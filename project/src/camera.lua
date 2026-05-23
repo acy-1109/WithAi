@@ -69,6 +69,42 @@ function Camera:setRotation(rotation)
     self.rotation = rotation
 end
 
+--- 스크린 좌표를 월드 좌표로 변환합니다.
+-- @param screenX 스크린 X 좌표
+-- @param screenY 스크린 Y 좌표
+-- @return worldX, worldY 월드 좌표
+function Camera:screenToWorld(screenX, screenY)
+    -- Lazy initialization of zoom
+    if not self.zoom then
+        local height = love.graphics.getHeight()
+        if height == 0 then height = 600 end
+        self.zoom = height / (2 * self.orthoSize)
+    end
+
+    local width = love.graphics.getWidth()
+    local height = love.graphics.getHeight()
+
+    -- 1. 화면 중심 기준으로 변환
+    local x = screenX - width / 2
+    local y = screenY - height / 2
+
+    -- 2. 회전 역변환
+    local cos_r = math.cos(self.rotation)
+    local sin_r = math.sin(self.rotation)
+    local rotatedX = x * cos_r - y * sin_r
+    local rotatedY = x * sin_r + y * cos_r
+
+    -- 3. 스케일 역변환 (zoom, -zoom)
+    local scaledX = rotatedX / self.zoom
+    local scaledY = rotatedY / (-self.zoom)
+
+    -- 4. 카메라 위치 보정
+    local worldX = scaledX + self.x
+    local worldY = scaledY + self.y
+
+    return worldX, worldY
+end
+
 --- 카메라의 현재 정보(위치, orthoSize, zoom, 회전각)를 화면에 오버레이로 표시합니다.
 -- @param x 표시할 화면 좌측 X 좌표 (기본값: 10)
 -- @param y 표시할 화면 상단 Y 좌표 (기본값: 10)
