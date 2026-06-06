@@ -1,20 +1,5 @@
 local k = require("kutil")
 
-local function gugudan(n)
-    for i = 1, 9 do
-        print(n, "*", i, "=", n * i)
-    end
-end
-
-function _12338(a, b)
-    local step = a > b and -1 or 1
-
-    for i = a, b, step do
-       gugudan(i)
-        print("\n")
-    end
-end
-
 function _1692(a, b)
     
     local ones = b % 10          
@@ -318,8 +303,8 @@ end
 print(count)
 end
 
-     function _2814(binary_input)
-        local binary_str = tostring(binary_input)
+function _2814(binary_input)
+    local binary_str = tostring(binary_input)
     local decimal = 0
     local power = 1
     
@@ -332,4 +317,82 @@ end
     end
     
     print(decimal)
+end
+
+function _1534(n, b)
+    local digits = "0123456789ABCDEF"
+    local result = ""
+    
+    if n == 0 then return "0" end
+    
+    while n > 0 do
+        local remainder = (n % b) + 1
+        local char = string.sub(digits, remainder, remainder)
+        result = char .. result
+        n = math.floor(n / b)
+    end
+    
+    print(result)
+end
+
+local BASE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+local function to_decimal(s, a)
+    local dec = 0
+    s = string.upper(s) 
+    
+    for i = 1, #s do
+        local char = string.sub(s, i, i)
+        local val = string.find(BASE_CHARS, char) - 1
+        dec = dec * a + val
+    end
+    return dec
+end
+
+local function from_decimal(dec, b)
+    if dec == 0 then return "0" end
+    
+    local result = ""
+    while dec > 0 do
+        local remainder = (dec % b) + 1
+        local char = string.sub(BASE_CHARS, remainder, remainder)
+        result = char .. result
+        dec = math.floor(dec / b)
+    end
+    return result
+end
+
+function _3106(a, s, b)
+    s = tostring(s) 
+    
+    local dec = to_decimal(s, a)
+    local result = from_decimal(dec, b)
+    
+    print(result)
+end
+
+function _4977(n)
+    local int_part = math.floor(n)
+    local frac_part = n - int_part
+    
+    local int_bin = ""
+    if int_part == 0 then
+        int_bin = "0"
+    else
+        while int_part > 0 do
+            local remainder = int_part % 2
+            int_bin = remainder .. int_bin
+            int_part = math.floor(int_part / 2)
+        end
+    end
+    
+    local frac_bin = ""
+    for i = 1, 4 do
+        frac_part = frac_part * 2
+        local bit = math.floor(frac_part)
+        frac_bin = frac_bin .. bit
+        frac_part = frac_part - bit 
+    end
+    
+    print(int_bin .. "." .. frac_bin)
 end
