@@ -1,34 +1,23 @@
 local WorldAxis = {}
 
 --- 월드 공간에 그리드를 그립니다.
--- @param camera 카메라 객체 (카메라의 줌 비율을 반영하여 선 두께를 보정)
 -- @param count 각 방향으로 그릴 선의 개수 (기본값: 10)
 -- @param spacing 그리드 간격 (월드 유닛, 기본값: 1)
 -- @param screenThickness 화면에 표시될 원하는 픽셀 두께 (기본값: 1)
-function WorldAxis.drawGrid(camera, count, spacing, screenThickness)
+function WorldAxis.drawGrid(count, spacing, screenThickness)
     count = count or 10
     spacing = spacing or 1
     screenThickness = screenThickness or 1
 
-    local zoom = 1
-    if camera then
-        if camera.zoom then
-            zoom = camera.zoom
-        else
-            local height = love.graphics.getHeight()
-            if height > 0 and camera.orthoSize and camera.orthoSize > 0 then
-                zoom = height / (2 * camera.orthoSize)
-            end
-        end
-    end
-
+    local height = love.graphics.getHeight()
+    local zoom = height / 2
     local thickness = screenThickness / zoom
 
     local prevWidth = love.graphics.getLineWidth()
     local prevR, prevG, prevB, prevA = love.graphics.getColor()
 
     love.graphics.setLineWidth(thickness)
-    love.graphics.setColor(115, 115, 115)
+    love.graphics.setColor(0.3, 0.3, 0.3)
 
     local maxDist = count * spacing
 
@@ -75,11 +64,11 @@ function WorldAxis.draw(camera, length, screenThickness)
     love.graphics.setLineWidth(thickness)
 
     -- +X축: Red (빨간색)
-    love.graphics.setColor(255, 0, 0)
+    love.graphics.setColor(1, 0, 0)
     love.graphics.line(0, 0, length, 0)
 
     -- +Y축: Green (초록색)
-    love.graphics.setColor(0, 255, 0)
+    love.graphics.setColor(0, 1, 0)
     love.graphics.line(0, 0, 0, length)
 
     -- 이전 그리기 상태 복원

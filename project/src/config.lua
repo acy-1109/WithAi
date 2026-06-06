@@ -1,11 +1,11 @@
 -- ============================================================================
--- conf.lua — LÖVE 윈도우 설정 (540×1200 portrait, Note20 비율)
+-- conf.lua — LÖVE 윈도우 설정 (1220×540 landscape, Note20 비율)
 -- ============================================================================
 --
 -- ◆ 역할
 --   love.conf(t)를 정의하여 윈도우 크기, MSAA, V-sync 등을 설정한다.
 --   resolutionList에서 인덱스로 해상도를 선택한다.
---   현재 기본값: index 5 = 432 × 960 (세로 모드)
+--   현재 기본값: index 13 = 2440/2 × 1080/2 (가로 모드 실험)
 
 local resolutionList = {
     -- Portrait mode (9:20 ratio) - 세로 모드
@@ -28,24 +28,24 @@ local resolutionList = {
     {width = 2440, height = 1080}, -- note20 for mobile
 }
 
-local resolutionIndex = 5
+local resolutionIndex = 13
 local resolution = resolutionList[resolutionIndex]
 
 function love.conf(t)
     -- Note: logger unavailable at conf time; use print only for critical debug
     
-    t.title = "Breakout - Love2D"                     -- The title of the window
+    t.title = "Vector Swarm - Zero Art Roguelite"    -- The title of the window
     t.author = "Your Name"                           -- The author of the game
     t.version = "11.5"                               -- The LÖVE version this game was made for
     
-    -- Window settings (Galaxy Note 20 portrait ratio)
+    -- Window settings (Galaxy Note 20 landscape ratio)
     t.window.width = resolution.width                -- Window width
     t.window.height = resolution.height              -- Window height
     t.window.minwidth = resolution.width / 2        -- Minimum window width
     t.window.minheight = resolution.height / 2      -- Minimum window height
     t.window.resizable = true                        -- Let the window be resizable
     t.window.centered = true                         -- Center the window
-    t.window.vsync = 0                               -- Enable vertical sync
+    t.window.vsync = 1                               -- Enable vertical sync
     t.window.msaa = 8                                -- The number of samples to use with multi-sampled antialiasing
     t.window.fullscreen = false                      -- Enable fullscreen (boolean)
     t.window.fullscreentype = "desktop"              -- Choose between "desktop" fullscreen or "exclusive" fullscreen mode

@@ -69,6 +69,42 @@ function Camera:setRotation(rotation)
     self.rotation = rotation
 end
 
+--- 스크린 좌표를 월드 좌표로 변환합니다.
+-- @param screenX 스크린 X 좌표
+-- @param screenY 스크린 Y 좌표
+-- @return worldX, worldY 월드 좌표
+function Camera:screenToWorld(screenX, screenY)
+    -- Lazy initialization of zoom
+    if not self.zoom then
+        local height = love.graphics.getHeight()
+        if height == 0 then height = 600 end
+        self.zoom = height / (2 * self.orthoSize)
+    end
+
+    local width = love.graphics.getWidth()
+    local height = love.graphics.getHeight()
+
+    -- 1. 화면 중심 기준으로 변환
+    local x = screenX - width / 2
+    local y = screenY - height / 2
+
+    -- 2. 회전 역변환
+    local cos_r = math.cos(self.rotation)
+    local sin_r = math.sin(self.rotation)
+    local rotatedX = x * cos_r - y * sin_r
+    local rotatedY = x * sin_r + y * cos_r
+
+    -- 3. 스케일 역변환 (zoom, -zoom)
+    local scaledX = rotatedX / self.zoom
+    local scaledY = rotatedY / (-self.zoom)
+
+    -- 4. 카메라 위치 보정
+    local worldX = scaledX + self.x
+    local worldY = scaledY + self.y
+
+    return worldX, worldY
+end
+
 --- 카메라의 현재 정보(위치, orthoSize, zoom, 회전각)를 화면에 오버레이로 표시합니다.
 -- @param x 표시할 화면 좌측 X 좌표 (기본값: 10)
 -- @param y 표시할 화면 상단 Y 좌표 (기본값: 10)
@@ -94,24 +130,17 @@ function Camera:drawInfo(x, y)
         rotation_deg, self.rotation
     )
 
-    -- 폰트가 없는 환경에서도 디버그 오버레이가 깨지지 않도록 안전하게 보정
-    local font = love.graphics.getFont()
-    if not font then
-        self._debugFont = self._debugFont or love.graphics.newFont(12)
-        font = self._debugFont
-        love.graphics.setFont(font)
-    end
-
     -- 폰트 정보 획득 및 배경 상자 크기 계산
+    local font = love.graphics.getFont()
     local textWidth = font:getWidth("Camera Information   ")
     local textHeight = font:getHeight() * 7 + 10
 
     -- 반투명 어두운 배경 상자 그리기
-    love.graphics.setColor(0, 0, 0, 153)
+    love.graphics.setColor(0, 0, 0, 0.6)
     love.graphics.rectangle("fill", x - 8, y - 8, textWidth + 16, textHeight + 6, 4, 4) -- 약간의 둥근 모서리 적용
 
     -- 개발자 콘솔 느낌의 세련된 민트색상으로 텍스트 그리기
-    love.graphics.setColor(51, 255, 204, 255)
+    love.graphics.setColor(0.2, 1, 0.8, 1)
     love.graphics.print(info, x, y)
 
     -- 원래 그리기 색상 복원
