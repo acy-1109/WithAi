@@ -32,14 +32,17 @@ function Exp.update(game, dt)
 
         -- 자석 특성이 있고 자석 범위 내에 있으면 플레이어에게 이동
         if player.hasMagnet and dist < player.magnetRange then
-            expOrb.x = expOrb.x + (dx / dist) * expOrb.speed * dt
-            expOrb.y = expOrb.y + (dy / dist) * expOrb.speed * dt
+            -- 플레이어 속도보다 훨씬 빠르게 설정하여 확실히 따라잡도록 함
+            local pullSpeed = math.max(expOrb.speed, player.speed + 150)
+            expOrb.x = expOrb.x + (dx / dist) * pullSpeed * dt
+            expOrb.y = expOrb.y + (dy / dist) * pullSpeed * dt
         end
 
         -- 플레이어와 충돌하면 경험치 획득
         local orbRect = { x = expOrb.x, y = expOrb.y, width = expOrb.size, height = expOrb.size }
         if Collision.check(player, orbRect) then
-            player.experience = player.experience + expOrb.experience
+            local gain = math.floor(expOrb.experience * (player.expModifier or 1.0))
+            player.experience = player.experience + gain
             table.remove(game.expOrbs, i)
 
             -- 레벨업 체크

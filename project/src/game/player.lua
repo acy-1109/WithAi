@@ -6,8 +6,8 @@ local Player = {}
 
 -- 플레이어 데이터 초기화
 function Player.init(skillIndex)
-    local skillLevels = { 0, 0, 0, 0, 0 }
-    if skillIndex and skillIndex >= 1 and skillIndex <= 5 then
+    local skillLevels = { 0, 0, 0, 0, 0, 0 }
+    if skillIndex and skillIndex >= 1 and skillIndex <= 6 then
         skillLevels[skillIndex] = 1
     end
 
@@ -20,13 +20,14 @@ function Player.init(skillIndex)
         health = 100,
         maxHealth = 100,
         invincibleTime = 0,
-        maxInvincibleTime = 1.0,
+        maxInvincibleTime = 0.6,
         level = 1,
         experience = 0,
         maxExperience = 100,
+        expModifier = 1.0,                 -- 경험치 획득 배율
         hasMagnet = false,                 -- 자석 특성 플래그
         magnetRange = 100,                 -- 자석 범위
-        upgradeLevels = { 0, 0, 0, 0, 0 }, -- 개별 스킬별 선택 횟수 (최대 3회)
+        upgradeLevels = { 0, 0, 0, 0, 0, 0 }, -- 개별 특성별 선택 횟수 (최대 3회)
         damage = 10,                       -- 구체 기본 데미지
         regenRate = 0,                     -- 체력 재생률 (%)
         regenTimer = 0,                    -- 체력 재생 타이머
@@ -97,11 +98,12 @@ function Player.draw(game)
 
     -- 무적 시간 중에는 깜빡임 효과
     if player.invincibleTime > 0 then
-        local blink = math.floor(game.time * 10) % 2 == 0
+        -- 무적 시간(invincibleTime)과 깜빡임 주기를 완전히 동기화
+        local blink = math.floor(player.invincibleTime * 20) % 2 == 0
         if blink then
-            love.graphics.setColor(0.2, 0.6, 1.0, 0.5)
+            love.graphics.setColor(0.2, 0.6, 1.0, 0.4)
         else
-            love.graphics.setColor(0.2, 0.6, 1.0)
+            love.graphics.setColor(0.2, 0.6, 1.0, 0.9)
         end
     else
         love.graphics.setColor(0.2, 0.6, 1.0)

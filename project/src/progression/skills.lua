@@ -561,7 +561,7 @@ function Skills.update(game, dt)
                     laser.hitEnemies[enemy] = true
                     enemy.health = enemy.health - laser.damage
                     if enemy.health <= 0 then
-                        game.score = game.score + 10
+                        game.score = game.score + (enemy.points or 10)
                         local Exp = require("progression.exp")
                         Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
                         table.remove(game.enemies, j)
@@ -572,6 +572,93 @@ function Skills.update(game, dt)
         
         if laser.timer >= laser.duration then
             table.remove(game.lasers, i)
+        end
+    end
+
+    -- 6. 자기장 스킬 업데이트 (레벨 > 0 일 때 가동)
+    if (player.skillLevels[6] or 0) > 0 then
+        game.magneticFieldTimer = game.magneticFieldTimer + dt
+        
+        local level = player.skillLevels[6] or 0
+        local cooldown = 6.0
+        local radius = 120
+        local duration = 3.0
+        local damage = 5 -- 매 틱당 대미지
+        local tickInterval = 0.25 -- 0.25초마다 대미지 주기
+        
+        -- 레벨에 따른 스펙 조정
+        if level == 2 then
+            cooldown = 5.0
+            damage = 8
+        elseif level == 3 then
+            cooldown = 5.0
+            damage = 8
+            duration = 4.5
+        elseif level == 4 then
+            cooldown = 5.0
+            radius = 170
+            duration = 4.5
+            damage = 12
+        elseif level >= 5 then
+            cooldown = 4.0
+            radius = 170
+            duration = 4.5
+            damage = 12
+        end
+
+        if game.magneticFieldTimer >= cooldown then
+            game.magneticFieldTimer = 0
+            -- 새로운 자기장 활성화
+            game.activeMagneticField = {
+                timer = 0,
+                duration = duration,
+                radius = radius,
+                damage = damage,
+                tickInterval = tickInterval,
+                tickTimer = 0
+            }
+        end
+    end
+    
+    if game.activeMagneticField then
+        local field = game.activeMagneticField
+        field.timer = field.timer + dt
+        field.tickTimer = field.tickTimer + dt
+
+        -- 플레이어 중심 좌표
+        local px = player.x + player.width / 2
+        local py = player.y + player.height / 2
+        
+        -- 틱 타이머 도달 시 대미지 적용
+        if field.tickTimer >= field.tickInterval then
+            field.tickTimer = field.tickTimer - field.tickInterval
+            
+            for j = #game.enemies, 1, -1 do
+                local enemy = game.enemies[j]
+                local ecx = enemy.x + enemy.width / 2
+                local ecy = enemy.y + enemy.height / 2
+                
+                local dx = ecx - px
+                local dy = ecy - py
+                local dist = math.sqrt(dx * dx + dy * dy)
+                
+                -- 적의 크기(절반) + 자기장 반지름 비교
+                if dist <= (field.radius + enemy.width / 2) then
+                    enemy.health = enemy.health - field.damage
+                    
+                    -- 적 사망 처리
+                    if enemy.health <= 0 then
+                        game.score = game.score + (enemy.points or 10)
+                        local Exp = require("progression.exp")
+                        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
+                        table.remove(game.enemies, j)
+                    end
+                end
+            end
+        end
+        
+        if field.timer >= field.duration then
+            game.activeMagneticField = nil
         end
     end
 end
@@ -790,6 +877,50 @@ function Skills.draw(game)
         love.graphics.setColor(1.0, 0.8, 0.9, alpha * 0.8)
         love.graphics.circle("fill", laser.x1, laser.y1, drawThickness * 1.5)
     end
+
+    -- 6. 자기장 (Magnetic Field) 그리기
+    if game.activeMagneticField then
+        local field = game.activeMagneticField
+        local px = game.player and (game.player.x + game.player.width / 2) or 0
+        local py = game.player and (game.player.y + game.player.height / 2) or 0
+        
+        local radius = field.radius
+        
+        -- 외부 연한 오라 그리기
+        love.graphics.setColor(0.1, 0.6, 1.0, 0.08)
+        love.graphics.circle("fill", px, py, radius)
+        
+        -- 중간 전기 필드 느낌
+        love.graphics.setColor(0.2, 0.7, 1.0, 0.15)
+        love.graphics.circle("fill", px, py, radius * 0.8)
+        
+        -- 바깥쪽 테두리 고리
+        love.graphics.setLineWidth(2)
+        love.graphics.setColor(0.3, 0.8, 1.0, 0.6)
+        love.graphics.circle("line", px, py, radius)
+        
+        -- 안쪽 얇은 고리
+        love.graphics.setLineWidth(1)
+        love.graphics.setColor(0.4, 0.9, 1.0, 0.3)
+        love.graphics.circle("line", px, py, radius * 0.9)
+        
+        -- 테두리를 따라 돌아가는 전기 스파크/도트 효과 그리기
+        local sparkCount = 8
+        local rotAngle = game.time * 4
+        for k = 1, sparkCount do
+            local angle = rotAngle + (k - 1) * (2 * math.pi / sparkCount)
+            local sx = px + math.cos(angle) * radius
+            local sy = py + math.sin(angle) * radius
+            
+            -- 미세 스파크
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+            love.graphics.circle("fill", sx, sy, 3)
+            
+            -- 스파크 잔상 아우라
+            love.graphics.setColor(0.3, 0.8, 1.0, 0.4)
+            love.graphics.circle("fill", sx, sy, 6)
+        end
+    end
 end
 
 -- 통합 레벨업 선택창(스킬 또는 특성)에서 카드 클릭 시 업그레이드 적용
@@ -832,6 +963,8 @@ function Skills.applyUpgrade(game, boxIndex)
             Skills.syncOrbs(game)
         elseif upgrade.name == "Health Regen" then
             player.regenRate = player.regenRate + 5
+        elseif upgrade.name == "EXP Boost" then
+            player.expModifier = (player.expModifier or 1.0) + 0.25
         end
     end
 

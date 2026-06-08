@@ -4,6 +4,14 @@
 
 local HUD = {}
 
+local fontCache = {}
+local function getFont(size)
+    if not fontCache[size] then
+        fontCache[size] = love.graphics.newFont(size)
+    end
+    return fontCache[size]
+end
+
 -- 스킬 선택 박스 레이아웃 계산 (3등분)
 function HUD.calculateSkillBoxes(game)
     local screenWidth = love.graphics.getWidth()
@@ -90,21 +98,21 @@ function HUD.drawMenu(game)
 
         -- 스킬 이름 (박스 중앙 위)
         love.graphics.setColor(1, 1, 1)
-        love.graphics.setFont(love.graphics.newFont(32))
+        love.graphics.setFont(getFont(32))
         love.graphics.printf(skill.name, box.x, box.y + box.height / 2 - 30, box.width, "center")
 
         -- 스킬 설명 (박스 중앙 아래)
-        love.graphics.setFont(love.graphics.newFont(18))
+        love.graphics.setFont(getFont(18))
         love.graphics.printf(skill.description, box.x, box.y + box.height / 2 + 20, box.width, "center")
     end
 
     -- 메인 제목
     love.graphics.setColor(1, 1, 1)
-    love.graphics.setFont(love.graphics.newFont(48))
+    love.graphics.setFont(getFont(48))
     love.graphics.printf("Roguelike Survivor", 0, 50, screenWidth, "center")
 
     -- 하단 안내
-    love.graphics.setFont(love.graphics.newFont(24))
+    love.graphics.setFont(getFont(24))
     love.graphics.printf("Select a skill", 0, screenHeight - 50, screenWidth, "center")
 end
 
@@ -151,7 +159,7 @@ function HUD.drawUpgrade(game)
 
             -- 텍스트 렌더링 준비
             love.graphics.setColor(1, 1, 1)
-            love.graphics.setFont(love.graphics.newFont(32))
+            love.graphics.setFont(getFont(32))
 
             local nameText, descText = "", ""
             local levelText = ""
@@ -227,6 +235,21 @@ function HUD.drawUpgrade(game)
                     else
                         descText = skill.description
                     end
+                elseif option.index == 6 then
+                    local nextLevel = currentLevel + 1
+                    if nextLevel == 1 then
+                        descText = "Deploys a circular magnetic field around you"
+                    elseif nextLevel == 2 then
+                        descText = "Increases damage & reduces cooldown"
+                    elseif nextLevel == 3 then
+                        descText = "Increases duration"
+                    elseif nextLevel == 4 then
+                        descText = "Increases radius & damage"
+                    elseif nextLevel == 5 then
+                        descText = "Reduces cooldown"
+                    else
+                        descText = skill.description
+                    end
                 else
                     descText = skill.description
                 end
@@ -240,14 +263,14 @@ function HUD.drawUpgrade(game)
             love.graphics.printf(nameText, box.x, box.y + box.height / 2 - 40, box.width, "center")
 
             -- 설명 출력
-            love.graphics.setFont(love.graphics.newFont(18))
+            love.graphics.setFont(getFont(18))
             love.graphics.printf(descText, box.x, box.y + box.height / 2 + 15, box.width, "center")
 
             -- 하단 부가 정보 렌더링
             if option.type == "skill" then
                 -- 스킬: 레벨 텍스트 표시
                 love.graphics.setColor(0.9, 0.9, 0.9)
-                love.graphics.setFont(love.graphics.newFont(16))
+                love.graphics.setFont(getFont(16))
                 love.graphics.printf(levelText, box.x, box.y + box.height / 2 + 70, box.width, "center")
             else
                 -- 특성: 별 표시 (3회 누적 업그레이드 표시)
@@ -282,11 +305,11 @@ function HUD.drawUpgrade(game)
 
     -- 상단 제목
     love.graphics.setColor(1, 1, 1)
-    love.graphics.setFont(love.graphics.newFont(48))
+    love.graphics.setFont(getFont(48))
     love.graphics.printf("Level Up!", 0, 50, screenWidth, "center")
 
     -- 하단 선택 가이드라인
-    love.graphics.setFont(love.graphics.newFont(24))
+    love.graphics.setFont(getFont(24))
     love.graphics.printf("Select a skill or upgrade", 0, screenHeight - 50, screenWidth, "center")
 end
 
@@ -299,12 +322,12 @@ function HUD.drawGameOver(game)
 
     -- Game Over 제목
     love.graphics.setColor(1, 0.3, 0.3)
-    love.graphics.setFont(love.graphics.newFont(48))
+    love.graphics.setFont(getFont(48))
     love.graphics.printf("Game Over", 0, screenHeight / 3, screenWidth, "center")
 
     -- 최종 점수 및 재시작 키 안내
     love.graphics.setColor(1, 1, 1)
-    love.graphics.setFont(love.graphics.newFont(24))
+    love.graphics.setFont(getFont(24))
     love.graphics.printf("Score: " .. game.score, 0, screenHeight / 2, screenWidth, "center")
     love.graphics.printf("Press R to Restart", 0, screenHeight / 2 + 50, screenWidth, "center")
 end
@@ -314,7 +337,7 @@ function HUD.drawUI(game)
     local player = game.player
     
     love.graphics.setColor(1, 1, 1)
-    love.graphics.setFont(love.graphics.newFont(14)) -- 기본 폰트 크기 재지정 (폰트 오버라이드 방지)
+    love.graphics.setFont(getFont(14)) -- 기본 폰트 크기 재지정 (폰트 오버라이드 방지)
     
     love.graphics.print("Score: " .. game.score, 10, 10)
 
@@ -323,6 +346,93 @@ function HUD.drawUI(game)
     end
 
     love.graphics.print("Time: " .. string.format("%.1f", game.time), 10, 50)
+    love.graphics.print("Wave: " .. (game.wave or 1), 10, 70)
+    if game.enemies then
+        love.graphics.print("Enemies: " .. #game.enemies, 10, 90)
+    end
+
+    -- Draw wave banner
+    if game.bannerText and game.bannerTimer and game.bannerTimer > 0 then
+        local screenWidth = love.graphics.getWidth()
+        local screenHeight = love.graphics.getHeight()
+        
+        local alpha = 1.0
+        if game.bannerTimer < 0.5 then
+            alpha = game.bannerTimer / 0.5
+        end
+        
+        -- Dark background band
+        love.graphics.setColor(0.04, 0.05, 0.08, alpha * 0.75)
+        love.graphics.rectangle("fill", 0, screenHeight / 2 - 60, screenWidth, 120)
+        
+        -- Border lines on the band (top/bottom)
+        love.graphics.setColor(0.2, 0.4, 0.8, alpha * 0.5)
+        love.graphics.setLineWidth(2)
+        love.graphics.line(0, screenHeight / 2 - 60, screenWidth, screenHeight / 2 - 60)
+        love.graphics.line(0, screenHeight / 2 + 60, screenWidth, screenHeight / 2 + 60)
+        
+        -- Font configuration
+        love.graphics.setFont(getFont(40))
+        
+        -- Drop shadow
+        love.graphics.setColor(0, 0, 0, alpha * 0.8)
+        love.graphics.printf(game.bannerText, 2, screenHeight / 2 - 23, screenWidth, "center")
+        
+        -- Main text color
+        if string.find(game.bannerText, "CLEAR") then
+            love.graphics.setColor(0.2, 0.9, 0.4, alpha) -- Vibrant green
+        else
+            love.graphics.setColor(1.0, 0.75, 0.1, alpha) -- Golden
+        end
+        love.graphics.printf(game.bannerText, 0, screenHeight / 2 - 25, screenWidth, "center")
+    end
+
+    -- 보스 HP바 그리기 (보스가 존재하는 경우)
+    local boss = nil
+    if game.enemies then
+        for _, enemy in ipairs(game.enemies) do
+            if enemy.type == "boss" then
+                boss = enemy
+                break
+            end
+        end
+    end
+
+    if boss then
+        local screenWidth = love.graphics.getWidth()
+        local barWidth = 450
+        local barHeight = 16
+        local barX = (screenWidth - barWidth) / 2
+        local barY = 40
+        
+        -- 보스 이름 출력
+        love.graphics.setFont(getFont(18))
+        love.graphics.setColor(0.9, 0.2, 0.9) -- 보라색 네온 컬러 느낌
+        love.graphics.printf(boss.name or "BOSS", 0, barY - 24, screenWidth, "center")
+        
+        -- HP바 배경
+        love.graphics.setColor(0.1, 0.1, 0.1, 0.8)
+        love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 4, 4)
+        
+        -- HP바 내용물
+        local hpRatio = math.max(0, boss.health / boss.maxHealth)
+        love.graphics.setColor(0.8, 0.15, 0.15, 0.9)
+        love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight, 4, 4)
+        
+        -- HP바 광택 효과
+        love.graphics.setColor(1.0, 1.0, 1.0, 0.15)
+        love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight / 2, 4, 4)
+        
+        -- HP바 테두리 (네온 파란색/보라색 글로우 테두리)
+        love.graphics.setLineWidth(2)
+        love.graphics.setColor(0.5, 0.2, 0.9, 0.8)
+        love.graphics.rectangle("line", barX, barY, barWidth, barHeight, 4, 4)
+        
+        -- HP 수치 텍스트
+        love.graphics.setFont(getFont(12))
+        love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+        love.graphics.printf(boss.health .. " / " .. boss.maxHealth, barX, barY + 1, barWidth, "center")
+    end
 end
 
 return HUD

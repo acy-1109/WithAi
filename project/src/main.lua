@@ -38,7 +38,8 @@ local game = {
         { name = "Thunder",      description = "Strike lightning on enemies periodically" },
         { name = "Blade",        description = "Auto-attack enemies with tracking blades" },
         { name = "Bullet",       description = "Auto-target enemies and fire bullets" },
-        { name = "Laser",        description = "Fire a slow-charging laser beam that follows your position" }
+        { name = "Laser",        description = "Fire a slow-charging laser beam that follows your position" },
+        { name = "Magnetic Field", description = "Periodically deploy a circular magnetic field that damages nearby enemies" }
     },
     selectedSkill = nil,
     skillBoxes = {},
@@ -48,7 +49,8 @@ local game = {
         { name = "Health Boost", description = "Increase max health by 20" },
         { name = "Speed Boost",  description = "Increase movement speed by 5%" },
         { name = "Damage Boost", description = "Increase orb damage by 10%" },
-        { name = "Health Regen", description = "Regenerate health when not taking damage" }
+        { name = "Health Regen", description = "Regenerate health when not taking damage" },
+        { name = "EXP Boost",    description = "Increase experience gained by 25%" }
     },
     upgradeOptions = {}, -- 현재 레벨업 시 표시할 특성 3개 (인덱스)
     upgradeBoxes = {},
@@ -86,6 +88,12 @@ local function startGame(skillIndex)
     -- 플레이어 초기화
     game.player = Player.init(skillIndex)
 
+    -- 첫 카메라 위치 강제 동기화 (적의 화면 밖 스폰 판정을 위함)
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+    game.camera.x = game.player.x - screenWidth / 2 + game.player.width / 2
+    game.camera.y = game.player.y - screenHeight / 2 + game.player.height / 2
+
     game.enemies = {}
     game.orbs = {}
     game.expOrbs = {}  -- 경험치 구슬
@@ -93,6 +101,7 @@ local function startGame(skillIndex)
     game.blades = {}   -- 칼날 스킬 프로젝타일
     game.bullets = {}  -- 총알 스킬 프로젝타일
     game.lasers = {}   -- 레이저 스킬 프로젝타일
+    game.enemyBullets = {} -- 적 탄환 프로젝타일
     game.score = 0
     game.time = 0
 
@@ -105,6 +114,17 @@ local function startGame(skillIndex)
     game.bulletCooldown = 1.5
     game.laserTimer = 0
     game.laserCooldown = 5.0
+    game.magneticFieldTimer = 0
+    game.magneticFieldCooldown = 6.0
+    game.activeMagneticField = nil
+
+    -- 웨이브 시스템 초기화
+    game.wave = 1
+    game.waveState = "playing"
+    game.waveTransitionTimer = 0
+    game.bannerText = "WAVE 1"
+    game.bannerTimer = 2.0
+    Enemy.spawnWave(game, 1)
 
     -- 배경 데코레이션 초기화
     game.backgroundElements = {}
@@ -272,6 +292,20 @@ end
 function love.keypressed(key)
     if key == "escape" then
         love.event.quit()
+    end
+
+    if game.state == "playing" and (key == "p" or key == "P") then
+        game.enemies = {}
+        game.enemyBullets = {}
+    end
+
+    if game.state == "playing" and (key == "o" or key == "O") then
+        local player = game.player
+        if player then
+            player.experience = player.maxExperience
+            local Exp = require("progression.exp")
+            Exp.checkLevelUp(game)
+        end
     end
 
     if game.state == "gameover" then
