@@ -12,6 +12,52 @@ local function getFont(size)
     return fontCache[size]
 end
 
+-- 스킬 레벨별 세부 설명 룩업 테이블
+local skillLevelDescriptions = {
+    [2] = { -- 벼락 (Thunder)
+        "Strike lightning on the closest enemy",
+        "Reduces cooldown & increases damage",
+        "Increases lightning count to 2 targets",
+        "Reduces cooldown & increases damage",
+        "Increases lightning count to 3 targets",
+    },
+    [3] = { -- 칼날 (Blade)
+        "Fires a tracking blade at the closest enemy",
+        "Reduces cooldown & increases damage",
+        "Fires 2 blades sequentially",
+        "Reduces cooldown",
+        "Fires 3 blades sequentially & increases blade size",
+    },
+    [4] = { -- 총알 (Bullet)
+        "Fires a bullet at the closest enemy",
+        "Adds piercing effect & reduces cooldown",
+        "Fires triple shot spread, increases damage & reduces cooldown",
+        "Reduces cooldown",
+        "Increases damage & reduces cooldown",
+    },
+    [5] = { -- 레이저 (Laser)
+        "Fires a slow-charging laser beam that follows you for a short duration",
+        "Increases damage & duration slightly",
+        "Increases laser thickness, damage & duration",
+        "Reduces cooldown slightly",
+        "Hyper Laser: Colossal damage, maximum thickness & longest duration",
+    },
+    [6] = { -- 자기장 (Magnetic Field)
+        "Deploys a circular magnetic field around you",
+        "Increases damage & reduces cooldown",
+        "Increases duration",
+        "Increases radius & damage",
+        "Reduces cooldown",
+    },
+    [7] = { -- 운석 (Meteor)
+        "Call down a meteor from the sky that damages enemies and shakes the screen",
+        "Reduces cooldown & increases meteor damage",
+        "Increases meteor count by 1 target",
+        "Leaves burning fire patches on the ground that deal damage over time",
+        "Increases meteor count by 1 target",
+    }
+}
+
 -- 스킬 선택 박스 레이아웃 계산 (3등분)
 function HUD.calculateSkillBoxes(game)
     local screenWidth = love.graphics.getWidth()
@@ -175,81 +221,10 @@ function HUD.drawUpgrade(game)
                     levelText = "Level: " .. currentLevel .. " -> " .. (currentLevel + 1)
                 end
 
-                if option.index == 2 then
-                    local nextLevel = currentLevel + 1
-                    if nextLevel == 1 then
-                        descText = "Strike lightning on the closest enemy"
-                    elseif nextLevel == 2 then
-                        descText = "Reduces cooldown & increases damage"
-                    elseif nextLevel == 3 then
-                        descText = "Increases lightning count to 2 targets"
-                    elseif nextLevel == 4 then
-                        descText = "Reduces cooldown & increases damage"
-                    elseif nextLevel == 5 then
-                        descText = "Increases lightning count to 3 targets"
-                    else
-                        descText = skill.description
-                    end
-                elseif option.index == 3 then
-                    local nextLevel = currentLevel + 1
-                    if nextLevel == 1 then
-                        descText = "Fires a tracking blade at the closest enemy"
-                    elseif nextLevel == 2 then
-                        descText = "Reduces cooldown & increases damage"
-                    elseif nextLevel == 3 then
-                        descText = "Fires 2 blades sequentially"
-                    elseif nextLevel == 4 then
-                        descText = "Reduces cooldown"
-                    elseif nextLevel == 5 then
-                        descText = "Fires 3 blades sequentially & increases blade size"
-                    else
-                        descText = skill.description
-                    end
-                elseif option.index == 4 then
-                    local nextLevel = currentLevel + 1
-                    if nextLevel == 1 then
-                        descText = "Fires a bullet at the closest enemy"
-                    elseif nextLevel == 2 then
-                        descText = "Adds piercing effect & reduces cooldown"
-                    elseif nextLevel == 3 then
-                        descText = "Fires triple shot spread, increases damage & reduces cooldown"
-                    elseif nextLevel == 4 then
-                        descText = "Reduces cooldown"
-                    elseif nextLevel == 5 then
-                        descText = "Increases damage & reduces cooldown"
-                    else
-                        descText = skill.description
-                    end
-                elseif option.index == 5 then
-                    local nextLevel = currentLevel + 1
-                    if nextLevel == 1 then
-                        descText = "Fires a slow-charging laser beam that follows you for a short duration"
-                    elseif nextLevel == 2 then
-                        descText = "Increases damage & duration slightly"
-                    elseif nextLevel == 3 then
-                        descText = "Increases laser thickness, damage & duration"
-                    elseif nextLevel == 4 then
-                        descText = "Reduces cooldown slightly"
-                    elseif nextLevel == 5 then
-                        descText = "Hyper Laser: Colossal damage, maximum thickness & longest duration"
-                    else
-                        descText = skill.description
-                    end
-                elseif option.index == 6 then
-                    local nextLevel = currentLevel + 1
-                    if nextLevel == 1 then
-                        descText = "Deploys a circular magnetic field around you"
-                    elseif nextLevel == 2 then
-                        descText = "Increases damage & reduces cooldown"
-                    elseif nextLevel == 3 then
-                        descText = "Increases duration"
-                    elseif nextLevel == 4 then
-                        descText = "Increases radius & damage"
-                    elseif nextLevel == 5 then
-                        descText = "Reduces cooldown"
-                    else
-                        descText = skill.description
-                    end
+                local nextLevel = currentLevel + 1
+                local descList = skillLevelDescriptions[option.index]
+                if descList and descList[nextLevel] then
+                    descText = descList[nextLevel]
                 else
                     descText = skill.description
                 end
@@ -332,6 +307,53 @@ function HUD.drawGameOver(game)
     love.graphics.printf("Press R to Restart", 0, screenHeight / 2 + 50, screenWidth, "center")
 end
 
+-- 스테이지 클리어 화면 렌더링
+function HUD.drawStageClear(game)
+    -- 반투명 어두운 배경으로 덮기 (인게임 상태가 살짝 비치도록 함)
+    love.graphics.setColor(0.04, 0.04, 0.06, 0.85)
+    love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+
+    -- STAGE CLEARED 제목 (그린 네온 느낌)
+    love.graphics.setColor(0.2, 0.9, 0.4)
+    love.graphics.setFont(getFont(48))
+    love.graphics.printf("STAGE " .. (game.stage or 1) .. " CLEARED!", 0, screenHeight / 3 - 50, screenWidth, "center")
+
+    -- 스코어 표시
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.setFont(getFont(24))
+    love.graphics.printf("Score: " .. game.score, 0, screenHeight / 3 + 30, screenWidth, "center")
+
+    -- Next Stage 버튼 그리기 (네온 스타일 및 마우스 호버 효과)
+    local btnWidth = 240
+    local btnHeight = 60
+    local btnX = (screenWidth - btnWidth) / 2
+    local btnY = screenHeight / 2 + 50
+
+    local mouseX, mouseY = love.mouse.getPosition()
+    local isHovered = mouseX >= btnX and mouseX <= btnX + btnWidth and
+                      mouseY >= btnY and mouseY <= btnY + btnHeight
+
+    if isHovered then
+        love.graphics.setColor(0.3, 0.8, 0.5, 0.95) -- 밝은 녹색 호버
+    else
+        love.graphics.setColor(0.2, 0.6, 0.3, 0.85) -- 녹색 기본
+    end
+    love.graphics.rectangle("fill", btnX, btnY, btnWidth, btnHeight, 8, 8)
+
+    -- 버튼 테두리 (빛나는 연녹색 테두리)
+    love.graphics.setColor(0.6, 1.0, 0.7, 0.9)
+    love.graphics.setLineWidth(2)
+    love.graphics.rectangle("line", btnX, btnY, btnWidth, btnHeight, 8, 8)
+
+    -- 버튼 텍스트
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.setFont(getFont(22))
+    love.graphics.printf("Next Stage", btnX, btnY + 16, btnWidth, "center")
+end
+
 -- 인게임 좌상단 기본 HUD 스탯 표시
 function HUD.drawUI(game)
     local player = game.player
@@ -347,8 +369,9 @@ function HUD.drawUI(game)
 
     love.graphics.print("Time: " .. string.format("%.1f", game.time), 10, 50)
     love.graphics.print("Wave: " .. (game.wave or 1), 10, 70)
+    love.graphics.print("Stage: " .. (game.stage or 1), 10, 90)
     if game.enemies then
-        love.graphics.print("Enemies: " .. #game.enemies, 10, 90)
+        love.graphics.print("Enemies: " .. #game.enemies, 10, 110)
     end
 
     -- Draw wave banner
@@ -433,6 +456,467 @@ function HUD.drawUI(game)
         love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
         love.graphics.printf(boss.health .. " / " .. boss.maxHealth, barX, barY + 1, barWidth, "center")
     end
+end
+
+-- ============================================================================
+-- Main Menu
+-- ============================================================================
+function HUD.drawMainMenu(game)
+    love.graphics.clear(0.05, 0.05, 0.07) -- Deep space dark color
+    
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+    local mx, my = love.mouse.getPosition()
+    
+    -- Futuristic title rendering
+    local titleGlow = 0.85 + math.sin(love.timer.getTime() * 4) * 0.1
+    love.graphics.setFont(getFont(54))
+    -- Drop shadow
+    love.graphics.setColor(0, 0, 0, 0.5)
+    love.graphics.printf("ROGUELIKE SURVIVOR", 4, screenHeight / 2 - 216, screenWidth, "center")
+    -- Main neon logo
+    love.graphics.setColor(0.3, 0.7, 1.0, titleGlow)
+    love.graphics.printf("ROGUELIKE SURVIVOR", 0, screenHeight / 2 - 220, screenWidth, "center")
+    
+    -- 4 menu navigation buttons
+    local buttons = {
+        { label = "START GAME", state = "menu" },
+        { label = "UPGRADES", state = "meta_upgrade" },
+        { label = "SETTINGS", state = "settings" },
+        { label = "EXIT GAME", action = "exit" }
+    }
+    
+    local btnW = 320
+    local btnH = 50
+    local startY = screenHeight / 2 - 80
+    local gap = 70
+    
+    game.mainMenuButtons = {}
+    
+    for i, btn in ipairs(buttons) do
+        local bx = (screenWidth - btnW) / 2
+        local by = startY + (i - 1) * gap
+        
+        table.insert(game.mainMenuButtons, {
+            x = bx, y = by, w = btnW, h = btnH,
+            state = btn.state, action = btn.action
+        })
+        
+        local isHovered = mx >= bx and mx <= bx + btnW and my >= by and my <= by + btnH
+        
+        if isHovered then
+            love.graphics.setColor(0.12, 0.2, 0.35, 0.95)
+        else
+            love.graphics.setColor(0.08, 0.1, 0.15, 0.85)
+        end
+        love.graphics.rectangle("fill", bx, by, btnW, btnH, 6, 6)
+        
+        if isHovered then
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(0.3, 0.8, 1.0, 0.95)
+        else
+            love.graphics.setLineWidth(1)
+            love.graphics.setColor(0.2, 0.4, 0.6, 0.7)
+        end
+        love.graphics.rectangle("line", bx, by, btnW, btnH, 6, 6)
+        
+        love.graphics.setFont(getFont(18))
+        if isHovered then
+            love.graphics.setColor(1.0, 1.0, 1.0)
+        else
+            love.graphics.setColor(0.7, 0.8, 0.9)
+        end
+        love.graphics.printf(btn.label, bx, by + 14, btnW, "center")
+    end
+    
+    -- Accumulated Persistent Score
+    love.graphics.setFont(getFont(16))
+    love.graphics.setColor(1.0, 0.75, 0.2, 0.85)
+    love.graphics.printf("TOTAL SCORE: " .. (game.totalScore or 0) .. " PTS", 0, screenHeight - 60, screenWidth, "center")
+    
+    love.graphics.setLineWidth(1)
+end
+
+-- ============================================================================
+-- Settings View
+-- ============================================================================
+function HUD.drawSettings(game)
+    love.graphics.clear(0.05, 0.05, 0.07)
+    
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+    local mx, my = love.mouse.getPosition()
+    
+    -- Title
+    love.graphics.setFont(getFont(36))
+    love.graphics.setColor(0.3, 0.7, 1.0)
+    love.graphics.printf("SETTINGS", 0, screenHeight / 2 - 200, screenWidth, "center")
+    
+    local cboxSize = 24
+    local startY = screenHeight / 2 - 80
+    local gap = 60
+    
+    local options = {
+        { key = "showStars", label = "Enable Background Star Dust" },
+        { key = "muted", label = "Mute Background Sound" }
+    }
+    
+    game.settingsCheckboxes = {}
+    
+    for i, opt in ipairs(options) do
+        local bx = screenWidth / 2 - 220
+        local by = startY + (i - 1) * gap
+        
+        table.insert(game.settingsCheckboxes, {
+            x = bx, y = by, w = cboxSize, h = cboxSize, key = opt.key
+        })
+        
+        local isHovered = mx >= bx and mx <= bx + 450 and my >= by and my <= by + cboxSize
+        
+        if isHovered then
+            love.graphics.setColor(0.15, 0.25, 0.4)
+        else
+            love.graphics.setColor(0.08, 0.1, 0.15)
+        end
+        love.graphics.rectangle("fill", bx, by, cboxSize, cboxSize, 4, 4)
+        
+        love.graphics.setColor(0.3, 0.7, 1.0, 0.8)
+        love.graphics.setLineWidth(1.5)
+        love.graphics.rectangle("line", bx, by, cboxSize, cboxSize, 4, 4)
+        
+        if game[opt.key] then
+            love.graphics.setColor(0.3, 1.0, 0.5)
+            love.graphics.rectangle("fill", bx + 5, by + 5, cboxSize - 10, cboxSize - 10, 2, 2)
+        end
+        
+        love.graphics.setFont(getFont(16))
+        love.graphics.setColor(0.85, 0.9, 0.95)
+        love.graphics.print(opt.label, bx + 40, by + 2)
+    end
+    
+    -- BACK button
+    local btnW = 180
+    local btnH = 46
+    local btnX = (screenWidth - btnW) / 2
+    local btnY = screenHeight / 2 + 120
+    
+    game.settingsBackBtn = { x = btnX, y = btnY, w = btnW, h = btnH }
+    
+    local isBackHovered = mx >= btnX and mx <= btnX + btnW and my >= btnY and my <= btnY + btnH
+    
+    if isBackHovered then
+        love.graphics.setColor(0.12, 0.2, 0.35, 0.95)
+    else
+        love.graphics.setColor(0.08, 0.1, 0.15, 0.85)
+    end
+    love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 6, 6)
+    
+    if isBackHovered then
+        love.graphics.setColor(0.3, 0.8, 1.0, 0.95)
+    else
+        love.graphics.setColor(0.2, 0.4, 0.6, 0.7)
+    end
+    love.graphics.rectangle("line", btnX, btnY, btnW, btnH, 6, 6)
+    
+    love.graphics.setFont(getFont(16))
+    love.graphics.setColor(1.0, 1.0, 1.0)
+    love.graphics.printf("BACK", btnX, btnY + 12, btnW, "center")
+    
+    love.graphics.setLineWidth(1)
+end
+
+-- ============================================================================
+-- Meta Upgrades (2-Column Grid Layout Shop)
+-- ============================================================================
+function HUD.drawMetaUpgrade(game)
+    love.graphics.clear(0.05, 0.05, 0.07)
+    
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+    local mx, my = love.mouse.getPosition()
+    local page = game.metaUpgradePage or 1
+    
+    -- Title
+    love.graphics.setFont(getFont(32))
+    love.graphics.setColor(0.3, 0.7, 1.0)
+    love.graphics.printf("META UPGRADES", 0, 35, screenWidth, "center")
+    
+    -- Available score PTS
+    love.graphics.setFont(getFont(18))
+    love.graphics.setColor(1.0, 0.75, 0.2)
+    love.graphics.printf("AVAILABLE SCORE: " .. (game.totalScore or 0) .. " PTS", 0, 85, screenWidth, "center")
+    
+    -- Tabs Navigation
+    local tabW = 200
+    local tabH = 36
+    local tabY = 120
+    local centerX = screenWidth / 2
+    
+    game.metaUpgradeTabs = {
+        { x = centerX - tabW - 10, y = tabY, w = tabW, h = tabH, page = 1, label = "ACTIVE SKILLS" },
+        { x = centerX + 10, y = tabY, w = tabW, h = tabH, page = 2, label = "PASSIVE STATS" }
+    }
+    
+    for _, tab in ipairs(game.metaUpgradeTabs) do
+        local isHovered = mx >= tab.x and mx <= tab.x + tab.w and my >= tab.y and my <= tab.y + tab.h
+        local isActive = (page == tab.page)
+        
+        -- Tab background
+        if isActive then
+            love.graphics.setColor(0.12, 0.22, 0.4, 0.95)
+        elseif isHovered then
+            love.graphics.setColor(0.08, 0.14, 0.25, 0.8)
+        else
+            love.graphics.setColor(0.05, 0.07, 0.1, 0.6)
+        end
+        love.graphics.rectangle("fill", tab.x, tab.y, tab.w, tab.h, 6, 6)
+        
+        -- Tab border
+        if isActive then
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(0.3, 0.8, 1.0, 0.95)
+        else
+            love.graphics.setLineWidth(1)
+            love.graphics.setColor(0.2, 0.4, 0.6, 0.7)
+        end
+        love.graphics.rectangle("line", tab.x, tab.y, tab.w, tab.h, 6, 6)
+        
+        -- Tab label
+        love.graphics.setFont(getFont(15))
+        if isActive then
+            love.graphics.setColor(1.0, 1.0, 1.0)
+        else
+            love.graphics.setColor(0.6, 0.7, 0.8)
+        end
+        love.graphics.printf(tab.label, tab.x, tab.y + 9, tab.w, "center")
+    end
+    
+    -- Upgradable items lists
+    local activeUpgrades = {
+        { index = 1, name = "Orbiting Orb",    baseCost = 1000, scale = 500, max = 5, desc = "Orbits damage aura around you." },
+        { index = 2, name = "Thunder",         baseCost = 1000, scale = 500, max = 5, desc = "Strikes lightning periodically." },
+        { index = 3, name = "Blade",           baseCost = 1000, scale = 500, max = 5, desc = "Fires homing curved glaives." },
+        { index = 4, name = "Bullet",          baseCost = 1000, scale = 500, max = 5, desc = "Rapid direct projectile shot." },
+        { index = 5, name = "Laser",           baseCost = 1200, scale = 600, max = 5, desc = "Continuous heavy plasma beam." },
+        { index = 6, name = "Magnetic Field",  baseCost = 1200, scale = 600, max = 5, desc = "Spawns circular electric field." },
+        { index = 7, name = "Meteor",          baseCost = 1500, scale = 700, max = 5, desc = "Calls screen-shake fireballs." }
+    }
+    
+    local passiveUpgrades = {
+        { index = 1, name = "Gravity Core",    baseCost = 800,  scale = 400, max = 5, desc = "Attract experience from far." },
+        { index = 2, name = "Fortified Hull",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting HP +20." },
+        { index = 3, name = "Thruster Output",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent speed boost +5%." },
+        { index = 4, name = "Reactor Overload",baseCost = 1200, scale = 600, max = 5, desc = "Permanent weapon damage +10%." },
+        { index = 5, name = "Health Regen",    baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting regen +5%." },
+        { index = 6, name = "EXP Collector",   baseCost = 1200, scale = 600, max = 5, desc = "Permanent EXP collection +25%." }
+    }
+    
+    local itemsToShow = {}
+    local itemType = ""
+    if page == 1 then
+        itemsToShow = activeUpgrades
+        itemType = "skill"
+    else
+        itemsToShow = passiveUpgrades
+        itemType = "upgrade"
+    end
+    
+    local colWidth = 340
+    local colSpacing = 20
+    local itemH = 60
+    local startY = 180
+    local gapY = 70
+    
+    game.upgradeStoreButtons = {}
+    
+    for i, up in ipairs(itemsToShow) do
+        local lv = 0
+        if itemType == "skill" then
+            lv = game.metaUpgrades.skills[up.index] or 0
+        else
+            lv = game.metaUpgrades.upgrades[up.index] or 0
+        end
+        
+        local cost = up.baseCost + lv * up.scale
+        local isMax = lv >= up.max
+        
+        local row = math.ceil(i / 2)
+        local col = (i - 1) % 2 + 1
+        
+        local rx = (col == 1) and (centerX - colWidth - colSpacing / 2) or (centerX + colSpacing / 2)
+        local ry = startY + (row - 1) * gapY
+        
+        -- Item Box Body
+        love.graphics.setColor(0.07, 0.08, 0.12, 0.95)
+        love.graphics.rectangle("fill", rx, ry, colWidth, itemH, 6, 6)
+        
+        -- Border
+        love.graphics.setLineWidth(1)
+        love.graphics.setColor(0.2, 0.35, 0.5, 0.6)
+        love.graphics.rectangle("line", rx, ry, colWidth, itemH, 6, 6)
+        
+        -- Title (Name)
+        love.graphics.setFont(getFont(15))
+        love.graphics.setColor(0.9, 0.95, 1.0)
+        love.graphics.print(up.name, rx + 12, ry + 8)
+        
+        -- Level Info (Lv. X/Y)
+        love.graphics.setFont(getFont(11))
+        love.graphics.setColor(0.3, 0.8, 1.0)
+        love.graphics.print("Lv. " .. lv .. "/" .. up.max, rx + 12, ry + 34)
+        
+        -- Description
+        love.graphics.setColor(0.65, 0.7, 0.75)
+        love.graphics.print(up.desc, rx + 80, ry + 34)
+        
+        -- BUY Button dimensions & coordinates
+        local btnW = 80
+        local btnH = 34
+        local btnX = rx + colWidth - btnW - 12
+        local btnY = ry + (itemH - btnH) / 2
+        
+        table.insert(game.upgradeStoreButtons, {
+            x = btnX, y = btnY, w = btnW, h = btnH, type = itemType, index = up.index, cost = cost, max = up.max, lv = lv
+        })
+        
+        local isHovered = mx >= btnX and mx <= btnX + btnW and my >= btnY and my <= btnY + btnH
+        local canAfford = (game.totalScore or 0) >= cost
+        
+        if isMax then
+            love.graphics.setColor(0.15, 0.15, 0.15, 0.8)
+            love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 4, 4)
+            love.graphics.setColor(0.4, 0.4, 0.4)
+            love.graphics.printf("MAXED", btnX, btnY + 10, btnW, "center")
+        elseif not canAfford then
+            love.graphics.setColor(0.12, 0.12, 0.14, 0.8)
+            love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 4, 4)
+            love.graphics.setColor(0.55, 0.35, 0.35)
+            love.graphics.printf(cost .. "P", btnX, btnY + 10, btnW, "center")
+        else
+            if isHovered then
+                love.graphics.setColor(0.1, 0.35, 0.2)
+            else
+                love.graphics.setColor(0.08, 0.25, 0.15)
+            end
+            love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 4, 4)
+            
+            if isHovered then
+                love.graphics.setColor(0.3, 1.0, 0.5)
+            else
+                love.graphics.setColor(0.2, 0.8, 0.4)
+            end
+            love.graphics.setLineWidth(1.2)
+            love.graphics.rectangle("line", btnX, btnY, btnW, btnH, 4, 4)
+            
+            love.graphics.setColor(1.0, 1.0, 1.0)
+            love.graphics.printf("BUY " .. cost, btnX, btnY + 10, btnW, "center")
+        end
+    end
+    
+    -- BACK and RESET ALL buttons (side by side, centered)
+    local btnW = 180
+    local btnH = 46
+    local gap = 20
+    local backX = centerX - btnW - gap / 2
+    local resetX = centerX + gap / 2
+    local btnY = screenHeight - 65
+    
+    game.upgradeBackBtn = { x = backX, y = btnY, w = btnW, h = btnH }
+    game.upgradeResetBtn = { x = resetX, y = btnY, w = btnW, h = btnH }
+    
+    -- Draw BACK button
+    local isBackHovered = mx >= backX and mx <= backX + btnW and my >= btnY and my <= btnY + btnH
+    if isBackHovered then
+        love.graphics.setColor(0.12, 0.2, 0.35, 0.95)
+    else
+        love.graphics.setColor(0.08, 0.1, 0.15, 0.85)
+    end
+    love.graphics.rectangle("fill", backX, btnY, btnW, btnH, 6, 6)
+    
+    if isBackHovered then
+        love.graphics.setColor(0.3, 0.8, 1.0, 0.95)
+    else
+        love.graphics.setColor(0.2, 0.4, 0.6, 0.7)
+    end
+    love.graphics.rectangle("line", backX, btnY, btnW, btnH, 6, 6)
+    
+    love.graphics.setFont(getFont(16))
+    love.graphics.setColor(1.0, 1.0, 1.0)
+    love.graphics.printf("BACK", backX, btnY + 12, btnW, "center")
+    
+    -- Draw RESET ALL button
+    local isResetHovered = mx >= resetX and mx <= resetX + btnW and my >= btnY and my <= btnY + btnH
+    if isResetHovered then
+        love.graphics.setColor(0.35, 0.12, 0.12, 0.95)
+    else
+        love.graphics.setColor(0.15, 0.08, 0.08, 0.85)
+    end
+    love.graphics.rectangle("fill", resetX, btnY, btnW, btnH, 6, 6)
+    
+    if isResetHovered then
+        love.graphics.setColor(1.0, 0.3, 0.3, 0.95)
+    else
+        love.graphics.setColor(0.6, 0.2, 0.2, 0.7)
+    end
+    love.graphics.rectangle("line", resetX, btnY, btnW, btnH, 6, 6)
+    
+    love.graphics.setFont(getFont(16))
+    if isResetHovered then
+        love.graphics.setColor(1.0, 1.0, 1.0)
+    else
+        love.graphics.setColor(0.9, 0.7, 0.7)
+    end
+    love.graphics.printf("RESET ALL", resetX, btnY + 12, btnW, "center")
+    
+    love.graphics.setLineWidth(1)
+end
+
+function HUD.resetMetaUpgrades(game)
+    local activeUpgrades = {
+        { index = 1, name = "Orbiting Orb",    baseCost = 1000, scale = 500, max = 5, desc = "Orbits damage aura around you." },
+        { index = 2, name = "Thunder",         baseCost = 1000, scale = 500, max = 5, desc = "Strikes lightning periodically." },
+        { index = 3, name = "Blade",           baseCost = 1000, scale = 500, max = 5, desc = "Fires homing curved glaives." },
+        { index = 4, name = "Bullet",          baseCost = 1000, scale = 500, max = 5, desc = "Rapid direct projectile shot." },
+        { index = 5, name = "Laser",           baseCost = 1200, scale = 600, max = 5, desc = "Continuous heavy plasma beam." },
+        { index = 6, name = "Magnetic Field",  baseCost = 1200, scale = 600, max = 5, desc = "Spawns circular electric field." },
+        { index = 7, name = "Meteor",          baseCost = 1500, scale = 700, max = 5, desc = "Calls screen-shake fireballs." }
+    }
+    
+    local passiveUpgrades = {
+        { index = 1, name = "Gravity Core",    baseCost = 800,  scale = 400, max = 5, desc = "Attract experience from far." },
+        { index = 2, name = "Fortified Hull",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting HP +20." },
+        { index = 3, name = "Thruster Output",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent speed boost +5%." },
+        { index = 4, name = "Reactor Overload",baseCost = 1200, scale = 600, max = 5, desc = "Permanent weapon damage +10%." },
+        { index = 5, name = "Health Regen",    baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting regen +5%." },
+        { index = 6, name = "EXP Collector",   baseCost = 1200, scale = 600, max = 5, desc = "Permanent EXP collection +25%." }
+    }
+
+    local refundPoints = 0
+
+    -- Calculate active skills refund
+    for _, up in ipairs(activeUpgrades) do
+        local lv = game.metaUpgrades.skills[up.index] or 0
+        if lv > 0 then
+            for currentLv = 0, lv - 1 do
+                refundPoints = refundPoints + (up.baseCost + currentLv * up.scale)
+            end
+            game.metaUpgrades.skills[up.index] = 0
+        end
+    end
+
+    -- Calculate passive upgrades refund
+    for _, up in ipairs(passiveUpgrades) do
+        local lv = game.metaUpgrades.upgrades[up.index] or 0
+        if lv > 0 then
+            for currentLv = 0, lv - 1 do
+                refundPoints = refundPoints + (up.baseCost + currentLv * up.scale)
+            end
+            game.metaUpgrades.upgrades[up.index] = 0
+        end
+    end
+
+    game.totalScore = (game.totalScore or 0) + refundPoints
+    game.saveGame()
 end
 
 return HUD

@@ -18,7 +18,8 @@ local HUD = require("ui.hud")
 -- 게임 상태 관리 테이블
 local game = {
     running = false,
-    state = "menu", -- menu, playing, upgrade, gameover, skill_upgrade
+    state = "main_menu", -- main_menu, settings, meta_upgrade, menu, playing, upgrade, gameover, stage_clear
+    stage = 1,
     player = nil,
     enemies = {},
     projectiles = {},
@@ -39,7 +40,8 @@ local game = {
         { name = "Blade",        description = "Auto-attack enemies with tracking blades" },
         { name = "Bullet",       description = "Auto-target enemies and fire bullets" },
         { name = "Laser",        description = "Fire a slow-charging laser beam that follows your position" },
-        { name = "Magnetic Field", description = "Periodically deploy a circular magnetic field that damages nearby enemies" }
+        { name = "Magnetic Field", description = "Periodically deploy a circular magnetic field that damages nearby enemies" },
+        { name = "Meteor",       description = "Call down devastating meteors from the sky that shake the screen and leave fire patches" }
     },
     selectedSkill = nil,
     skillBoxes = {},
@@ -58,8 +60,67 @@ local game = {
     blades = {},         -- 칼날 스킬 프로젝타일
     bullets = {},        -- 총알 스킬 프로젝타일
     lasers = {},         -- 레이저 스킬 프로젝타일
-    skillUpgradeBox = {} -- 스킬 업그레이드 박스
+    skillUpgradeBox = {}, -- 스킬 업그레이드 박스
+    
+    -- 영구 강화 및 설정 데이터
+    totalScore = 0,
+    metaUpgrades = {
+        skills = { 0, 0, 0, 0, 0, 0, 0 },  -- 7 active skills starting level offsets
+        upgrades = { 0, 0, 0, 0, 0, 0 }     -- 6 passive traits starting level offsets
+    },
+    showStars = true, -- 설정: 성간 배경 먼지 그리기 여부
+    muted = false     -- 설정: 음소거 여부 (필요 시 효과음 제어용)
 }
+
+-- 세이브 파일 저장 기능
+game.saveGame = function()
+    local totalScoreVal = game.totalScore or 0
+    local dataStr = string.format("totalScore:%d\nshowStars:%s\nmuted:%s\n",
+        totalScoreVal, tostring(game.showStars), tostring(game.muted))
+    
+    for i = 1, 7 do
+        dataStr = dataStr .. string.format("skill_%d:%d\n", i, game.metaUpgrades.skills[i] or 0)
+    end
+    for i = 1, 6 do
+        dataStr = dataStr .. string.format("upgrade_%d:%d\n", i, game.metaUpgrades.upgrades[i] or 0)
+    end
+    
+    love.filesystem.write("save.txt", dataStr)
+end
+
+-- 세이브 파일 불러오기 기능
+game.loadGame = function()
+    game.totalScore = 0
+    game.metaUpgrades = {
+        skills = { 0, 0, 0, 0, 0, 0, 0 },
+        upgrades = { 0, 0, 0, 0, 0, 0 }
+    }
+    game.showStars = true
+    game.muted = false
+    
+    if love.filesystem.getInfo("save.txt") then
+        for line in love.filesystem.lines("save.txt") do
+            local k, v = line:match("([^:]+):([^%s]+)")
+            if k and v then
+                local val = tonumber(v)
+                if k == "totalScore" then game.totalScore = val or 0
+                elseif k == "showStars" then game.showStars = (v == "true")
+                elseif k == "muted" then game.muted = (v == "true")
+                elseif k:match("^skill_%d+$") then
+                    local idx = tonumber(k:match("skill_(%d+)"))
+                    if idx and idx >= 1 and idx <= 7 then
+                        game.metaUpgrades.skills[idx] = val or 0
+                    end
+                elseif k:match("^upgrade_%d+$") then
+                    local idx = tonumber(k:match("upgrade_(%d+)"))
+                    if idx and idx >= 1 and idx <= 6 then
+                        game.metaUpgrades.upgrades[idx] = val or 0
+                    end
+                end
+            end
+        end
+    end
+end
 
 -- 의존성 순환 참조 방지를 위한 콜백 바인딩
 game.calculateUpgradeBoxes = function()
@@ -75,9 +136,24 @@ function love.load()
     math.randomseed(os.time() + love.timer.getTime())
     for i = 1, 5 do math.random() end -- 난수 생성기 예열
 
-    -- 게임 초기화
-    game.state = "menu"
+    -- 게임 데이터 및 영구 강화 로드
+    game.loadGame()
+
+    -- 1회성 스코어 및 업그레이드 현황 초기화 처리
+    if not love.filesystem.getInfo("reset_done.txt") then
+        game.totalScore = 0
+        game.metaUpgrades = {
+            skills = { 0, 0, 0, 0, 0, 0, 0 },
+            upgrades = { 0, 0, 0, 0, 0, 0 }
+        }
+        game.saveGame()
+        love.filesystem.write("reset_done.txt", "done")
+    end
+
+    game.state = "main_menu"
     game.selectedSkill = nil
+    game.metaUpgradePage = 1 -- Default to page 1 (Active Skills)
+    
     HUD.calculateSkillBoxes(game)
     HUD.shuffleSkills(game)
     print("Game loaded successfully")
@@ -85,8 +161,8 @@ end
 
 -- 게임 시작 함수
 local function startGame(skillIndex)
-    -- 플레이어 초기화
-    game.player = Player.init(skillIndex)
+    -- 플레이어 초기화 (영구 강화 능력치 적용)
+    game.player = Player.init(skillIndex, game.metaUpgrades)
 
     -- 첫 카메라 위치 강제 동기화 (적의 화면 밖 스폰 판정을 위함)
     local screenWidth = love.graphics.getWidth()
@@ -101,9 +177,19 @@ local function startGame(skillIndex)
     game.blades = {}   -- 칼날 스킬 프로젝타일
     game.bullets = {}  -- 총알 스킬 프로젝타일
     game.lasers = {}   -- 레이저 스킬 프로젝타일
+    game.meteors = {}  -- 운석 스킬 프로젝타일
+    game.firePatches = {} -- 운석 불장판
     game.enemyBullets = {} -- 적 탄환 프로젝타일
     game.score = 0
     game.time = 0
+
+    -- 카메라 쉐이크 데이터
+    game.shakeTimer = 0
+    game.shakeIntensity = 0
+    game.triggerShake = function(duration, intensity)
+        game.shakeTimer = duration
+        game.shakeIntensity = intensity
+    end
 
     -- 모든 스킬 타이머 및 쿨다운 초기화
     game.thunderTimer = 0
@@ -117,8 +203,11 @@ local function startGame(skillIndex)
     game.magneticFieldTimer = 0
     game.magneticFieldCooldown = 6.0
     game.activeMagneticField = nil
+    game.meteorTimer = 0
+    game.meteorCooldown = 8.0
 
     -- 웨이브 시스템 초기화
+    game.stage = 1
     game.wave = 1
     game.waveState = "playing"
     game.waveTransitionTimer = 0
@@ -158,8 +247,8 @@ local function startGame(skillIndex)
         })
     end
 
-    -- 첫 스킬 적용 및 오비팅 오브 생성
-    if skillIndex == 1 then
+    -- 첫 스킬 적용 및 오비팅 오브 생성 (시작 선택 또는 영구 강화에 의해 Orb 보유 시)
+    if skillIndex == 1 or (game.player.skillLevels[1] or 0) > 0 then
         Skills.syncOrbs(game)
     end
 
@@ -172,8 +261,22 @@ end
 -- ============================================================================
 
 function love.update(dt)
-    if game.state == "menu" or game.state == "upgrade" or not game.running then
+    -- 메인메뉴, 설정, 강화 화면에서는 일반 루프 미가동
+    if game.state == "main_menu" or game.state == "settings" or game.state == "meta_upgrade" or
+       game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or not game.running then
+        
+        -- 플레이 중이 아니었다가 gameover 상태가 된 순간 스코어 누적 및 세이브 처리
+        if game.state == "gameover" and game.score > 0 then
+            game.totalScore = game.totalScore + game.score
+            game.score = 0 -- 누적 후 리셋하여 중복 합산 방지
+            game.saveGame()
+        end
         return
+    end
+
+    -- 카메라 쉐이크 타이머 업데이트
+    if game.shakeTimer and game.shakeTimer > 0 then
+        game.shakeTimer = game.shakeTimer - dt
     end
 
     -- 게임 시간 갱신
@@ -200,11 +303,23 @@ end
 -- ============================================================================
 
 function love.draw()
-    if game.state == "menu" then
+    if game.state == "main_menu" then
+        HUD.drawMainMenu(game)
+        return
+    elseif game.state == "settings" then
+        HUD.drawSettings(game)
+        return
+    elseif game.state == "meta_upgrade" then
+        HUD.drawMetaUpgrade(game)
+        return
+    elseif game.state == "menu" then
         HUD.drawMenu(game)
         return
     elseif game.state == "upgrade" then
         HUD.drawUpgrade(game)
+        return
+    elseif game.state == "stage_clear" then
+        HUD.drawStageClear(game)
         return
     elseif game.state == "gameover" then
         HUD.drawGameOver(game)
@@ -212,22 +327,40 @@ function love.draw()
     end
 
     -- 배경 지우기
-    love.graphics.clear(0.06, 0.06, 0.08) -- Deep dark blue-grey background
+    if game.stage == 1 then
+        love.graphics.clear(0.06, 0.06, 0.08) -- Deep dark blue-grey background (Stage 1)
+    else
+        love.graphics.clear(0.09, 0.04, 0.04) -- Deep dark crimson background (Stage 2+)
+    end
 
-    -- 카메라 적용
+    -- 카메라 적용 (쉐이크 효과 포함)
+    local shakeX, shakeY = 0, 0
+    if game.shakeTimer and game.shakeTimer > 0 then
+        shakeX = (math.random() - 0.5) * game.shakeIntensity
+        shakeY = (math.random() - 0.5) * game.shakeIntensity
+    end
     love.graphics.push()
-    love.graphics.translate(-game.camera.x, -game.camera.y)
+    love.graphics.translate(-game.camera.x + shakeX, -game.camera.y + shakeY)
 
     -- 1. 대형 네뷸라 광원 그리기 (카메라 좌표계 안에서 잔잔한 고유 웅장함 부여)
     if game.nebulas then
         for _, neb in ipairs(game.nebulas) do
-            love.graphics.setColor(neb.r, neb.g, neb.b, neb.alpha)
+            if game.stage == 1 then
+                love.graphics.setColor(neb.r, neb.g, neb.b, neb.alpha)
+            else
+                -- Stage 2+ 에서 붉은 틴트 적용
+                love.graphics.setColor(neb.r * 1.5 + 0.1, neb.g * 0.5, neb.b * 0.5, neb.alpha * 1.2)
+            end
             love.graphics.circle("fill", neb.x, neb.y, neb.radius)
         end
     end
 
     -- 2. 바닥 격자 무늬(Grid Floor) 그리기
-    love.graphics.setColor(0.12, 0.14, 0.2, 0.35) -- Faint tech grid lines
+    if game.stage == 1 then
+        love.graphics.setColor(0.12, 0.14, 0.2, 0.35) -- Faint tech grid lines (Stage 1)
+    else
+        love.graphics.setColor(0.24, 0.1, 0.1, 0.4)  -- Warm low-lit red-orange grid lines (Stage 2+)
+    end
     love.graphics.setLineWidth(1)
     local gridSize = 80
     for x = 0, game.world.width, gridSize do
@@ -241,9 +374,11 @@ function love.draw()
     if game.backgroundElements then
         for _, elem in ipairs(game.backgroundElements) do
             if elem.type == 1 then
-                -- 푸른 별빛 먼지
-                love.graphics.setColor(0.4, 0.6, 1.0, elem.alpha)
-                love.graphics.circle("fill", elem.x, elem.y, elem.size)
+                -- 푸른 별빛 먼지 (설정에서 켜져 있을 때만 렌더링)
+                if game.showStars then
+                    love.graphics.setColor(0.4, 0.6, 1.0, elem.alpha)
+                    love.graphics.circle("fill", elem.x, elem.y, elem.size)
+                end
             elseif elem.type == 2 then
                 -- 미세 격자 조각
                 love.graphics.setColor(0.3, 0.7, 0.4, elem.alpha * 0.7)
@@ -299,6 +434,7 @@ function love.keypressed(key)
         game.enemyBullets = {}
     end
 
+    -- 치트키 O: 즉시 레벨업 경험치 지급
     if game.state == "playing" and (key == "o" or key == "O") then
         local player = game.player
         if player then
@@ -308,29 +444,138 @@ function love.keypressed(key)
         end
     end
 
+    -- 치트키 I: 즉시 보스 웨이브(7웨이브)로 이동 및 보스 스폰
+    if game.state == "playing" and (key == "i" or key == "I") then
+        game.enemies = {}
+        game.enemyBullets = {}
+        game.wave = 7
+        game.waveState = "playing"
+        Enemy.spawnWave(game, 7)
+    end
+
+    -- 게임오버 시 R 누르면 스킬 선택이 아니라 메인메뉴로 이동
     if game.state == "gameover" then
         if key == "r" or key == "R" then
-            game.state = "menu"
+            game.state = "main_menu"
         end
     end
 end
 
 function love.mousepressed(x, y, button)
-    if button == 1 and game.state == "menu" then
-        for i, box in ipairs(game.skillBoxes) do
-            if x >= box.x and x <= box.x + box.width and
-                y >= box.y and y <= box.y + box.height then
-                local skillIndex = game.skillOptions[i]
-                startGame(skillIndex)
-                break
+    if button == 1 then
+        if game.state == "main_menu" then
+            if game.mainMenuButtons then
+                for _, btn in ipairs(game.mainMenuButtons) do
+                    if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                        if btn.action == "exit" then
+                            love.event.quit()
+                        else
+                            game.state = btn.state
+                        end
+                        break
+                    end
+                end
             end
-        end
-    elseif button == 1 and game.state == "upgrade" then
-        for i, box in ipairs(game.upgradeBoxes) do
-            if x >= box.x and x <= box.x + box.width and
-                y >= box.y and y <= box.y + box.height then
-                Skills.applyUpgrade(game, i)
-                break
+            
+        elseif game.state == "settings" then
+            -- 체크박스 영역 클릭 처리
+            if game.settingsCheckboxes then
+                for _, box in ipairs(game.settingsCheckboxes) do
+                    if x >= box.x and x <= box.x + 400 and y >= box.y and y <= box.y + box.h then
+                        game[box.key] = not game[box.key]
+                        game.saveGame()
+                        break
+                    end
+                end
+            end
+            
+            -- 뒤로 가기 버튼 클릭 처리
+            local back = game.settingsBackBtn
+            if back and x >= back.x and x <= back.x + back.w and y >= back.y and y <= back.y + back.h then
+                game.state = "main_menu"
+            end
+            
+        elseif game.state == "meta_upgrade" then
+            -- 탭 클릭 처리
+            if game.metaUpgradeTabs then
+                for _, tab in ipairs(game.metaUpgradeTabs) do
+                    if x >= tab.x and x <= tab.x + tab.w and y >= tab.y and y <= tab.y + tab.h then
+                        game.metaUpgradePage = tab.page
+                        break
+                    end
+                end
+            end
+
+            -- 강화 상점 구매 클릭 처리
+            if game.upgradeStoreButtons then
+                for _, btn in ipairs(game.upgradeStoreButtons) do
+                    if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                        if btn.lv < btn.max and game.totalScore >= btn.cost then
+                            game.totalScore = game.totalScore - btn.cost
+                            if btn.type == "skill" then
+                                game.metaUpgrades.skills[btn.index] = btn.lv + 1
+                            elseif btn.type == "upgrade" then
+                                game.metaUpgrades.upgrades[btn.index] = btn.lv + 1
+                            end
+                            game.saveGame()
+                        end
+                        break
+                    end
+                end
+            end
+            
+            -- 뒤로 가기 버튼 클릭 처리
+            local back = game.upgradeBackBtn
+            if back and x >= back.x and x <= back.x + back.w and y >= back.y and y <= back.y + back.h then
+                game.state = "main_menu"
+            end
+
+            -- 리셋 버튼 클릭 처리
+            local reset = game.upgradeResetBtn
+            if reset and x >= reset.x and x <= reset.x + reset.w and y >= reset.y and y <= reset.y + reset.h then
+                HUD.resetMetaUpgrades(game)
+            end
+            
+        elseif game.state == "menu" then
+            for i, box in ipairs(game.skillBoxes) do
+                if x >= box.x and x <= box.x + box.width and
+                    y >= box.y and y <= box.y + box.height then
+                    local skillIndex = game.skillOptions[i]
+                    startGame(skillIndex)
+                    break
+                end
+            end
+            
+        elseif game.state == "upgrade" then
+            for i, box in ipairs(game.upgradeBoxes) do
+                if x >= box.x and x <= box.x + box.width and
+                    y >= box.y and y <= box.y + box.height then
+                    Skills.applyUpgrade(game, i)
+                    break
+                end
+            end
+            
+        elseif game.state == "stage_clear" then
+            local screenWidth = love.graphics.getWidth()
+            local screenHeight = love.graphics.getHeight()
+            local btnWidth = 240
+            local btnHeight = 60
+            local btnX = (screenWidth - btnWidth) / 2
+            local btnY = screenHeight / 2 + 50
+            
+            if x >= btnX and x <= btnX + btnWidth and
+               y >= btnY and y <= btnY + btnHeight then
+                -- 다음 스테이지 개시 처리
+                game.stage = (game.stage or 1) + 1
+                game.wave = 1
+                game.waveState = "playing"
+                game.bannerText = "STAGE " .. game.stage .. " START!"
+                game.bannerTimer = 3.0
+                game.state = "playing"
+                game.running = true
+                
+                local EnemyModule = require("enemy.spawner")
+                EnemyModule.spawnWave(game, 1)
             end
         end
     end

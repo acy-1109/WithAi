@@ -59,7 +59,7 @@ function Exp.checkLevelUp(game)
     if player.experience >= player.maxExperience then
         player.experience = player.experience - player.maxExperience
         player.level = player.level + 1
-        player.maxExperience = math.floor(player.maxExperience * 1.5)
+        player.maxExperience = math.floor(player.maxExperience * 1.3)
 
         -- 레벨업 보너스 (체력 회복)
         player.health = math.min(player.health + 20, player.maxHealth)
@@ -90,28 +90,23 @@ function Exp.checkLevelUp(game)
             availableUpgrades[i], availableUpgrades[j] = availableUpgrades[j], availableUpgrades[i]
         end
 
-        -- 3) 3개의 상자 슬롯 옵션 구성 (왼쪽 2개: 스킬 우선, 오른쪽 1개: 특성)
+        -- 3) 3개의 상자 슬롯 옵션 구성 (루프 기반)
         game.upgradeOptions = {}
+        for box = 1, 3 do
+            local preferred, secondary
+            if box < 3 then
+                preferred, secondary = availableSkills, availableUpgrades
+            else
+                preferred, secondary = availableUpgrades, availableSkills
+            end
 
-        -- 박스 1 (왼쪽)
-        if #availableSkills > 0 then
-            table.insert(game.upgradeOptions, { type = "skill", index = table.remove(availableSkills, 1) })
-        elseif #availableUpgrades > 0 then
-            table.insert(game.upgradeOptions, { type = "upgrade", index = table.remove(availableUpgrades, 1) })
-        end
-
-        -- 박스 2 (중앙)
-        if #availableSkills > 0 then
-            table.insert(game.upgradeOptions, { type = "skill", index = table.remove(availableSkills, 1) })
-        elseif #availableUpgrades > 0 then
-            table.insert(game.upgradeOptions, { type = "upgrade", index = table.remove(availableUpgrades, 1) })
-        end
-
-        -- 박스 3 (오른쪽)
-        if #availableUpgrades > 0 then
-            table.insert(game.upgradeOptions, { type = "upgrade", index = table.remove(availableUpgrades, 1) })
-        elseif #availableSkills > 0 then
-            table.insert(game.upgradeOptions, { type = "skill", index = table.remove(availableSkills, 1) })
+            if #preferred > 0 then
+                local optType = (preferred == availableSkills) and "skill" or "upgrade"
+                table.insert(game.upgradeOptions, { type = optType, index = table.remove(preferred, 1) })
+            elseif #secondary > 0 then
+                local optType = (secondary == availableSkills) and "skill" or "upgrade"
+                table.insert(game.upgradeOptions, { type = optType, index = table.remove(secondary, 1) })
+            end
         end
 
         -- 만약 아무런 업그레이드 옵션도 남지 않은 경우 바로 게임을 재개함

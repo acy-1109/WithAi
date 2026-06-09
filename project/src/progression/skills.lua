@@ -2,6 +2,55 @@
 -- skills.lua — 스킬들(구체, 벼락, 칼날, 총알)의 업데이트, 그리기 및 특성/레벨업 처리
 -- ============================================================================
 
+-- 스킬별 레벨 스펙 데이터 테이블
+local thunderLevels = {
+    { cooldown = 3.0, damage = 20, count = 1 },
+    { cooldown = 2.2, damage = 30, count = 1 },
+    { cooldown = 2.2, damage = 30, count = 2 },
+    { cooldown = 1.4, damage = 45, count = 2 },
+    { cooldown = 1.4, damage = 45, count = 3 },
+}
+
+local bladeLevels = {
+    { cooldown = 2.0, damage = 15, count = 1, size = 10 },
+    { cooldown = 1.5, damage = 25, count = 1, size = 10 },
+    { cooldown = 1.5, damage = 25, count = 2, size = 10 },
+    { cooldown = 1.0, damage = 25, count = 2, size = 10 },
+    { cooldown = 1.0, damage = 25, count = 3, size = 18 },
+}
+
+local bulletLevels = {
+    { cooldown = 1.5, pierce = false, count = 1, damage = 15 },
+    { cooldown = 1.2, pierce = true,  count = 1, damage = 15 },
+    { cooldown = 0.9, pierce = true,  count = 3, damage = 25 },
+    { cooldown = 0.7, pierce = true,  count = 3, damage = 25 },
+    { cooldown = 0.5, pierce = true,  count = 3, damage = 40 },
+}
+
+local laserLevels = {
+    { cooldown = 6.0, damage = 40,  thickness = 10, duration = 0.6 },
+    { cooldown = 5.5, damage = 70,  thickness = 14, duration = 0.7 },
+    { cooldown = 5.0, damage = 110, thickness = 18, duration = 0.8 },
+    { cooldown = 4.5, damage = 160, thickness = 18, duration = 0.8 },
+    { cooldown = 4.0, damage = 250, thickness = 26, duration = 1.0 },
+}
+
+local magneticFieldLevels = {
+    { cooldown = 6.0, radius = 120, duration = 3.0, damage = 5,  tickInterval = 0.25 },
+    { cooldown = 5.0, radius = 120, duration = 3.0, damage = 8,  tickInterval = 0.25 },
+    { cooldown = 5.0, radius = 120, duration = 4.5, damage = 8,  tickInterval = 0.25 },
+    { cooldown = 5.0, radius = 170, duration = 4.5, damage = 12, tickInterval = 0.25 },
+    { cooldown = 4.0, radius = 170, duration = 4.5, damage = 12, tickInterval = 0.25 },
+}
+
+local meteorLevels = {
+    { cooldown = 8.0, damage = 50, count = 1, hasFire = false },
+    { cooldown = 6.0, damage = 85, count = 1, hasFire = false },
+    { cooldown = 6.0, damage = 85, count = 2, hasFire = false },
+    { cooldown = 6.0, damage = 85, count = 2, hasFire = true },
+    { cooldown = 6.0, damage = 85, count = 3, hasFire = true },
+}
+
 local Skills = {}
 
 -- 플레이어와 가장 가까운 적 찾기
@@ -153,26 +202,10 @@ function Skills.update(game, dt)
         game.thunderTimer = game.thunderTimer + dt
         
         local level = player.skillLevels[2] or 0
-        local cooldown = 3.0
-        local damage = 20
-        local count = 1
-
-        if level == 2 then
-            cooldown = 2.2
-            damage = 30
-        elseif level == 3 then
-            cooldown = 2.2
-            damage = 30
-            count = 2
-        elseif level == 4 then
-            cooldown = 1.4
-            damage = 45
-            count = 2
-        elseif level >= 5 then
-            cooldown = 1.4
-            damage = 45
-            count = 3
-        end
+        local spec = thunderLevels[math.min(level, #thunderLevels)]
+        local cooldown = spec.cooldown
+        local damage = spec.damage
+        local count = spec.count
         
         if game.thunderTimer >= cooldown then
             game.thunderTimer = 0
@@ -289,28 +322,11 @@ function Skills.update(game, dt)
         game.bladeTimer = game.bladeTimer + dt
         
         local level = player.skillLevels[3] or 0
-        local cooldown = 2.0
-        local damage = 15
-        local count = 1
-        local size = 10
-
-        if level == 2 then
-            cooldown = 1.5
-            damage = 25
-        elseif level == 3 then
-            cooldown = 1.5
-            damage = 25
-            count = 2
-        elseif level == 4 then
-            cooldown = 1.0
-            damage = 25
-            count = 2
-        elseif level >= 5 then
-            cooldown = 1.0
-            damage = 25
-            count = 3
-            size = 18
-        end
+        local spec = bladeLevels[math.min(level, #bladeLevels)]
+        local cooldown = spec.cooldown
+        local damage = spec.damage
+        local count = spec.count
+        local size = spec.size
         
         if game.bladeTimer >= cooldown then
             game.bladeTimer = 0
@@ -368,30 +384,11 @@ function Skills.update(game, dt)
         game.bulletTimer = game.bulletTimer + dt
         
         local level = player.skillLevels[4] or 0
-        local cooldown = 1.5
-        local pierce = false
-        local count = 1
-        local damage = 15
-
-        if level == 2 then
-            cooldown = 1.2
-            pierce = true
-        elseif level == 3 then
-            cooldown = 0.9
-            pierce = true
-            count = 3
-            damage = 25
-        elseif level == 4 then
-            cooldown = 0.7
-            pierce = true
-            count = 3
-            damage = 25
-        elseif level >= 5 then
-            cooldown = 0.5
-            pierce = true
-            count = 3
-            damage = 40
-        end
+        local spec = bulletLevels[math.min(level, #bulletLevels)]
+        local cooldown = spec.cooldown
+        local pierce = spec.pierce
+        local count = spec.count
+        local damage = spec.damage
         
         if game.bulletTimer >= cooldown then
             game.bulletTimer = 0
@@ -453,32 +450,11 @@ function Skills.update(game, dt)
         game.laserTimer = game.laserTimer + dt
         
         local level = player.skillLevels[5] or 0
-        local cooldown = 6.0
-        local damage = 40
-        local thickness = 10
-        local duration = 0.6
-
-        if level == 2 then
-            cooldown = 5.5
-            damage = 70
-            thickness = 14
-            duration = 0.7
-        elseif level == 3 then
-            cooldown = 5.0
-            damage = 110
-            thickness = 18
-            duration = 0.8
-        elseif level == 4 then
-            cooldown = 4.5
-            damage = 160
-            thickness = 18
-            duration = 0.8
-        elseif level >= 5 then
-            cooldown = 4.0
-            damage = 250
-            thickness = 26
-            duration = 1.0
-        end
+        local spec = laserLevels[math.min(level, #laserLevels)]
+        local cooldown = spec.cooldown
+        local damage = spec.damage
+        local thickness = spec.thickness
+        local duration = spec.duration
         
         if game.laserTimer >= cooldown then
             game.laserTimer = 0
@@ -559,13 +535,8 @@ function Skills.update(game, dt)
                 -- 충돌 판정 (적 절반 폭 + 레이저 절반 두께)
                 if distToLine < (enemy.width / 2 + laser.thickness / 2) then
                     laser.hitEnemies[enemy] = true
-                    enemy.health = enemy.health - laser.damage
-                    if enemy.health <= 0 then
-                        game.score = game.score + (enemy.points or 10)
-                        local Exp = require("progression.exp")
-                        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
-                        table.remove(game.enemies, j)
-                    end
+                    local EnemyModule = require("enemy.spawner")
+                    EnemyModule.damage(game, j, laser.damage)
                 end
             end
         end
@@ -580,31 +551,12 @@ function Skills.update(game, dt)
         game.magneticFieldTimer = game.magneticFieldTimer + dt
         
         local level = player.skillLevels[6] or 0
-        local cooldown = 6.0
-        local radius = 120
-        local duration = 3.0
-        local damage = 5 -- 매 틱당 대미지
-        local tickInterval = 0.25 -- 0.25초마다 대미지 주기
-        
-        -- 레벨에 따른 스펙 조정
-        if level == 2 then
-            cooldown = 5.0
-            damage = 8
-        elseif level == 3 then
-            cooldown = 5.0
-            damage = 8
-            duration = 4.5
-        elseif level == 4 then
-            cooldown = 5.0
-            radius = 170
-            duration = 4.5
-            damage = 12
-        elseif level >= 5 then
-            cooldown = 4.0
-            radius = 170
-            duration = 4.5
-            damage = 12
-        end
+        local spec = magneticFieldLevels[math.min(level, #magneticFieldLevels)]
+        local cooldown = spec.cooldown
+        local radius = spec.radius
+        local duration = spec.duration
+        local damage = spec.damage
+        local tickInterval = spec.tickInterval
 
         if game.magneticFieldTimer >= cooldown then
             game.magneticFieldTimer = 0
@@ -644,21 +596,159 @@ function Skills.update(game, dt)
                 
                 -- 적의 크기(절반) + 자기장 반지름 비교
                 if dist <= (field.radius + enemy.width / 2) then
-                    enemy.health = enemy.health - field.damage
-                    
-                    -- 적 사망 처리
-                    if enemy.health <= 0 then
-                        game.score = game.score + (enemy.points or 10)
-                        local Exp = require("progression.exp")
-                        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
-                        table.remove(game.enemies, j)
-                    end
+                    local EnemyModule = require("enemy.spawner")
+                    EnemyModule.damage(game, j, field.damage)
                 end
             end
         end
         
         if field.timer >= field.duration then
             game.activeMagneticField = nil
+        end
+    end
+
+    -- 7. 운석 스킬 업데이트 (레벨 > 0 일 때 가동)
+    if (player.skillLevels[7] or 0) > 0 then
+        game.meteorTimer = game.meteorTimer + dt
+        
+        local level = player.skillLevels[7] or 0
+        local spec = meteorLevels[math.min(level, #meteorLevels)]
+        
+        if game.meteorTimer >= spec.cooldown then
+            game.meteorTimer = 0
+            
+            -- 가장 가까운 적 N마리 구함
+            local targets = Skills.findClosestEnemies(game, spec.count)
+            
+            if #targets == 0 then
+                -- 타겟이 없으면 플레이어 주변 임의 위치 타격
+                for c = 1, spec.count do
+                    local tx = player.x + math.random(-250, 250)
+                    local ty = player.y + math.random(-250, 250)
+                    table.insert(game.meteors, {
+                        targetX = tx,
+                        targetY = ty,
+                        startX = tx - 200,
+                        startY = ty - 600,
+                        currentX = tx - 200,
+                        currentY = ty - 600,
+                        progress = 0,
+                        speed = 450,
+                        damage = spec.damage,
+                        hasFire = spec.hasFire,
+                        radius = 60,
+                        trail = {}
+                    })
+                end
+            else
+                for _, targetEnemy in ipairs(targets) do
+                    local tx = targetEnemy.x + targetEnemy.width / 2
+                    local ty = targetEnemy.y + targetEnemy.height / 2
+                    table.insert(game.meteors, {
+                        targetX = tx,
+                        targetY = ty,
+                        startX = tx - 200,
+                        startY = ty - 600,
+                        currentX = tx - 200,
+                        currentY = ty - 600,
+                        progress = 0,
+                        speed = 450,
+                        damage = spec.damage,
+                        hasFire = spec.hasFire,
+                        radius = 60,
+                        trail = {}
+                    })
+                end
+            end
+        end
+    end
+    
+    -- 운석 낙하 처리
+    game.meteors = game.meteors or {}
+    for i = #game.meteors, 1, -1 do
+        local met = game.meteors[i]
+        local dx = met.targetX - met.startX
+        local dy = met.targetY - met.startY
+        local totalDist = math.sqrt(dx * dx + dy * dy)
+        
+        met.progress = met.progress + (met.speed * dt) / totalDist
+        
+        if met.progress >= 1 then
+            -- 지면 낙하 완료! 
+            -- 1) 카메라 쉐이크 트리거
+            if game.triggerShake then
+                game.triggerShake(0.35, 12)
+            end
+            
+            -- 2) 범위 대미지 적용
+            for j = #game.enemies, 1, -1 do
+                local enemy = game.enemies[j]
+                local ecx = enemy.x + enemy.width / 2
+                local ecy = enemy.y + enemy.height / 2
+                local edx = ecx - met.targetX
+                local edy = ecy - met.targetY
+                local distToExplosion = math.sqrt(edx * edx + edy * edy)
+                
+                if distToExplosion <= (met.radius + enemy.width / 2) then
+                    local EnemyModule = require("enemy.spawner")
+                    EnemyModule.damage(game, j, met.damage)
+                end
+            end
+            
+            -- 3) 불장판 생성 (4레벨 이상)
+            if met.hasFire then
+                table.insert(game.firePatches, {
+                    x = met.targetX,
+                    y = met.targetY,
+                    radius = 50,
+                    duration = 4.0,
+                    timer = 0,
+                    damage = 12,
+                    tickInterval = 0.5,
+                    tickTimer = 0
+                })
+            end
+            
+            table.remove(game.meteors, i)
+        else
+            met.currentX = met.startX + dx * met.progress
+            met.currentY = met.startY + dy * met.progress
+            
+            -- 잔상 트레일 기록
+            table.insert(met.trail, 1, { x = met.currentX, y = met.currentY })
+            if #met.trail > 10 then
+                table.remove(met.trail)
+            end
+        end
+    end
+    
+    -- 불장판 틱 대미지 및 타이머 처리
+    game.firePatches = game.firePatches or {}
+    for i = #game.firePatches, 1, -1 do
+        local patch = game.firePatches[i]
+        patch.timer = patch.timer + dt
+        patch.tickTimer = patch.tickTimer + dt
+        
+        if patch.tickTimer >= patch.tickInterval then
+            patch.tickTimer = patch.tickTimer - patch.tickInterval
+            
+            for j = #game.enemies, 1, -1 do
+                local enemy = game.enemies[j]
+                local ecx = enemy.x + enemy.width / 2
+                local ecy = enemy.y + enemy.height / 2
+                local pdx = ecx - patch.x
+                local pdy = ecy - patch.y
+                local distToPatch = math.sqrt(pdx * pdx + pdy * pdy)
+                
+                if distToPatch <= (patch.radius + enemy.width / 2) then
+                    local EnemyModule = require("enemy.spawner")
+                    EnemyModule.damage(game, j, patch.damage)
+                end
+            end
+        end
+        
+        if patch.timer >= patch.duration then
+            table.remove(game.firePatches, i)
         end
     end
 end
@@ -920,6 +1010,75 @@ function Skills.draw(game)
             love.graphics.setColor(0.3, 0.8, 1.0, 0.4)
             love.graphics.circle("fill", sx, sy, 6)
         end
+    end
+
+    -- 7. 불장판 (Fire Patch) 그리기
+    game.firePatches = game.firePatches or {}
+    for _, patch in ipairs(game.firePatches) do
+        local alpha = 0.45 * (1 - patch.timer / patch.duration)
+        
+        -- 이글거리는 불장판 열기 표현 (회전하지 않고, 다중 레이어가 각각 다른 주기로 일렁임)
+        local pulse1 = 1 + math.sin(game.time * 7) * 0.06
+        local pulse2 = 1 + math.cos(game.time * 11) * 0.08
+        local pulse3 = 1 + math.sin(game.time * 16) * 0.1
+        
+        -- 1) 가장자리 옅은 열기 (적색)
+        love.graphics.setColor(0.9, 0.15, 0.0, alpha * 0.25)
+        love.graphics.circle("fill", patch.x, patch.y, patch.radius * 1.15 * pulse1)
+        
+        -- 2) 중간 열기 영역 (주황색)
+        love.graphics.setColor(1.0, 0.45, 0.0, alpha * 0.45)
+        love.graphics.circle("fill", patch.x, patch.y, patch.radius * 0.85 * pulse2)
+        
+        -- 3) 내부 가장 뜨거운 코어 (황금색)
+        love.graphics.setColor(1.0, 0.75, 0.1, alpha * 0.7)
+        love.graphics.circle("fill", patch.x, patch.y, patch.radius * 0.5 * pulse3)
+        
+        -- 4) 불꽃 일렁임 도트 (회전하지 않고 안팎으로 일렁이며 깜빡임)
+        love.graphics.setColor(1.0, 0.95, 0.3, alpha * 0.95)
+        for k = 1, 6 do
+            local baseAngle = (k - 1) * (2 * math.pi / 6)
+            -- k에 따라 서로 다른 오프셋 주기로 일렁임
+            local flicker = math.sin(game.time * 10 + k * 2.3) * 0.2
+            local dist = patch.radius * (0.3 + 0.45 * (1 + flicker))
+            local sx = patch.x + math.cos(baseAngle) * dist
+            -- 열기는 위쪽으로 살짝 올라가는 경향을 주어 입체감 부여 (-4 * (1 + math.sin(...)) 오프셋)
+            local sy = patch.y + math.sin(baseAngle) * dist - 4 * (1 + math.sin(game.time * 5 + k))
+            
+            local sz = 2.0 + math.sin(game.time * 14 + k) * 1.2
+            love.graphics.circle("fill", sx, sy, sz)
+        end
+    end
+
+    -- 8. 운석 (Meteor) 그리기
+    game.meteors = game.meteors or {}
+    for _, met in ipairs(game.meteors) do
+        local r = 18
+        
+        -- 1) 화염 트레일 잔상
+        if met.trail then
+            local trailCount = #met.trail
+            for t = 1, trailCount do
+                local pos = met.trail[t]
+                local alpha = (1 - t / (trailCount + 1)) * 0.45
+                love.graphics.setColor(1.0, 0.35, 0.0, alpha)
+                love.graphics.circle("fill", pos.x, pos.y, r * (1.1 - t / trailCount))
+            end
+        end
+        
+        -- 2) 낙하지점 경고 데칼
+        love.graphics.setColor(1.0, 0.15, 0.15, 0.45 * met.progress)
+        love.graphics.setLineWidth(2)
+        love.graphics.circle("line", met.targetX, met.targetY, met.radius * (2 - met.progress))
+        love.graphics.circle("fill", met.targetX, met.targetY, 7)
+        
+        -- 3) 운석 불타는 본체
+        love.graphics.setColor(1.0, 0.45, 0.05, 0.9)
+        love.graphics.circle("fill", met.currentX, met.currentY, r)
+        
+        -- 4) 노란색 화염 코어
+        love.graphics.setColor(1.0, 0.95, 0.2, 0.95)
+        love.graphics.circle("fill", met.currentX, met.currentY, r * 0.5)
     end
 end
 

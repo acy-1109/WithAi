@@ -5,6 +5,22 @@
 local Collision = require("combat.collision")
 local Enemy = {}
 
+-- 적에게 피해를 입히고 체력이 0 이하가 되면 처치 및 경험치 구슬 생성 처리
+function Enemy.damage(game, index, damage)
+    local enemy = game.enemies[index]
+    if not enemy then return false end
+
+    enemy.health = enemy.health - damage
+    if enemy.health <= 0 then
+        game.score = game.score + (enemy.points or 10)
+        local Exp = require("progression.exp")
+        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
+        table.remove(game.enemies, index)
+        return true
+    end
+    return false
+end
+
 -- 웨이브 적 전체 스폰
 function Enemy.spawnWave(game, wave)
     local player = game.player
@@ -19,37 +35,65 @@ function Enemy.spawnWave(game, wave)
     local camY = game.camera.y
     local padding = 50 -- 화면 가장자리 50px 여유 공간
 
+    local stageMultiplier = 1.0 + ((game.stage or 1) - 1) * 0.5
     if wave == 7 then
+        -- 스테이지에 따라 다른 보스 정보 설정
+        local bossName = "Void Overlord"
+        local bossColor = {0.6, 0.1, 0.9} -- 보라
+        local bossSize = 64
+        local bossSpeed = 60
+        local baseHealth = 12000 -- 1스테이지 보스 기본 체력
+        local pointsVal = 500
+        
+        if (game.stage or 1) >= 2 then
+            bossName = "Infernus Leviathan"
+            bossColor = {1.0, 0.2, 0.1} -- 강렬한 빨강/주황
+            bossSize = 80
+            bossSpeed = 70
+            baseHealth = 20000 -- 2스테이지 보스 기본 체력
+            pointsVal = 1000
+        end
+
         -- 보스 스폰 (플레이어 주변 화면 밖 450px 정도 위치에 스폰)
         local angle = math.random() * 2 * math.pi
         local spawnDist = 450
-        local ex = player.x + player.width / 2 + math.cos(angle) * spawnDist - 32
-        local ey = player.y + player.height / 2 + math.sin(angle) * spawnDist - 32
+        local ex = player.x + player.width / 2 + math.cos(angle) * spawnDist - bossSize / 2
+        local ey = player.y + player.height / 2 + math.sin(angle) * spawnDist - bossSize / 2
         
         -- 보스가 월드 경계 밖으로 나가지 않도록 킵
         ex = math.max(100, math.min(game.world.width - 200, ex))
         ey = math.max(100, math.min(game.world.height - 200, ey))
         
+        local isStage2 = (game.stage or 1) >= 2
+        local bBurstTimer = 5.0
+        local bPetalTimer = nil
+        local bRushTimer = 8.0
+        if isStage2 then
+            bPetalTimer = 6.0
+            bRushTimer = 9.0
+        end
+
         local boss = {
             x = ex,
             y = ey,
-            width = 64,
-            height = 64,
-            speed = 60,
-            health = 2500,
-            maxHealth = 2500,
+            width = bossSize,
+            height = bossSize,
+            speed = bossSpeed,
+            health = baseHealth * stageMultiplier,
+            maxHealth = baseHealth * stageMultiplier,
             type = "boss",
-            color = {0.6, 0.1, 0.9}, -- 보랏빛 네온 아우라
-            name = "Void Overlord",
-            points = 500,
+            color = bossColor,
+            name = bossName,
+            points = pointsVal,
             shootCooldown = 2.0,
             shootTimer = 1.0,
-            shootRange = 400,
+            shootRange = 450,
             velX = 0,
             velY = 0,
             bossState = "normal",
-            burstTimer = 6.0,
-            rushTimer = 9.0,
+            burstTimer = bBurstTimer,
+            petalTimer = bPetalTimer,
+            rushTimer = bRushTimer,
             stateTimer = 0,
             trailHistory = {}
         }
@@ -69,8 +113,8 @@ function Enemy.spawnWave(game, wave)
                 width = 24,
                 height = 24,
                 speed = 90,
-                health = 78,
-                maxHealth = 78,
+                health = 78 * stageMultiplier,
+                maxHealth = 78 * stageMultiplier,
                 type = "normal",
                 color = {1.0, 0.3, 0.3},
                 points = 10,
@@ -104,52 +148,71 @@ function Enemy.spawnWave(game, wave)
                 -- 웨이브 진행에 따라 다른 유형의 적 출현
                 local enemyType = "normal"
                 local rand = math.random()
+                local isStage2 = (game.stage or 1) >= 2
+                
                 if wave >= 5 then
-                    if rand < 0.20 then
+                    if rand < 0.15 then
                         enemyType = "fast"
-                    elseif rand < 0.40 then
+                    elseif rand < 0.30 then
                         enemyType = "ranged"
-                    elseif rand < 0.60 then
+                    elseif rand < 0.45 then
                         enemyType = "tank"
+                    elseif isStage2 and rand < 0.60 then
+                        enemyType = "charger"
                     end
                 elseif wave >= 4 then
-                    if rand < 0.20 then
+                    if rand < 0.15 then
                         enemyType = "fast"
-                    elseif rand < 0.40 then
+                    elseif rand < 0.30 then
                         enemyType = "ranged"
+                    elseif isStage2 and rand < 0.45 then
+                        enemyType = "charger"
                     end
                 elseif wave >= 3 then
-                    if rand < 0.25 then
+                    if rand < 0.20 then
                         enemyType = "fast"
+                    elseif isStage2 and rand < 0.35 then
+                        enemyType = "charger"
+                    end
+                elseif isStage2 and wave >= 1 then
+                    if rand < 0.15 then
+                        enemyType = "charger"
                     end
                 end
                 
                 local width, height = 24, 24
                 local speed = 80 + math.random(0, 40)
-                local maxHealth = 30 + (wave - 1) * 8
+                local maxHealth = (30 + (wave - 1) * 8) * stageMultiplier
                 local hp = maxHealth
                 local color = {1.0, 0.3, 0.3} -- 기본 빨강 (Normal)
                 local points = 10
                 local shootCooldown, shootTimer, shootRange = nil, nil, nil
                 
-                if enemyType == "fast" then
+                if enemyType == "charger" then
+                    width, height = 22, 22
+                    speed = 75 + math.random(0, 15)
+                    maxHealth = (35 + (wave - 1) * 7) * stageMultiplier
+                    hp = maxHealth
+                    color = {0.1, 0.8, 1.0} -- 하늘색 (Charger)
+                    points = 25
+                elseif enemyType == "fast" then
                     width, height = 18, 18
                     speed = 130 + math.random(0, 30)
-                    maxHealth = 20 + (wave - 1) * 4
+                    maxHealth = (20 + (wave - 1) * 4) * stageMultiplier
                     hp = maxHealth
                     color = {1.0, 0.6, 0.2} -- 주황 (Fast)
                     points = 15
                 elseif enemyType == "tank" then
                     width, height = 36, 36
                     speed = 50 + math.random(0, 15)
-                    maxHealth = 80 + (wave - 1) * 15
+                    maxHealth = (80 + (wave - 1) * 15) * stageMultiplier
                     hp = maxHealth
                     color = {0.8, 0.2, 0.6} -- 마젠타/자주 (Tank)
                     points = 30
                 elseif enemyType == "ranged" then
                     width, height = 20, 20
                     speed = 70 + math.random(0, 20)
-                    maxHealth = 25 + (wave - 1) * 6
+                    maxHealth = (25 + (wave - 1) * 6) * stageMultiplier
                     hp = maxHealth
                     color = {0.2, 0.8, 0.4} -- 녹색/청록 (Ranged)
                     points = 20
@@ -209,10 +272,11 @@ function Enemy.update(game, dt)
                 game.enemies = {}
                 game.enemyBullets = {}
                 game.bossActive = false
-                game.waveState = "cleared"
-                game.waveTransitionTimer = 3.0
-                game.bannerText = "BOSS DEFEATED! WAVE 7 CLEAR!"
-                game.bannerTimer = 3.0
+                
+                game.waveState = "stage_cleared"
+                game.waveTransitionTimer = 4.0
+                game.bannerText = "STAGE " .. (game.stage or 1) .. " CLEAR!"
+                game.bannerTimer = 4.0
             end
         else
             -- 일반 웨이브인 경우: 적 전멸 시 클리어
@@ -229,6 +293,13 @@ function Enemy.update(game, dt)
             game.wave = (game.wave or 1) + 1
             game.waveState = "playing"
             Enemy.spawnWave(game, game.wave)
+        end
+    elseif game.waveState == "stage_cleared" then
+        game.waveTransitionTimer = game.waveTransitionTimer - dt
+        if game.waveTransitionTimer <= 0 then
+            -- 스테이지 클리어 화면으로 진입 (자동 전향 중단)
+            game.state = "stage_clear"
+            game.running = false
         end
     end
 
@@ -295,8 +366,8 @@ function Enemy.update(game, dt)
                 width = w,
                 height = h,
                 speed = spd,
-                health = maxHp,
                 maxHealth = maxHp,
+                health = maxHp,
                 type = minionType,
                 color = col,
                 points = pts,
@@ -330,123 +401,336 @@ function Enemy.update(game, dt)
         local targetVelY = 0
 
         if enemy.type == "boss" then
-            -- Initialize state variables if not present
+            local isStage2 = (game.stage or 1) >= 2
             enemy.bossState = enemy.bossState or "normal"
-            enemy.burstTimer = enemy.burstTimer or 6.0
-            enemy.rushTimer = enemy.rushTimer or 9.0
             enemy.stateTimer = enemy.stateTimer or 0
             enemy.trailHistory = enemy.trailHistory or {}
-            
-            -- State transitions and behaviors
-            if enemy.bossState == "normal" then
-                -- Reduce cooldown timers
-                enemy.burstTimer = enemy.burstTimer - dt
-                enemy.rushTimer = enemy.rushTimer - dt
-                
-                -- Check for transitions (Locked Rush takes priority if both ready)
-                if enemy.rushTimer <= 0 then
-                    enemy.bossState = "charging_rush"
-                    enemy.stateTimer = 0.6 -- 0.6 seconds charge time
-                    -- Lock laser direction to player center
-                    local pCenterX = player.x + player.width / 2
-                    local pCenterY = player.y + player.height / 2
-                    local bCenterX = enemy.x + enemy.width / 2
-                    local bCenterY = enemy.y + enemy.height / 2
-                    local ldx = pCenterX - bCenterX
-                    local ldy = pCenterY - bCenterY
+
+            if not isStage2 then
+                -- ==========================================
+                -- BOSS 1 (Void Overlord)
+                -- ==========================================
+                enemy.burstTimer = enemy.burstTimer or 5.0
+                enemy.rushTimer = enemy.rushTimer or 8.0
+
+                if enemy.bossState == "normal" then
+                    enemy.burstTimer = enemy.burstTimer - dt
+                    enemy.rushTimer = enemy.rushTimer - dt
+
+                    if enemy.rushTimer <= 0 then
+                        enemy.bossState = "charging_rush"
+                        enemy.stateTimer = 0.6
+                        local pCenterX, pCenterY = player.x + player.width/2, player.y + player.height/2
+                        local bCenterX, bCenterY = enemy.x + enemy.width/2, enemy.y + enemy.height/2
+                        local ldx, ldy = pCenterX - bCenterX, pCenterY - bCenterY
+                        local ldist = math.sqrt(ldx * ldx + ldy * ldy)
+                        if ldist > 0 then
+                            enemy.rushDirX, enemy.rushDirY = ldx / ldist, ldy / ldist
+                        else
+                            enemy.rushDirX, enemy.rushDirY = 1, 0
+                        end
+                    elseif enemy.burstTimer <= 0 then
+                        enemy.bossState = "charging_burst"
+                        enemy.stateTimer = 0.8
+                    end
+
+                    -- Chase player
+                    if dist > 0 then
+                        targetVelX = (dx / dist) * enemy.speed
+                        targetVelY = (dy / dist) * enemy.speed
+                    end
+                    if #enemy.trailHistory > 0 then enemy.trailHistory = {} end
+
+                elseif enemy.bossState == "charging_burst" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    targetVelX, targetVelY = 0, 0
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "spiral_burst"
+                        enemy.stateTimer = 1.5 -- 1.5 seconds of spiral firing
+                        enemy.spiralAngle = 0
+                        enemy.fireTimer = 0
+                    end
+
+                elseif enemy.bossState == "spiral_burst" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    targetVelX, targetVelY = 0, 0
+                    
+                    enemy.fireTimer = (enemy.fireTimer or 0) + dt
+                    if enemy.fireTimer >= 0.08 then
+                        enemy.fireTimer = 0
+                        enemy.spiralAngle = (enemy.spiralAngle or 0) + 0.25
+                        local bCenterX = enemy.x + enemy.width / 2
+                        local bCenterY = enemy.y + enemy.height / 2
+                        local bulletSpeed = 160
+                        
+                        -- Fire in 2 opposite directions
+                        for k = 0, 1 do
+                            local angle = enemy.spiralAngle + k * math.pi
+                            table.insert(game.enemyBullets, {
+                                x = bCenterX,
+                                y = bCenterY,
+                                dirX = math.cos(angle),
+                                dirY = math.sin(angle),
+                                speed = bulletSpeed,
+                                damage = 14,
+                                size = 8,
+                                maxDist = 600,
+                                distTraveled = 0,
+                                type = "void_bullet"
+                            })
+                        end
+                    end
+
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "normal"
+                        enemy.burstTimer = 5.0
+                    end
+
+                elseif enemy.bossState == "charging_rush" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    targetVelX, targetVelY = 0, 0
+                    
+                    local pCenterX, pCenterY = player.x + player.width/2, player.y + player.height/2
+                    local bCenterX, bCenterY = enemy.x + enemy.width/2, enemy.y + enemy.height/2
+                    local ldx, ldy = pCenterX - bCenterX, pCenterY - bCenterY
                     local ldist = math.sqrt(ldx * ldx + ldy * ldy)
                     if ldist > 0 then
-                        enemy.rushDirX = ldx / ldist
-                        enemy.rushDirY = ldy / ldist
-                    else
-                        enemy.rushDirX = 1
-                        enemy.rushDirY = 0
+                        enemy.rushDirX, enemy.rushDirY = ldx / ldist, ldy / ldist
                     end
-                elseif enemy.burstTimer <= 0 then
-                    enemy.bossState = "charging_burst"
-                    enemy.stateTimer = 0.8 -- 0.8 seconds charge time
+
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "rushing"
+                        enemy.stateTimer = 1.2
+                        enemy.mineTimer = 0
+                    end
+
+                elseif enemy.bossState == "rushing" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    local rushSpeed = 210
+                    targetVelX = enemy.rushDirX * rushSpeed
+                    targetVelY = enemy.rushDirY * rushSpeed
+
+                    -- Periodically drop void mines
+                    enemy.mineTimer = (enemy.mineTimer or 0) + dt
+                    if enemy.mineTimer >= 0.08 then
+                        enemy.mineTimer = 0
+                        local bCenterX = enemy.x + enemy.width / 2
+                        local bCenterY = enemy.y + enemy.height / 2
+                        table.insert(game.enemyBullets, {
+                            x = bCenterX,
+                            y = bCenterY,
+                            dirX = 0,
+                            dirY = 0,
+                            speed = 0,
+                            damage = 0,
+                            size = 14, -- larger rift bullet
+                            maxDist = 9999,
+                            distTraveled = 0,
+                            type = "void_mine",
+                            timer = 0.8
+                        })
+                    end
+
+                    -- Record trail
+                    enemy.trailTimer = (enemy.trailTimer or 0) + dt
+                    if enemy.trailTimer >= 0.05 then
+                        enemy.trailTimer = 0
+                        table.insert(enemy.trailHistory, 1, {x = enemy.x, y = enemy.y})
+                        if #enemy.trailHistory > 3 then table.remove(enemy.trailHistory) end
+                    end
+
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "normal"
+                        enemy.rushTimer = 8.0
+                    end
+                end
+            else
+                -- ==========================================
+                -- BOSS 2 (Infernus Leviathan / Petal Boss)
+                -- ==========================================
+                enemy.petalTimer = enemy.petalTimer or 6.0
+                enemy.rushTimer = enemy.rushTimer or 9.0
+
+                if enemy.bossState == "normal" then
+                    enemy.petalTimer = enemy.petalTimer - dt
+                    enemy.rushTimer = enemy.rushTimer - dt
+
+                    if enemy.rushTimer <= 0 then
+                        enemy.bossState = "charging_rush"
+                        enemy.stateTimer = 0.6
+                        local pCenterX, pCenterY = player.x + player.width/2, player.y + player.height/2
+                        local bCenterX, bCenterY = enemy.x + enemy.width/2, enemy.y + enemy.height/2
+                        local ldx, ldy = pCenterX - bCenterX, pCenterY - bCenterY
+                        local ldist = math.sqrt(ldx * ldx + ldy * ldy)
+                        if ldist > 0 then
+                            enemy.rushDirX, enemy.rushDirY = ldx / ldist, ldy / ldist
+                        else
+                            enemy.rushDirX, enemy.rushDirY = 1, 0
+                        end
+                    elseif enemy.petalTimer <= 0 then
+                        enemy.bossState = "charging_petal"
+                        enemy.stateTimer = 0.8
+                    end
+
+                    -- Chase player
+                    if dist > 0 then
+                        targetVelX = (dx / dist) * enemy.speed
+                        targetVelY = (dy / dist) * enemy.speed
+                    end
+                    if #enemy.trailHistory > 0 then enemy.trailHistory = {} end
+
+                elseif enemy.bossState == "charging_petal" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    targetVelX, targetVelY = 0, 0
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "petalling"
+                        enemy.stateTimer = 2.0 -- 2 seconds of petal blizzard
+                        enemy.fireTimer = 0
+                    end
+
+                elseif enemy.bossState == "petalling" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    targetVelX, targetVelY = 0, 0
+
+                    enemy.fireTimer = (enemy.fireTimer or 0) + dt
+                    if enemy.fireTimer >= 0.12 then
+                        enemy.fireTimer = 0
+                        local bCenterX = enemy.x + enemy.width / 2
+                        local bCenterY = enemy.y + enemy.height / 2
+                        
+                        -- Target direction to player
+                        local pCenterX, pCenterY = player.x + player.width/2, player.y + player.height/2
+                        local pAngle = math.atan2(pCenterY - bCenterY, pCenterX - bCenterX)
+                        
+                        -- Sweep fan wave of 5 petals
+                        local sweepAngle = math.sin(game.time * 6) * 0.8
+                        local centerAngle = pAngle + sweepAngle
+                        local petalCount = 5
+                        local bulletSpeed = 150
+                        
+                        for k = 1, petalCount do
+                            local offset = (k - (petalCount + 1) / 2) * 0.22 -- spacing
+                            local angle = centerAngle + offset
+                            table.insert(game.enemyBullets, {
+                                x = bCenterX,
+                                y = bCenterY,
+                                dirX = math.cos(angle),
+                                dirY = math.sin(angle),
+                                speed = bulletSpeed,
+                                damage = 16,
+                                size = 7,
+                                maxDist = 550,
+                                distTraveled = 0,
+                                type = "petal",
+                                angle = angle
+                            })
+                        end
+                    end
+
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "normal"
+                        enemy.petalTimer = 6.0
+                    end
+
+                elseif enemy.bossState == "charging_rush" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    targetVelX, targetVelY = 0, 0
+                    
+                    local pCenterX, pCenterY = player.x + player.width/2, player.y + player.height/2
+                    local bCenterX, bCenterY = enemy.x + enemy.width/2, enemy.y + enemy.height/2
+                    local ldx, ldy = pCenterX - bCenterX, pCenterY - bCenterY
+                    local ldist = math.sqrt(ldx * ldx + ldy * ldy)
+                    if ldist > 0 then
+                        enemy.rushDirX, enemy.rushDirY = ldx / ldist, ldy / ldist
+                    end
+
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "rushing"
+                        enemy.stateTimer = 1.2
+                        enemy.patchTimer = 0
+                    end
+
+                elseif enemy.bossState == "rushing" then
+                    enemy.stateTimer = enemy.stateTimer - dt
+                    local rushSpeed = 280 -- faster dash for boss 2
+                    targetVelX = enemy.rushDirX * rushSpeed
+                    targetVelY = enemy.rushDirY * rushSpeed
+
+                    -- Drop burning fire patches
+                    enemy.patchTimer = (enemy.patchTimer or 0) + dt
+                    if enemy.patchTimer >= 0.08 then
+                        enemy.patchTimer = 0
+                        local bCenterX = enemy.x + enemy.width / 2
+                        local bCenterY = enemy.y + enemy.height / 2
+                        table.insert(game.bossFirePatches, {
+                            x = bCenterX,
+                            y = bCenterY,
+                            radius = 45,
+                            duration = 3.5,
+                            timer = 0,
+                            tickTimer = 0
+                        })
+                    end
+
+                    -- Record trail
+                    enemy.trailTimer = (enemy.trailTimer or 0) + dt
+                    if enemy.trailTimer >= 0.05 then
+                        enemy.trailTimer = 0
+                        table.insert(enemy.trailHistory, 1, {x = enemy.x, y = enemy.y})
+                        if #enemy.trailHistory > 3 then table.remove(enemy.trailHistory) end
+                    end
+
+                    if enemy.stateTimer <= 0 then
+                        enemy.bossState = "normal"
+                        enemy.rushTimer = 9.0
+                    end
+                end
+            end
+        elseif enemy.type == "charger" then
+            -- Charger state machine
+            enemy.chargerState = enemy.chargerState or "normal"
+            enemy.chargeTimer = enemy.chargeTimer or (math.random() * 3.0 + 2.0)
+            
+            if enemy.chargerState == "normal" then
+                enemy.chargeTimer = enemy.chargeTimer - dt
+                if enemy.chargeTimer <= 0 then
+                    enemy.chargerState = "charging"
+                    enemy.stateTimer = 0.8 -- Aiming duration
+                    
+                    local pCenterX = player.x + player.width/2
+                    local pCenterY = player.y + player.height/2
+                    local eCenterX = enemy.x + enemy.width/2
+                    local eCenterY = enemy.y + enemy.height/2
+                    local ldx = pCenterX - eCenterX
+                    local ldy = pCenterY - eCenterY
+                    local ldist = math.sqrt(ldx * ldx + ldy * ldy)
+                    if ldist > 0 then
+                        enemy.rushDirX, enemy.rushDirY = ldx / ldist, ldy / ldist
+                    else
+                        enemy.rushDirX, enemy.rushDirY = 1, 0
+                    end
                 end
                 
-                -- Target velocity when normal: chase player
+                -- Move towards player normally
                 if dist > 0 then
                     targetVelX = (dx / dist) * enemy.speed
                     targetVelY = (dy / dist) * enemy.speed
                 end
-                
-                -- Clear trail history since not rushing
-                if #enemy.trailHistory > 0 then
-                    enemy.trailHistory = {}
-                end
-                
-            elseif enemy.bossState == "charging_burst" then
+            elseif enemy.chargerState == "charging" then
                 enemy.stateTimer = enemy.stateTimer - dt
-                targetVelX = 0
-                targetVelY = 0
+                targetVelX, targetVelY = 0, 0
                 if enemy.stateTimer <= 0 then
-                    -- Trigger Radial Burst: 12-way bullet ring
-                    game.enemyBullets = game.enemyBullets or {}
-                    local bCenterX = enemy.x + enemy.width / 2
-                    local bCenterY = enemy.y + enemy.height / 2
-                    for k = 0, 11 do
-                        local angle = (k * 2 * math.pi) / 12
-                        table.insert(game.enemyBullets, {
-                            x = bCenterX,
-                            y = bCenterY,
-                            dirX = math.cos(angle),
-                            dirY = math.sin(angle),
-                            speed = 150,
-                            damage = 18, -- Radial burst damage
-                            size = 8,
-                            maxDist = 600,
-                            distTraveled = 0
-                        })
-                    end
-                    enemy.bossState = "normal"
-                    enemy.burstTimer = 6.0
+                    enemy.chargerState = "rushing"
+                    enemy.stateTimer = 0.6 -- Dash duration
                 end
-                
-            elseif enemy.bossState == "charging_rush" then
+            elseif enemy.chargerState == "rushing" then
                 enemy.stateTimer = enemy.stateTimer - dt
-                targetVelX = 0
-                targetVelY = 0
-                
-                -- Keep locking laser to player position during charge for dynamic warning
-                local pCenterX = player.x + player.width / 2
-                local pCenterY = player.y + player.height / 2
-                local bCenterX = enemy.x + enemy.width / 2
-                local bCenterY = enemy.y + enemy.height / 2
-                local ldx = pCenterX - bCenterX
-                local ldy = pCenterY - bCenterY
-                local ldist = math.sqrt(ldx * ldx + ldy * ldy)
-                if ldist > 0 then
-                    enemy.rushDirX = ldx / ldist
-                    enemy.rushDirY = ldy / ldist
-                end
-                
+                local dashSpeed = 320
+                targetVelX = enemy.rushDirX * dashSpeed
+                targetVelY = enemy.rushDirY * dashSpeed
                 if enemy.stateTimer <= 0 then
-                    enemy.bossState = "rushing"
-                    enemy.stateTimer = 1.2 -- 1.2 seconds dash time
-                end
-                
-            elseif enemy.bossState == "rushing" then
-                enemy.stateTimer = enemy.stateTimer - dt
-                -- Dash at high speed
-                targetVelX = enemy.rushDirX * 210
-                targetVelY = enemy.rushDirY * 210
-                
-                -- Record trail history for motion blur
-                enemy.trailTimer = (enemy.trailTimer or 0) + dt
-                if enemy.trailTimer >= 0.05 then
-                    enemy.trailTimer = 0
-                    table.insert(enemy.trailHistory, 1, {x = enemy.x, y = enemy.y})
-                    if #enemy.trailHistory > 3 then
-                        table.remove(enemy.trailHistory)
-                    end
-                end
-                
-                if enemy.stateTimer <= 0 then
-                    enemy.bossState = "normal"
-                    enemy.rushTimer = 9.0
+                    enemy.chargerState = "normal"
+                    enemy.chargeTimer = math.random() * 2.5 + 2.5
                 end
             end
         else
@@ -495,7 +779,13 @@ function Enemy.update(game, dt)
         local maxAllowedSpeed = enemy.speed * 1.3
         if enemy.type == "boss" then
             if enemy.bossState == "rushing" then
-                maxAllowedSpeed = 210
+                maxAllowedSpeed = 280
+            else
+                maxAllowedSpeed = enemy.speed * 1.3
+            end
+        elseif enemy.type == "charger" then
+            if enemy.chargerState == "rushing" then
+                maxAllowedSpeed = 320
             else
                 maxAllowedSpeed = enemy.speed * 1.3
             end
@@ -576,6 +866,8 @@ function Enemy.update(game, dt)
                 local dmg = 1
                 if enemy.type == "boss" then
                     dmg = 20 -- 보스의 몸박 데미지는 강력하게 20!
+                elseif enemy.type == "charger" and enemy.chargerState == "rushing" then
+                    dmg = 3  -- 돌격하는 돌진병 대미지 3!
                 end
                 player.health = player.health - dmg
                 player.invincibleTime = player.maxInvincibleTime
@@ -593,11 +885,7 @@ function Enemy.update(game, dt)
         for _, orb in ipairs(game.orbs) do
             local orbRect = { x = orb.x, y = orb.y, width = orb.size, height = orb.size }
             if Collision.check(enemy, orbRect) then
-                enemy.health = enemy.health - orb.damage
-                if enemy.health <= 0 then
-                    game.score = game.score + (enemy.points or 10)
-                    Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
-                    table.remove(game.enemies, i)
+                if Enemy.damage(game, i, orb.damage) then
                     enemyRemoved = true
                     break
                 end
@@ -614,11 +902,7 @@ function Enemy.update(game, dt)
                     height = thunder.size
                 }
                 if Collision.check(enemy, thunderRect) then
-                    enemy.health = enemy.health - thunder.damage
-                    if enemy.health <= 0 then
-                        game.score = game.score + (enemy.points or 10)
-                        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
-                        table.remove(game.enemies, i)
+                    if Enemy.damage(game, i, thunder.damage) then
                         enemyRemoved = true
                         break
                     end
@@ -636,11 +920,7 @@ function Enemy.update(game, dt)
                     height = blade.size
                 }
                 if Collision.check(enemy, bladeRect) then
-                    enemy.health = enemy.health - blade.damage
-                    if enemy.health <= 0 then
-                        game.score = game.score + (enemy.points or 10)
-                        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
-                        table.remove(game.enemies, i)
+                    if Enemy.damage(game, i, blade.damage) then
                         enemyRemoved = true
                         break
                     end
@@ -661,16 +941,10 @@ function Enemy.update(game, dt)
                 -- 이미 해당 적을 타격했는지 중복 검사 (다중 피격 방지) 및 관통 처리를 위한 제거 마크
                 if not bullet.toRemove and not bullet.hitEnemies[enemy] and Collision.check(enemy, bulletRect) then
                     bullet.hitEnemies[enemy] = true
-                    enemy.health = enemy.health - bullet.damage
-                    
                     if not bullet.pierce then
                         bullet.toRemove = true
                     end
-                    
-                    if enemy.health <= 0 then
-                        game.score = game.score + (enemy.points or 10)
-                        Exp.spawn(game, enemy.x + enemy.width / 2, enemy.y + enemy.height / 2)
-                        table.remove(game.enemies, i)
+                    if Enemy.damage(game, i, bullet.damage) then
                         enemyRemoved = true
                         break
                     end
@@ -679,36 +953,112 @@ function Enemy.update(game, dt)
         end
     end
 
+    -- 보스 전용 불장판 업데이트 및 플레이어 피격 판정
+    game.bossFirePatches = game.bossFirePatches or {}
+    for i = #game.bossFirePatches, 1, -1 do
+        local patch = game.bossFirePatches[i]
+        patch.timer = patch.timer + dt
+        patch.tickTimer = (patch.tickTimer or 0) + dt
+        
+        if patch.tickTimer >= 0.4 then
+            patch.tickTimer = 0
+            local pdx = (player.x + player.width/2) - patch.x
+            local pdy = (player.y + player.height/2) - patch.y
+            local distToPlayer = math.sqrt(pdx*pdx + pdy*pdy)
+            
+            if distToPlayer <= (patch.radius + player.width/2) then
+                if player.invincibleTime <= 0 then
+                    player.health = player.health - 6 -- 6 damage
+                    player.invincibleTime = player.maxInvincibleTime
+                    player.regenTimer = 0
+                    if player.health <= 0 then
+                        game.running = false
+                        game.state = "gameover"
+                    end
+                end
+            end
+        end
+        
+        if patch.timer >= patch.duration then
+            table.remove(game.bossFirePatches, i)
+        end
+    end
+
     -- 적 탄환 투사체 업데이트
     game.enemyBullets = game.enemyBullets or {}
     for i = #game.enemyBullets, 1, -1 do
         local bullet = game.enemyBullets[i]
-        local moveDist = bullet.speed * dt
-        bullet.x = bullet.x + bullet.dirX * moveDist
-        bullet.y = bullet.y + bullet.dirY * moveDist
-        bullet.distTraveled = bullet.distTraveled + moveDist
-
-        -- 플레이어 충돌 검사
-        local bulletRect = {
-            x = bullet.x - bullet.size / 2,
-            y = bullet.y - bullet.size / 2,
-            width = bullet.size,
-            height = bullet.size
-        }
         
-        if Collision.check(bulletRect, player) then
-            if player.invincibleTime <= 0 then
-                player.health = player.health - bullet.damage
-                player.invincibleTime = player.maxInvincibleTime
-                player.regenTimer = 0
-                if player.health <= 0 then
-                    game.running = false
-                    game.state = "gameover"
+        if bullet.type == "petal" then
+            bullet.timeActive = (bullet.timeActive or 0) + dt
+            local perpX = -bullet.dirY
+            local perpY = bullet.dirX
+            local waveSpeed = 8
+            local waveAmp = 100 -- amplitude of perpendicular velocity
+            local moveX = bullet.dirX * bullet.speed + perpX * math.sin(bullet.timeActive * waveSpeed) * waveAmp
+            local moveY = bullet.dirY * bullet.speed + perpY * math.sin(bullet.timeActive * waveSpeed) * waveAmp
+            bullet.x = bullet.x + moveX * dt
+            bullet.y = bullet.y + moveY * dt
+            bullet.distTraveled = bullet.distTraveled + bullet.speed * dt
+            bullet.angle = (bullet.angle or 0) + 4 * dt
+        elseif bullet.type == "void_mine" then
+            bullet.timer = (bullet.timer or 0.8) - dt
+            if bullet.timer <= 0 then
+                -- Explode into 4-way cross bullets
+                local bulletSpeed = 160
+                local angles = { 0, math.pi/2, math.pi, math.pi*1.5 }
+                for _, angle in ipairs(angles) do
+                    table.insert(game.enemyBullets, {
+                        x = bullet.x,
+                        y = bullet.y,
+                        dirX = math.cos(angle),
+                        dirY = math.sin(angle),
+                        speed = bulletSpeed,
+                        damage = 10,
+                        size = 6,
+                        maxDist = 500,
+                        distTraveled = 0,
+                        type = "void_bullet"
+                    })
                 end
+                table.remove(game.enemyBullets, i)
             end
-            table.remove(game.enemyBullets, i)
-        elseif bullet.distTraveled >= bullet.maxDist then
-            table.remove(game.enemyBullets, i)
+        else
+            local moveDist = bullet.speed * dt
+            bullet.x = bullet.x + bullet.dirX * moveDist
+            bullet.y = bullet.y + bullet.dirY * moveDist
+            bullet.distTraveled = bullet.distTraveled + moveDist
+        end
+
+        -- 플레이어 충돌 검사 (지뢰는 직접 충돌하지 않고 폭발로만 피해)
+        if bullet.type ~= "void_mine" then
+            local bulletRect = {
+                x = bullet.x - bullet.size / 2,
+                y = bullet.y - bullet.size / 2,
+                width = bullet.size,
+                height = bullet.size
+            }
+            
+            if Collision.check(bulletRect, player) then
+                if player.invincibleTime <= 0 then
+                    player.health = player.health - bullet.damage
+                    player.invincibleTime = player.maxInvincibleTime
+                    player.regenTimer = 0
+                    if player.health <= 0 then
+                        game.running = false
+                        game.state = "gameover"
+                    end
+                end
+                if bullet.type ~= "petal" and bullet.type ~= "void_bullet" then
+                    -- Petal and void bullets don't self-destruct on hit (or they can, but let's make them disappear)
+                    table.remove(game.enemyBullets, i)
+                else
+                    -- For petals/void bullets, they dissolve on player contact
+                    table.remove(game.enemyBullets, i)
+                end
+            elseif bullet.distTraveled >= bullet.maxDist then
+                table.remove(game.enemyBullets, i)
+            end
         end
     end
 end
@@ -719,6 +1069,7 @@ function Enemy.draw(game)
         local col = enemy.color or {1.0, 0.3, 0.3}
 
         if enemy.type == "boss" then
+            local isStage2 = (game.stage or 1) >= 2
             local cx = enemy.x + enemy.width / 2
             local cy = enemy.y + enemy.height / 2
             local halfW = enemy.width / 2
@@ -732,37 +1083,56 @@ function Enemy.draw(game)
                     
                     love.graphics.push()
                     love.graphics.translate(pos.x + halfW, pos.y + halfW)
-                    love.graphics.rotate(game.time * 2 + idx * 0.2)
-                    -- Outer plates at trail position
-                    for k = 1, 4 do
-                        local angle = (k * math.pi / 2)
+                    love.graphics.rotate(game.time * 1.5 + idx * 0.2)
+                    
+                    -- Draw simplified trail spikes
+                    local outerR = halfW * 1.1
+                    local innerR = halfW * 0.5
+                    for k = 1, 6 do
+                        local angle = (k * math.pi / 3)
                         love.graphics.push()
                         love.graphics.rotate(angle)
-                        love.graphics.rectangle("fill", -10, -halfW - 5, 20, 10, 2, 2)
+                        love.graphics.polygon("fill", 
+                            -4, -innerR, 
+                            4, -innerR, 
+                            6, -outerR * 0.7, 
+                            0, -outerR, 
+                            -6, -outerR * 0.7
+                        )
                         love.graphics.pop()
                     end
-                    -- Diamond core at trail position
-                    love.graphics.rotate(-game.time * 4)
-                    love.graphics.polygon("fill", 0, -halfW * 0.6, halfW * 0.6, 0, 0, halfW * 0.6, -halfW * 0.6, 0)
                     love.graphics.pop()
                 end
             end
 
-            -- 2. Warning indicator rings (charging_burst state)
-            if enemy.bossState == "charging_burst" then
+            -- 2. Warning indicator rings (charging_burst & charging_petal state)
+            if enemy.bossState == "charging_burst" or enemy.bossState == "charging_petal" then
                 -- Collapsing indicator ring
                 local progress = enemy.stateTimer / 0.8
-                love.graphics.setColor(1.0, 0.3, 0.3, 0.6)
-                love.graphics.setLineWidth(2)
-                love.graphics.circle("line", cx, cy, enemy.width * 1.5 * progress)
-                -- Glowing outer ring
-                love.graphics.setColor(1.0, 0.5, 0.5, 0.2)
-                love.graphics.circle("fill", cx, cy, enemy.width * 1.5)
+                if enemy.bossState == "charging_petal" then
+                    love.graphics.setColor(1.0, 0.4, 0.6, 0.6) -- Pink for petal
+                    love.graphics.setLineWidth(2)
+                    love.graphics.circle("line", cx, cy, enemy.width * 1.5 * progress)
+                    -- Glowing outer ring
+                    love.graphics.setColor(1.0, 0.6, 0.7, 0.2)
+                    love.graphics.circle("fill", cx, cy, enemy.width * 1.5)
+                else
+                    love.graphics.setColor(1.0, 0.3, 0.3, 0.6) -- Red for void burst
+                    love.graphics.setLineWidth(2)
+                    love.graphics.circle("line", cx, cy, enemy.width * 1.5 * progress)
+                    -- Glowing outer ring
+                    love.graphics.setColor(1.0, 0.5, 0.5, 0.2)
+                    love.graphics.circle("fill", cx, cy, enemy.width * 1.5)
+                end
             end
 
             -- 3. Targeting laser beam line (charging_rush state)
             if enemy.bossState == "charging_rush" then
-                love.graphics.setColor(1.0, 0.1, 0.1, 0.7 + math.sin(game.time * 20) * 0.2)
+                if isStage2 then
+                    love.graphics.setColor(1.0, 0.45, 0.1, 0.75 + math.sin(game.time * 20) * 0.25) -- Solar orange
+                else
+                    love.graphics.setColor(0.7, 0.1, 1.0, 0.75 + math.sin(game.time * 20) * 0.25) -- Void purple
+                end
                 love.graphics.setLineWidth(3)
                 -- Draw a long laser line from boss center towards player
                 local laserLength = 1000
@@ -783,59 +1153,129 @@ function Enemy.draw(game)
             love.graphics.setColor(col[1], col[2], col[3], 0.3)
             love.graphics.circle("fill", cx, cy, enemy.width * 0.55 * pulse)
 
-            -- 5. Rotating Outer Armor Plates (4 plates)
+            -- 5. Rotating Outer Spiked Claws/Wings (6 claws)
+            local rotationAngle = game.time * 1.5
+            local innerR = halfW * 0.4
+            local outerR = halfW * 1.1
+            
+            if enemy.bossState == "charging_rush" or enemy.bossState == "charging_burst" or enemy.bossState == "charging_petal" then
+                -- Claws expand and vibrate while charging
+                innerR = halfW * 0.5 + math.sin(game.time * 30) * 2
+                outerR = halfW * 1.35 + math.sin(game.time * 30) * 4
+                rotationAngle = game.time * 4.0 + (math.random() - 0.5) * 0.08
+            elseif enemy.bossState == "petalling" then
+                -- Claws flare wide and slow rotate when spraying petals
+                innerR = halfW * 0.65
+                outerR = halfW * 1.45
+                rotationAngle = game.time * 0.5
+            elseif enemy.bossState == "rushing" then
+                -- Spins like a lethal saw blade when dashing
+                innerR = halfW * 0.35
+                outerR = halfW * 1.15
+                rotationAngle = game.time * 6.0
+            end
+            
             love.graphics.push()
             love.graphics.translate(cx, cy)
-            love.graphics.rotate(game.time * 2) -- Clockwise rotation
-            for k = 1, 4 do
-                local angle = (k * math.pi / 2)
+            love.graphics.rotate(rotationAngle)
+            for k = 1, 6 do
+                local angle = (k * math.pi / 3)
                 love.graphics.push()
                 love.graphics.rotate(angle)
                 
-                -- Plate fill
-                love.graphics.setColor(0.15, 0.08, 0.25, 0.95)
-                love.graphics.rectangle("fill", -12, -halfW - 6, 24, 12, 3, 3)
+                -- Spiked Claw fill (dark metal color)
+                love.graphics.setColor(0.12, 0.08, 0.2, 0.95)
+                love.graphics.polygon("fill", 
+                    -8, -innerR, 
+                    8, -innerR, 
+                    12, -outerR * 0.7, 
+                    0, -outerR, 
+                    -12, -outerR * 0.7
+                )
                 
-                -- Neon border for the plates
+                -- Neon border for the spikes (glow effect)
                 love.graphics.setColor(col[1], col[2], col[3], 0.9)
-                love.graphics.setLineWidth(1.5)
-                love.graphics.rectangle("line", -12, -halfW - 6, 24, 12, 3, 3)
+                love.graphics.setLineWidth(1.8)
+                love.graphics.polygon("line", 
+                    -8, -innerR, 
+                    8, -innerR, 
+                    12, -outerR * 0.7, 
+                    0, -outerR, 
+                    -12, -outerR * 0.7
+                )
                 
                 love.graphics.pop()
             end
             love.graphics.pop()
 
-            -- 6. Counter-rotating diamond body
+            -- 6. Counter-rotating dual-triangle (creates a shifting Star of David hexagram body)
+            local r_tri = halfW * 0.58
+            local innerRot = -game.time * 1.5
+            if enemy.bossState == "charging_rush" or enemy.bossState == "charging_burst" or enemy.bossState == "charging_petal" then
+                innerRot = -game.time * 3.0
+            elseif enemy.bossState == "rushing" or enemy.bossState == "petalling" then
+                innerRot = -game.time * 4.0
+            end
+
+            -- Triangle 1
             love.graphics.push()
             love.graphics.translate(cx, cy)
-            love.graphics.rotate(-game.time * 3) -- Counter-clockwise rotation
-            
-            -- Diamond body shape
-            love.graphics.setColor(0.25, 0.12, 0.4, 0.9)
-            love.graphics.polygon("fill", 0, -halfW * 0.65, halfW * 0.65, 0, 0, halfW * 0.65, -halfW * 0.65, 0)
-            
-            -- Neon border for diamond
-            love.graphics.setColor(0.8, 0.3, 1.0, 0.95)
-            love.graphics.setLineWidth(2)
-            love.graphics.polygon("line", 0, -halfW * 0.65, halfW * 0.65, 0, 0, halfW * 0.65, -halfW * 0.65, 0)
-            
+            love.graphics.rotate(innerRot)
+            love.graphics.setColor(0.15, 0.08, 0.22, 0.85)
+            love.graphics.polygon("fill", 
+                0, -r_tri, 
+                r_tri * 0.866, r_tri * 0.5, 
+                -r_tri * 0.866, r_tri * 0.5
+            )
+            love.graphics.setColor(col[1]*1.2, col[2]*1.2, col[3]*1.2, 0.95)
+            love.graphics.setLineWidth(1.8)
+            love.graphics.polygon("line", 
+                0, -r_tri, 
+                r_tri * 0.866, r_tri * 0.5, 
+                -r_tri * 0.866, r_tri * 0.5
+            )
             love.graphics.pop()
 
-            -- 7. Glowing nucleus eye in the center
+            -- Triangle 2 (Offset by 180 degrees)
+            love.graphics.push()
+            love.graphics.translate(cx, cy)
+            love.graphics.rotate(-innerRot + math.pi)
+            love.graphics.setColor(0.15, 0.08, 0.22, 0.75)
+            love.graphics.polygon("fill", 
+                0, -r_tri, 
+                r_tri * 0.866, r_tri * 0.5, 
+                -r_tri * 0.866, r_tri * 0.5
+            )
+            love.graphics.setColor(col[1]*1.2, col[2]*1.2, col[3]*1.2, 0.95)
+            love.graphics.setLineWidth(1.8)
+            love.graphics.polygon("line", 
+                0, -r_tri, 
+                r_tri * 0.866, r_tri * 0.5, 
+                -r_tri * 0.866, r_tri * 0.5
+            )
+            love.graphics.pop()
+
+            -- 7. Glowing nucleus eye in the center (synced with boss col)
             local eyePulse = 1 + math.sin(game.time * 12) * 0.15
-            -- Eye color changes to warning color when charging
-            local eyeCol = {0.9, 0.2, 0.9} -- Default magenta/purple
-            if enemy.bossState == "charging_rush" or enemy.bossState == "charging_burst" then
+            local eyeCol = {col[1]*1.2, col[2]*1.2, col[3]*1.2} -- Default synced eye color
+            if enemy.bossState == "charging_rush" or enemy.bossState == "charging_burst" or enemy.bossState == "charging_petal" then
                 eyeCol = {1.0, 0.4, 0.1} -- High-glow orange-yellow
                 eyePulse = 1.2 + math.sin(game.time * 24) * 0.25
             elseif enemy.bossState == "rushing" then
                 eyeCol = {1.0, 0.1, 0.1} -- Red during rush
+            elseif enemy.bossState == "petalling" then
+                eyeCol = {1.0, 0.25, 0.6} -- Bright pink/magenta eye during petal blizzard
+                eyePulse = 1.1 + math.sin(game.time * 18) * 0.15
             end
             
-            love.graphics.setColor(eyeCol[1], eyeCol[2], eyeCol[3], 0.4)
-            love.graphics.circle("fill", cx, cy, 14 * eyePulse)
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-            love.graphics.circle("fill", cx, cy, 6 * eyePulse)
+            love.graphics.setColor(eyeCol[1], eyeCol[2], eyeCol[3], 0.35)
+            love.graphics.circle("fill", cx, cy, 18 * eyePulse)
+            love.graphics.setColor(0.05, 0.05, 0.1, 0.9)
+            love.graphics.circle("fill", cx, cy, 10 * eyePulse)
+            love.graphics.setColor(eyeCol[1], eyeCol[2], eyeCol[3], 0.95)
+            love.graphics.circle("fill", cx, cy, 5 * eyePulse)
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+            love.graphics.circle("fill", cx - 2 * eyePulse, cy - 2 * eyePulse, 2 * eyePulse)
             
             -- Reset color & line width just in case
             love.graphics.setColor(1.0, 1.0, 1.0)
@@ -843,13 +1283,208 @@ function Enemy.draw(game)
             
         else
             -- Standard enemy drawing
-            love.graphics.setColor(col[1], col[2], col[3])
-            love.graphics.rectangle("fill", enemy.x, enemy.y, enemy.width, enemy.height)
+            local cx = enemy.x + enemy.width / 2
+            local cy = enemy.y + enemy.height / 2
+            local halfW = enemy.width / 2
             
-            -- 테두리 선 (가시성/입체감 증대)
-            love.graphics.setColor(0.06, 0.06, 0.08, 0.8)
-            love.graphics.setLineWidth(1.5)
-            love.graphics.rectangle("line", enemy.x, enemy.y, enemy.width, enemy.height)
+            if enemy.type == "charger" then
+                -- 5) Delta Wing (Charger - Cyan wedge shape with back boosters)
+                local vx = enemy.velX or 0
+                local vy = enemy.velY or 0
+                local angle = math.atan2(vy, vx)
+                if enemy.chargerState == "charging" then
+                    angle = math.atan2(enemy.rushDirY or 0, enemy.rushDirX or 0)
+                elseif vx == 0 and vy == 0 and game.player then
+                    angle = math.atan2(game.player.y - enemy.y, game.player.x - enemy.x)
+                end
+                
+                -- Warning laser line
+                if enemy.chargerState == "charging" then
+                    local laserLength = 500
+                    local lx = cx + (enemy.rushDirX or 0) * laserLength
+                    local ly = cy + (enemy.rushDirY or 0) * laserLength
+                    love.graphics.setColor(0.1, 0.8, 1.0, 0.45 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.setLineWidth(1.5)
+                    love.graphics.line(cx, cy, lx, ly)
+                end
+                
+                love.graphics.push()
+                love.graphics.translate(cx, cy)
+                love.graphics.rotate(angle)
+                
+                love.graphics.setColor(0.08, 0.14, 0.18, 0.95)
+                love.graphics.polygon("fill", halfW * 1.4, 0, -halfW, halfW * 0.8, -halfW * 0.4, 0, -halfW, -halfW * 0.8)
+                
+                if enemy.chargerState == "charging" then
+                    if math.floor(game.time * 15) % 2 == 0 then
+                        love.graphics.setColor(1.0, 0.3, 0.3, 0.95)
+                    else
+                        love.graphics.setColor(0.1, 0.8, 1.0, 0.95)
+                    end
+                elseif enemy.chargerState == "rushing" then
+                    love.graphics.setColor(0.3, 0.9, 1.0, 0.95)
+                else
+                    love.graphics.setColor(col[1], col[2], col[3], 0.9)
+                end
+                love.graphics.setLineWidth(1.8)
+                love.graphics.polygon("line", halfW * 1.4, 0, -halfW, halfW * 0.8, -halfW * 0.4, 0, -halfW, -halfW * 0.8)
+                
+                -- Engine flame
+                if enemy.chargerState == "rushing" then
+                    local flamePulse = 1.3 + math.sin(game.time * 30) * 0.3
+                    love.graphics.setColor(0.2, 0.8, 1.0, 0.85)
+                    love.graphics.polygon("fill", -halfW * 0.4, 0, -halfW * 1.5 * flamePulse, -halfW * 0.3, -halfW * 1.5 * flamePulse, halfW * 0.3)
+                end
+                
+                love.graphics.pop()
+            elseif enemy.type == "fast" then
+                -- 1) Shadow Beetle (Fast - Orange arrowhead with engine thruster & speed lines)
+                local vx = enemy.velX or 0
+                local vy = enemy.velY or 0
+                local angle = math.atan2(vy, vx)
+                if vx == 0 and vy == 0 and game.player then
+                    angle = math.atan2(game.player.y - enemy.y, game.player.x - enemy.x)
+                end
+                
+                -- Motion trail line
+                love.graphics.setLineWidth(1)
+                love.graphics.setColor(col[1], col[2], col[3], 0.35)
+                local trailLen = 22
+                love.graphics.line(cx, cy, cx - math.cos(angle) * trailLen, cy - math.sin(angle) * trailLen)
+                love.graphics.line(cx + math.sin(angle) * 3, cy - math.cos(angle) * 3, cx - math.cos(angle) * trailLen + math.sin(angle) * 3, cy - math.sin(angle) * trailLen - math.cos(angle) * 3)
+                
+                -- Arrowhead body
+                love.graphics.push()
+                love.graphics.translate(cx, cy)
+                love.graphics.rotate(angle)
+                
+                love.graphics.setColor(0.14, 0.12, 0.16, 0.95)
+                love.graphics.polygon("fill", halfW * 1.3, 0, -halfW * 0.9, halfW * 0.7, -halfW * 0.5, 0, -halfW * 0.9, -halfW * 0.7)
+                
+                love.graphics.setColor(col[1], col[2], col[3], 0.9)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.polygon("line", halfW * 1.3, 0, -halfW * 0.9, halfW * 0.7, -halfW * 0.5, 0, -halfW * 0.9, -halfW * 0.7)
+                
+                -- Small thruster flame
+                local flamePulse = 1 + math.sin(game.time * 25) * 0.25
+                love.graphics.setColor(1.0, 0.85, 0.2, 0.8)
+                love.graphics.polygon("fill", -halfW * 0.5, 0, -halfW * 1.1 * flamePulse, -halfW * 0.25, -halfW * 1.1 * flamePulse, halfW * 0.25)
+                
+                love.graphics.pop()
+
+            elseif enemy.type == "tank" then
+                -- 2) Crystal Bastion (Tank - Magenta octagonal fortress with crossed power pipes)
+                local pulse = 1 + math.sin(game.time * 4.5 + enemy.y) * 0.04
+                love.graphics.push()
+                love.graphics.translate(cx, cy)
+                love.graphics.rotate(game.time * 0.6)
+                
+                love.graphics.setColor(0.15, 0.08, 0.18, 0.95)
+                local pts = {}
+                for k = 1, 8 do
+                    local a = (k - 1) * (math.pi / 4)
+                    local r_dist = halfW * 1.1 * pulse
+                    table.insert(pts, math.cos(a) * r_dist)
+                    table.insert(pts, math.sin(a) * r_dist)
+                end
+                love.graphics.polygon("fill", pts)
+                
+                love.graphics.setColor(col[1], col[2], col[3], 0.95)
+                love.graphics.setLineWidth(2)
+                love.graphics.polygon("line", pts)
+                
+                -- Cross reactor pipes
+                love.graphics.setColor(col[1] * 1.2, col[2] * 0.8, col[3] * 1.2, 0.65)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.line(-halfW * 0.7, -halfW * 0.7, halfW * 0.7, halfW * 0.7)
+                love.graphics.line(-halfW * 0.7, halfW * 0.7, halfW * 0.7, -halfW * 0.7)
+                
+                love.graphics.pop()
+                
+                -- Bright crystal core
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+                love.graphics.circle("fill", cx, cy, halfW * 0.35)
+
+            elseif enemy.type == "ranged" then
+                -- 3) Sentry Node (Ranged - Green hexagon with orbiting weapon satellites)
+                love.graphics.push()
+                love.graphics.translate(cx, cy)
+                love.graphics.rotate(game.time * 0.8)
+                
+                love.graphics.setColor(0.08, 0.16, 0.12, 0.95)
+                local hexPts = {}
+                for k = 1, 6 do
+                    local a = (k - 1) * (math.pi / 3)
+                    table.insert(hexPts, math.cos(a) * halfW * 0.95)
+                    table.insert(hexPts, math.sin(a) * halfW * 0.95)
+                end
+                love.graphics.polygon("fill", hexPts)
+                
+                love.graphics.setColor(col[1], col[2], col[3], 0.9)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.polygon("line", hexPts)
+                love.graphics.pop()
+                
+                -- 3 Orbiting Satellites (Triangular alignment)
+                local orbitR = halfW * 1.55
+                local rotA = -game.time * 2.0
+                for s = 1, 3 do
+                    local a = rotA + (s - 1) * (2 * math.pi / 3)
+                    local sx = cx + math.cos(a) * orbitR
+                    local sy = cy + math.sin(a) * orbitR
+                    
+                    love.graphics.push()
+                    love.graphics.translate(sx, sy)
+                    love.graphics.rotate(a + math.pi / 2)
+                    
+                    love.graphics.setColor(col[1] * 1.2, col[2] * 1.2, col[3], 0.9)
+                    love.graphics.polygon("fill", 0, -3, 3, 3, -3, 3)
+                    
+                    love.graphics.pop()
+                end
+                
+                -- Center core
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+                love.graphics.circle("fill", cx, cy, halfW * 0.25)
+
+            else
+                -- 4) Scrap Drone (Normal - Red core with rotating orbital rings)
+                local pulse = 1 + math.sin(game.time * 6 + enemy.x) * 0.05
+                
+                -- Circular ring
+                love.graphics.setLineWidth(1)
+                love.graphics.setColor(col[1], col[2], col[3], 0.45)
+                love.graphics.circle("line", cx, cy, halfW * 1.25 * pulse)
+                
+                -- Elliptic rotating ring
+                love.graphics.push()
+                love.graphics.translate(cx, cy)
+                love.graphics.rotate(game.time * 1.8)
+                love.graphics.ellipse("line", 0, 0, halfW * 1.35 * pulse, halfW * 0.5)
+                love.graphics.pop()
+                
+                -- Diamond eye core
+                love.graphics.push()
+                love.graphics.translate(cx, cy)
+                love.graphics.rotate(-game.time * 1.2)
+                
+                love.graphics.setColor(0.12, 0.12, 0.16, 0.95)
+                love.graphics.polygon("fill", 0, -halfW * 0.7, halfW * 0.7, 0, 0, halfW * 0.7, -halfW * 0.7, 0)
+                
+                love.graphics.setColor(col[1], col[2], col[3], 0.9)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.polygon("line", 0, -halfW * 0.7, halfW * 0.7, 0, 0, halfW * 0.7, -halfW * 0.7, 0)
+                
+                love.graphics.pop()
+                
+                -- Glowing eye center
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.circle("fill", cx, cy, halfW * 0.25)
+            end
+            
+            -- Restore default drawing colors and thickness
+            love.graphics.setColor(1.0, 1.0, 1.0)
+            love.graphics.setLineWidth(1)
         end
         
         -- 체력이 닳았을 때만 머리 위에 체력바 표시 (보스는 제외)
@@ -870,20 +1505,79 @@ function Enemy.draw(game)
         end
     end
 
-    -- 적 탄환 투사체 그리기 (빛나는 붉은 플라즈마 구체 효과)
+    -- 보스 전용 불장판 그리기
+    if game.bossFirePatches then
+        for _, patch in ipairs(game.bossFirePatches) do
+            local alpha = 0.4 * (1 - patch.timer / patch.duration)
+            local pulse1 = 1 + math.sin(game.time * 8) * 0.07
+            local pulse2 = 1 + math.cos(game.time * 12) * 0.09
+            
+            -- 외곽 열기 (진한 오렌지/레드)
+            love.graphics.setColor(0.9, 0.25, 0.0, alpha * 0.25)
+            love.graphics.circle("fill", patch.x, patch.y, patch.radius * 1.15 * pulse1)
+            
+            -- 중간 불타는 코어 (황금빛 노랑)
+            love.graphics.setColor(1.0, 0.65, 0.1, alpha * 0.45)
+            love.graphics.circle("fill", patch.x, patch.y, patch.radius * 0.75 * pulse2)
+            
+            -- 안쪽 중심부 (백색광)
+            love.graphics.setColor(1.0, 0.9, 0.4, alpha * 0.65)
+            love.graphics.circle("fill", patch.x, patch.y, patch.radius * 0.4)
+        end
+    end
+
+    -- 적 탄환 투사체 그리기
     if game.enemyBullets then
         for _, bullet in ipairs(game.enemyBullets) do
-            -- 외곽 오라 효과
-            love.graphics.setColor(0.9, 0.1, 0.1, 0.3)
-            love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 1.5)
-            
-            -- 내부 탄두 코어
-            love.graphics.setColor(1.0, 0.3, 0.3)
-            love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
-            
-            -- 눈부신 백색 중심부
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
-            love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.2)
+            if bullet.type == "petal" then
+                -- 꽃잎 투사체 그리기 (분홍/오렌지 빛나는 타원형 꽃잎 형태)
+                love.graphics.push()
+                love.graphics.translate(bullet.x, bullet.y)
+                love.graphics.rotate(bullet.angle or 0)
+                
+                -- 외곽 아우라
+                love.graphics.setColor(1.0, 0.45, 0.6, 0.25)
+                love.graphics.ellipse("fill", 0, 0, bullet.size * 2.2, bullet.size * 1.3)
+                
+                -- 본체
+                love.graphics.setColor(1.0, 0.25, 0.45, 0.95)
+                love.graphics.ellipse("fill", 0, 0, bullet.size * 1.6, bullet.size * 0.85)
+                
+                -- 화이트/옐로우 코어 하이라이트
+                love.graphics.setColor(1.0, 0.9, 0.85, 0.95)
+                love.graphics.ellipse("fill", -bullet.size * 0.3, 0, bullet.size * 0.65, bullet.size * 0.3)
+                
+                love.graphics.pop()
+            elseif bullet.type == "void_mine" then
+                -- 보이드 지뢰 (보라색 중력 균열 리프트 연출)
+                local pulse = 1 + math.sin(game.time * 15) * 0.15
+                love.graphics.setColor(0.5, 0.1, 0.8, 0.2)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 1.6 * pulse)
+                
+                love.graphics.setColor(0.6, 0.2, 0.9, 0.8)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.circle("line", bullet.x, bullet.y, bullet.size * pulse)
+                
+                -- 중심 검은 코어
+                love.graphics.setColor(0.05, 0.05, 0.1, 0.95)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.45)
+            elseif bullet.type == "void_bullet" then
+                -- 보라색 보이드 탄환
+                love.graphics.setColor(0.6, 0.1, 0.9, 0.3)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 1.5)
+                love.graphics.setColor(0.7, 0.2, 1.0, 0.9)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.25)
+            else
+                -- 일반 붉은색 탄환
+                love.graphics.setColor(0.9, 0.1, 0.1, 0.3)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 1.5)
+                love.graphics.setColor(1.0, 0.3, 0.3)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.2)
+            end
         end
     end
 end
