@@ -51,6 +51,32 @@ local meteorLevels = {
     { cooldown = 6.0, damage = 85, count = 3, hasFire = true },
 }
 
+local cutterLevels = {
+    { count = 1, damage = 15, speed = 2.5, length = 80 },
+    { count = 2, damage = 25, speed = 2.5, length = 85 },
+    { count = 3, damage = 25, speed = 3.5, length = 90 },
+    { count = 4, damage = 35, speed = 3.5, length = 95 },
+    { count = 5, damage = 35, speed = 5.0, length = 100 }
+}
+
+local cutterCurvature = 0.7
+
+local chainLevels = {
+    { count = 1, rootDuration = 2.0, maxChains = 1, cooldown = 4.0, damage = 20 },
+    { count = 1, rootDuration = 3.5, maxChains = 1, cooldown = 4.0, damage = 25 },
+    { count = 1, rootDuration = 3.5, maxChains = 2, cooldown = 4.0, damage = 30 },
+    { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 4.0, damage = 35 },
+    { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 2.5, damage = 45 }
+}
+
+local function isEnemyAlive(game, enemy)
+    if not game.enemies then return false end
+    for _, e in ipairs(game.enemies) do
+        if e == enemy then return true end
+    end
+    return false
+end
+
 local Skills = {}
 
 -- 플레이어와 가장 가까운 적 찾기
@@ -75,17 +101,19 @@ function Skills.findClosestEnemy(game)
     return closestEnemy
 end
 
--- 플레이어와 가까운 순서대로 최대 N개의 적 찾기
-function Skills.findClosestEnemies(game, n)
+-- 플레이어와 가까운 순서대로 최대 N개의 적 찾기 (excludeBoss가 참일 경우 보스는 제외)
+function Skills.findClosestEnemies(game, n, excludeBoss)
     local player = game.player
     if not player or #game.enemies == 0 then return {} end
 
     local candidates = {}
     for _, enemy in ipairs(game.enemies) do
-        local dx = enemy.x + enemy.width / 2 - (player.x + player.width / 2)
-        local dy = enemy.y + enemy.height / 2 - (player.y + player.height / 2)
-        local distance = math.sqrt(dx * dx + dy * dy)
-        table.insert(candidates, { enemy = enemy, distance = distance })
+        if not (excludeBoss and enemy.type == "boss") then
+            local dx = enemy.x + enemy.width / 2 - (player.x + player.width / 2)
+            local dy = enemy.y + enemy.height / 2 - (player.y + player.height / 2)
+            local distance = math.sqrt(dx * dx + dy * dy)
+            table.insert(candidates, { enemy = enemy, distance = distance })
+        end
     end
 
     table.sort(candidates, function(a, b)
@@ -97,6 +125,31 @@ function Skills.findClosestEnemies(game, n)
         table.insert(result, candidates[i].enemy)
     end
     return result
+end
+
+-- 특정 좌표로부터 가장 가까우면서 제외 대상을 제외한 적 찾기 (체인 연쇄용, 보스는 제외)
+function Skills.findClosestEnemyFrom(game, fromX, fromY, excludeSet)
+    if not game.enemies or #game.enemies == 0 then return nil end
+
+    local closestEnemy = nil
+    local closestDistance = math.huge
+
+    for _, enemy in ipairs(game.enemies) do
+        if enemy.type ~= "boss" and not excludeSet[enemy] then
+            local ecx = enemy.x + enemy.width / 2
+            local ecy = enemy.y + enemy.height / 2
+            local dx = ecx - fromX
+            local dy = ecy - fromY
+            local distance = math.sqrt(dx * dx + dy * dy)
+
+            if distance < closestDistance then
+                closestDistance = distance
+                closestEnemy = enemy
+            end
+        end
+    end
+
+    return closestEnemy
 end
 
 -- 칼날 투사체 인스턴스 생성 및 리스트 삽입
@@ -751,6 +804,275 @@ function Skills.update(game, dt)
             table.remove(game.firePatches, i)
         end
     end
+
+    -- 9. 커터 스킬 업데이트 (레벨 > 0 일 때 가동)
+    if (player.skillLevels[8] or 0) > 0 then
+        local level = player.skillLevels[8] or 0
+        local spec = cutterLevels[math.min(level, #cutterLevels)]
+        local count = spec.count
+        local damage = spec.damage
+        local speed = spec.speed
+        local length = spec.length
+        
+        -- Update base rotation angle
+        game.cutterAngle = (game.cutterAngle or 0) + speed * dt
+        
+        -- Player center coordinates
+        local px = player.x + player.width / 2
+        local py = player.y + player.height / 2
+        
+        -- Reset cutters table
+        game.cutters = game.cutters or {}
+        
+        -- We will check collision for each cutter blade
+        for c = 1, count do
+            local offset = (c - 1) * (2 * math.pi / count)
+            local angle = game.cutterAngle + offset
+            
+            -- We want to store points for rendering (16 points for smooth curve)
+            local drawPoints = {}
+            local segments = 16
+            for s = 0, segments do
+                local t = s / segments
+                local currAngle = angle - cutterCurvature * t
+                local cx_point = px + math.cos(currAngle) * (length * t)
+                local cy_point = py + math.sin(currAngle) * (length * t)
+                table.insert(drawPoints, cx_point)
+                table.insert(drawPoints, cy_point)
+            end
+            
+            game.cutters[c] = {
+                drawPoints = drawPoints,
+                angle = angle,
+                length = length
+            }
+            
+            -- Collision check: 8 segments
+            local prevX, prevY = px, py
+            local collSegments = 8
+            local hitEnemyThisBlade = {}
+            
+            for s = 1, collSegments do
+                local t = s / collSegments
+                local currAngle = angle - cutterCurvature * t
+                local cx_point = px + math.cos(currAngle) * (length * t)
+                local cy_point = py + math.sin(currAngle) * (length * t)
+                
+                local ux_seg = cx_point - prevX
+                local uy_seg = cy_point - prevY
+                local seg_len = math.sqrt(ux_seg * ux_seg + uy_seg * uy_seg)
+                
+                if seg_len > 0 then
+                    local dx_seg = ux_seg / seg_len
+                    local dy_seg = uy_seg / seg_len
+                    
+                    for j = #game.enemies, 1, -1 do
+                        local enemy = game.enemies[j]
+                        
+                        if enemy and not hitEnemyThisBlade[enemy] then
+                            enemy.cutterHitCooldown = enemy.cutterHitCooldown or 0
+                            if enemy.cutterHitCooldown <= 0 then
+                                local ecx = enemy.x + enemy.width / 2
+                                local ecy = enemy.y + enemy.height / 2
+                                
+                                local apx = ecx - prevX
+                                local apy = ecy - prevY
+                                local proj = apx * dx_seg + apy * dy_seg
+                                local clamped_proj = math.max(0, math.min(seg_len, proj))
+                                
+                                local nearestX = prevX + dx_seg * clamped_proj
+                                local nearestY = prevY + dy_seg * clamped_proj
+                                
+                                local distDX = ecx - nearestX
+                                local distDY = ecy - nearestY
+                                local dist = math.sqrt(distDX * distDX + distDY * distDY)
+                                
+                                -- Hit check (half of enemy width + cutter thickness, say 16 for extra thick blade)
+                                if dist < (enemy.width / 2 + 16) then
+                                    hitEnemyThisBlade[enemy] = true
+                                    local EnemyModule = require("enemy.spawner")
+                                    if EnemyModule.damage(game, j, damage) then
+                                        -- Enemy died
+                                    else
+                                        -- Set hit cooldown
+                                        enemy.cutterHitCooldown = 0.25
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                prevX, prevY = cx_point, cy_point
+            end
+        end
+        
+        -- Clean up extra cutter visual references
+        for c = count + 1, #game.cutters do
+            game.cutters[c] = nil
+        end
+    else
+        game.cutters = nil
+    end
+
+    -- 10. 가시 이펙트 업데이트
+    game.thornsVisuals = game.thornsVisuals or {}
+    for i = #game.thornsVisuals, 1, -1 do
+        local tv = game.thornsVisuals[i]
+        tv.timer = tv.timer - dt
+        if tv.timer <= 0 then
+            table.remove(game.thornsVisuals, i)
+        end
+    end
+
+    -- 11. 체인 스킬 업데이트 (레벨 > 0 일 때 가동)
+    if (player.skillLevels[9] or 0) > 0 then
+        local level = player.skillLevels[9] or 0
+        local spec = chainLevels[math.min(level, #chainLevels)]
+        
+        game.chainTimer = (game.chainTimer or 0) + dt
+        if game.chainTimer >= spec.cooldown then
+            game.chainTimer = game.chainTimer - spec.cooldown
+            
+            -- Find the spec.count closest enemies (excluding boss)
+            local targets = Skills.findClosestEnemies(game, spec.count, true)
+            for _, targetEnemy in ipairs(targets) do
+                local excludeSet = {}
+                excludeSet[targetEnemy] = true
+                
+                table.insert(game.chains, {
+                    type = "primary",
+                    sourceType = "player",
+                    source = player,
+                    target = targetEnemy,
+                    state = "extending",
+                    progress = 0,
+                    speed = 600,
+                    damage = spec.damage,
+                    rootDuration = spec.rootDuration,
+                    depth = 1,
+                    maxDepth = spec.maxChains,
+                    excludeSet = excludeSet,
+                    timer = 0,
+                    fadeDuration = 0.3
+                })
+            end
+        end
+    end
+
+    -- 액티브 체인 업데이트
+    game.chains = game.chains or {}
+    for i = #game.chains, 1, -1 do
+        local chain = game.chains[i]
+        
+        -- 부모 체인이 속박 해제/제거/fading인 경우 자식 체인도 동기화하여 fading 전향
+        if chain.parent and (chain.parent.state == "fading" or chain.parent.toRemove) then
+            if chain.state ~= "fading" then
+                chain.state = "fading"
+                chain.timer = chain.parent.timer or chain.fadeDuration
+            end
+        end
+        
+        -- Source 좌표 결정
+        local sx, sy
+        if chain.sourceType == "player" then
+            sx = player.x + player.width / 2
+            sy = player.y + player.height / 2
+        else
+            if isEnemyAlive(game, chain.source) then
+                chain.sourceX = chain.source.x + chain.source.width / 2
+                chain.sourceY = chain.source.y + chain.source.height / 2
+            end
+            sx = chain.sourceX or 0
+            sy = chain.sourceY or 0
+        end
+
+        if chain.state == "extending" then
+            if not isEnemyAlive(game, chain.target) then
+                chain.state = "fading"
+                chain.timer = chain.fadeDuration
+            else
+                local tx = chain.target.x + chain.target.width / 2
+                local ty = chain.target.y + chain.target.height / 2
+                local dx = tx - sx
+                local dy = ty - sy
+                local distance = math.sqrt(dx * dx + dy * dy)
+                
+                if distance > 0 then
+                    chain.progress = chain.progress + (chain.speed * dt) / distance
+                    if chain.progress >= 1 then
+                        chain.progress = 1
+                        chain.state = "active"
+                        chain.timer = chain.rootDuration
+                        
+                        -- 속박 및 데미지 적용
+                        local targetIdx = nil
+                        for idx, enemy in ipairs(game.enemies) do
+                            if enemy == chain.target then
+                                targetIdx = idx
+                                break
+                            end
+                        end
+                        if targetIdx then
+                            chain.target.rootedTimer = chain.rootDuration
+                            local EnemyModule = require("enemy.spawner")
+                            EnemyModule.damage(game, targetIdx, chain.damage)
+                        end
+                        
+                        -- 연쇄 반응 (다음 대상 탐색)
+                        if chain.depth < chain.maxDepth then
+                            local tx_loc = chain.target.x + chain.target.width / 2
+                            local ty_loc = chain.target.y + chain.target.height / 2
+                            local nextEnemy = Skills.findClosestEnemyFrom(game, tx_loc, ty_loc, chain.excludeSet)
+                            if nextEnemy then
+                                local newExcludeSet = {}
+                                for k, v in pairs(chain.excludeSet) do
+                                    newExcludeSet[k] = v
+                                end
+                                newExcludeSet[nextEnemy] = true
+                                
+                                table.insert(game.chains, {
+                                    type = "secondary",
+                                    sourceType = "enemy",
+                                    source = chain.target,
+                                    sourceX = tx_loc,
+                                    sourceY = ty_loc,
+                                    target = nextEnemy,
+                                    state = "extending",
+                                    progress = 0,
+                                    speed = 600,
+                                    damage = chain.damage,
+                                    rootDuration = chain.rootDuration,
+                                    depth = chain.depth + 1,
+                                    maxDepth = chain.maxDepth,
+                                    excludeSet = newExcludeSet,
+                                    parent = chain, -- 부모 체인 링크 기록
+                                    timer = 0,
+                                    fadeDuration = 0.3
+                                })
+                            end
+                        end
+                    end
+                else
+                    chain.progress = 1
+                    chain.state = "active"
+                    chain.timer = chain.rootDuration
+                end
+            end
+        elseif chain.state == "active" then
+            chain.timer = chain.timer - dt
+            if chain.timer <= 0 or not isEnemyAlive(game, chain.target) then
+                chain.state = "fading"
+                chain.timer = chain.fadeDuration
+            end
+        elseif chain.state == "fading" then
+            chain.timer = chain.timer - dt
+            if chain.timer <= 0 then
+                chain.toRemove = true
+                table.remove(game.chains, i)
+            end
+        end
+    end
 end
 
 -- 스킬 투사체 렌더링
@@ -1080,6 +1402,213 @@ function Skills.draw(game)
         love.graphics.setColor(1.0, 0.95, 0.2, 0.95)
         love.graphics.circle("fill", met.currentX, met.currentY, r * 0.5)
     end
+
+    -- 9. 가시 특성 (Thorns Visuals) 그리기
+    game.thornsVisuals = game.thornsVisuals or {}
+    for _, tv in ipairs(game.thornsVisuals) do
+        local progress = tv.timer / tv.maxTimer
+        local alpha = math.max(0, tv.timer / tv.maxTimer)
+        local radius = tv.radius * (0.3 + 0.7 * (1 - progress)) -- expands outward
+        
+        -- Draw 12 sharp spikes pointing outward
+        local numSpikes = 12 + tv.level * 2
+        love.graphics.setLineWidth(2)
+        for s = 1, numSpikes do
+            local angle = (s - 1) * (2 * math.pi / numSpikes) + game.time * 2
+            local startDist = radius * 0.4
+            local endDist = radius
+            
+            local sx = tv.x + math.cos(angle) * startDist
+            local sy = tv.y + math.sin(angle) * startDist
+            local ex = tv.x + math.cos(angle) * endDist
+            local ey = tv.y + math.sin(angle) * endDist
+            
+            -- Draw a sharp triangle spike
+            local angleLeft = angle + 0.12
+            local angleRight = angle - 0.12
+            local lx = tv.x + math.cos(angleLeft) * startDist
+            local ly = tv.y + math.sin(angleLeft) * startDist
+            local rx = tv.x + math.cos(angleRight) * startDist
+            local ry = tv.y + math.sin(angleRight) * startDist
+            
+            -- Neon green/cyan spike color
+            love.graphics.setColor(0.0, 1.0, 0.6, alpha * 0.3)
+            love.graphics.polygon("fill", lx, ly, rx, ry, ex, ey)
+            
+            love.graphics.setColor(0.3, 1.0, 0.8, alpha * 0.8)
+            love.graphics.polygon("line", lx, ly, rx, ry, ex, ey)
+        end
+    end
+
+    -- 10. 커터 (Cutter) 그리기
+    if game.cutters and #game.cutters > 0 then
+        local player = game.player
+        if player then
+            local px = player.x + player.width / 2
+            local py = player.y + player.height / 2
+            
+            for c, cutter in ipairs(game.cutters) do
+                local drawPoints = cutter.drawPoints
+                if drawPoints and #drawPoints >= 4 then
+                    -- Draw 4 layers of metal blade segments
+                    -- Layer 1: Ambient steel slash reflection (wide faint grey glow)
+                    love.graphics.setColor(0.85, 0.85, 0.9, 0.1)
+                    love.graphics.setLineWidth(26)
+                    love.graphics.line(drawPoints)
+                    
+                    -- Layer 2: Dark steel blade backbone (contrast backing)
+                    love.graphics.setColor(0.12, 0.12, 0.15, 0.65)
+                    love.graphics.setLineWidth(12)
+                    love.graphics.line(drawPoints)
+                    
+                    -- Layer 3: Silver blade body (sharp metal feel)
+                    love.graphics.setColor(0.65, 0.65, 0.7, 0.8)
+                    love.graphics.setLineWidth(8)
+                    love.graphics.line(drawPoints)
+                    
+                    -- Layer 4: White razor edge (extremely sharp core)
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                    love.graphics.setLineWidth(3)
+                    love.graphics.line(drawPoints)
+                    
+                    -- Draw a sharp wedge blade at the cutter tip
+                    local tx = drawPoints[#drawPoints - 1]
+                    local ty = drawPoints[#drawPoints]
+                    
+                    -- The tangent angle at the tip can be calculated using the last segment
+                    local ptx = drawPoints[#drawPoints - 3]
+                    local pty = drawPoints[#drawPoints - 2]
+                    local tangentAngle = math.atan2(ty - pty, tx - ptx)
+                    
+                    love.graphics.push()
+                    love.graphics.translate(tx, ty)
+                    love.graphics.rotate(tangentAngle)
+                    
+                    -- Draw steel diamond tip (scaled up to match thicker blade)
+                    love.graphics.setColor(0.2, 0.2, 0.22, 0.9)
+                    love.graphics.polygon("fill", 0, 0, -18, -10, -28, 0, -18, 10)
+                    love.graphics.setColor(0.9, 0.9, 0.95, 0.95)
+                    love.graphics.polygon("line", 0, 0, -18, -10, -28, 0, -18, 10)
+                    
+                    love.graphics.pop()
+                end
+            end
+            
+            -- Draw a rotating spark core at the player center (silver/grey)
+            love.graphics.setColor(0.7, 0.7, 0.75, 0.2)
+            love.graphics.circle("fill", px, py, 18 + math.sin(game.time * 15) * 3)
+        end
+    end
+
+    -- 11. 체인 (Chain) 그리기
+    game.chains = game.chains or {}
+    for _, chain in ipairs(game.chains) do
+        local sx, sy
+        if chain.sourceType == "player" then
+            local player = game.player
+            if player then
+                sx = player.x + player.width / 2
+                sy = player.y + player.height / 2
+            end
+        else
+            sx = chain.sourceX
+            sy = chain.sourceY
+        end
+        
+        -- Target coordinates
+        local tx, ty
+        if isEnemyAlive(game, chain.target) then
+            tx = chain.target.x + chain.target.width / 2
+            ty = chain.target.y + chain.target.height / 2
+            chain.lastTargetX = tx
+            chain.lastTargetY = ty
+        else
+            tx = chain.lastTargetX or sx
+            ty = chain.lastTargetY or sy
+        end
+        
+        if sx and sy and tx and ty then
+            -- Determine transparency based on state
+            local alpha = 0.85
+            if chain.state == "fading" then
+                alpha = 0.85 * math.max(0, chain.timer / chain.fadeDuration)
+            end
+            
+            -- Current tip position based on progress
+            local cx = sx + (tx - sx) * chain.progress
+            local cy = sy + (ty - sy) * chain.progress
+            
+            local dx = cx - sx
+            local dy = cy - sy
+            local dist = math.sqrt(dx * dx + dy * dy)
+            
+            if dist > 0 then
+                local ux = dx / dist
+                local uy = dy / dist
+                
+                -- Draw neon cyan glow (wide/faint)
+                love.graphics.setColor(0.1, 0.8, 1.0, alpha * 0.25)
+                love.graphics.setLineWidth(10)
+                love.graphics.line(sx, sy, cx, cy)
+                
+                -- Draw neon cyan main core
+                love.graphics.setColor(0.2, 0.7, 0.95, alpha * 0.7)
+                love.graphics.setLineWidth(4)
+                love.graphics.line(sx, sy, cx, cy)
+                
+                -- Draw interlocking chain links
+                local linkSpacing = 16
+                local numLinks = math.floor(dist / linkSpacing)
+                love.graphics.setLineWidth(1.5)
+                local angle = math.atan2(dy, dx)
+                
+                for k = 0, numLinks do
+                    local t = k * linkSpacing
+                    local lx = sx + ux * t
+                    local ly = sy + uy * t
+                    
+                    love.graphics.push()
+                    love.graphics.translate(lx, ly)
+                    -- Alternate links orientation to simulate 3D chain structure
+                    love.graphics.rotate(angle + (k % 2 == 0 and 0 or math.pi / 2))
+                    
+                    -- Steel grey / glowing cyan linked capsule
+                    love.graphics.setColor(0.4, 0.85, 1.0, alpha * 0.85)
+                    love.graphics.ellipse("line", 0, 0, 7, 3.5)
+                    
+                    -- Draw link inner color
+                    love.graphics.setColor(0.1, 0.1, 0.15, alpha * 0.5)
+                    love.graphics.ellipse("fill", 0, 0, 5, 2)
+                    
+                    love.graphics.pop()
+                end
+                
+                -- Draw target lock animation for active state
+                if chain.state == "active" and isEnemyAlive(game, chain.target) then
+                    local pulse = 1 + math.sin(game.time * 12) * 0.15
+                    local r_lock = 14 * pulse
+                    
+                    -- Glowing neon circle around target
+                    love.graphics.setLineWidth(1.5)
+                    love.graphics.setColor(0.2, 0.9, 1.0, alpha * 0.3)
+                    love.graphics.circle("fill", tx, ty, r_lock)
+                    
+                    love.graphics.setColor(0.4, 1.0, 1.0, alpha * 0.8)
+                    love.graphics.circle("line", tx, ty, r_lock)
+                    
+                    -- Draw lock pointers (crosshairs)
+                    for k = 0, 3 do
+                        local rotA = game.time * 2 + k * (math.pi / 2)
+                        local px1 = tx + math.cos(rotA) * (r_lock - 4)
+                        local py1 = ty + math.sin(rotA) * (r_lock - 4)
+                        local px2 = tx + math.cos(rotA) * (r_lock + 4)
+                        local py2 = ty + math.sin(rotA) * (r_lock + 4)
+                        love.graphics.line(px1, py1, px2, py2)
+                    end
+                end
+            end
+        end
+    end
 end
 
 -- 통합 레벨업 선택창(스킬 또는 특성)에서 카드 클릭 시 업그레이드 적용
@@ -1124,12 +1653,78 @@ function Skills.applyUpgrade(game, boxIndex)
             player.regenRate = player.regenRate + 5
         elseif upgrade.name == "EXP Boost" then
             player.expModifier = (player.expModifier or 1.0) + 0.25
+        elseif upgrade.name == "Thorns" then
+            -- Thorns upgrade is matched here (no immediate stat updates required)
         end
     end
 
     -- 게임 재개
     game.state = "playing"
     game.running = true
+end
+
+-- 피해를 입었을 때 가시 특성(반사 피해 및 아우라) 트리거
+function Skills.triggerThorns(game, attacker)
+    local player = game.player
+    if not player then return end
+
+    -- Thorns는 7번째 특성이므로 인덱스 7
+    local thornsLevel = player.upgradeLevels[7] or 0
+    if thornsLevel <= 0 then return end
+
+    -- 레벨당 30% 확률 (1레벨: 30%, 2레벨: 60%, 3레벨: 90%)
+    if math.random() < thornsLevel * 0.3 then
+        local dmg = player.damage * 2.5 * thornsLevel
+        local radius = 150 + thornsLevel * 30
+        local px = player.x + player.width / 2
+        local py = player.y + player.height / 2
+
+        -- 1) 가시 방출 비주얼 생성
+        game.thornsVisuals = game.thornsVisuals or {}
+        table.insert(game.thornsVisuals, {
+            x = px,
+            y = py,
+            radius = radius,
+            timer = 0.35,
+            maxTimer = 0.35,
+            level = thornsLevel
+        })
+
+        -- 2) 피해를 준 적(Attaker)이 있으면 먼저 다이렉트 대미지 적용
+        local EnemyModule = require("enemy.spawner")
+        if attacker then
+            local attackerIdx = nil
+            for idx, enemy in ipairs(game.enemies) do
+                if enemy == attacker then
+                    attackerIdx = idx
+                    break
+                end
+            end
+            if attackerIdx then
+                EnemyModule.damage(game, attackerIdx, dmg)
+            end
+        end
+
+        -- 3) 주변 모든 적들에게 범위 대미지(Retaliation AoE) 적용
+        for idx = #game.enemies, 1, -1 do
+            local enemy = game.enemies[idx]
+            if enemy ~= attacker then
+                local ecx = enemy.x + enemy.width / 2
+                local ecy = enemy.y + enemy.height / 2
+                local dx = ecx - px
+                local dy = ecy - py
+                local dist = math.sqrt(dx * dx + dy * dy)
+                if dist <= radius + enemy.width / 2 then
+                    EnemyModule.damage(game, idx, dmg)
+                end
+            end
+        end
+
+        -- 4) 타격감 증대를 위한 가시적 화면 쉐이크 트리거
+        if game.triggerShake then
+            game.triggerShake(0.2, 5)
+        end
+    end
 end
 
 return Skills

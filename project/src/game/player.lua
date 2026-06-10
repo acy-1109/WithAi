@@ -8,21 +8,21 @@ local Player = {}
 function Player.init(skillIndex, metaUpgrades)
     -- 메타 스킬/특성 강화 데이터 불러오기 (없으면 0레벨 디폴트)
     metaUpgrades = metaUpgrades or {
-        skills = { 0, 0, 0, 0, 0, 0, 0 },
-        upgrades = { 0, 0, 0, 0, 0, 0 }
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        upgrades = { 0, 0, 0, 0, 0, 0, 0 }
     }
     
     local skillLevels = {}
-    for i = 1, 7 do
+    for i = 1, 9 do
         skillLevels[i] = metaUpgrades.skills[i] or 0
     end
     -- 시작 스킬로 선택한 항목은 레벨 1 추가
-    if skillIndex and skillIndex >= 1 and skillIndex <= 7 then
+    if skillIndex and skillIndex >= 1 and skillIndex <= 9 then
         skillLevels[skillIndex] = skillLevels[skillIndex] + 1
     end
 
     local upgradeLevels = {}
-    for i = 1, 6 do
+    for i = 1, 7 do
         upgradeLevels[i] = metaUpgrades.upgrades[i] or 0
     end
 

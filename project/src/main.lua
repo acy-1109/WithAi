@@ -41,7 +41,9 @@ local game = {
         { name = "Bullet",       description = "Auto-target enemies and fire bullets" },
         { name = "Laser",        description = "Fire a slow-charging laser beam that follows your position" },
         { name = "Magnetic Field", description = "Periodically deploy a circular magnetic field that damages nearby enemies" },
-        { name = "Meteor",       description = "Call down devastating meteors from the sky that shake the screen and leave fire patches" }
+        { name = "Meteor",       description = "Call down devastating meteors from the sky that shake the screen and leave fire patches" },
+        { name = "Cutter",       description = "Energy cutter blades extending from your body that rotate and slice through enemies" },
+        { name = "Chain",        description = "Fires glowing chains that lock enemies in place and deal damage" }
     },
     selectedSkill = nil,
     skillBoxes = {},
@@ -52,7 +54,8 @@ local game = {
         { name = "Speed Boost",  description = "Increase movement speed by 5%" },
         { name = "Damage Boost", description = "Increase orb damage by 10%" },
         { name = "Health Regen", description = "Regenerate health when not taking damage" },
-        { name = "EXP Boost",    description = "Increase experience gained by 25%" }
+        { name = "EXP Boost",    description = "Increase experience gained by 25%" },
+        { name = "Thorns",       description = "30% chance per level to retaliate and damage nearby enemies when hit" }
     },
     upgradeOptions = {}, -- 현재 레벨업 시 표시할 특성 3개 (인덱스)
     upgradeBoxes = {},
@@ -65,8 +68,8 @@ local game = {
     -- 영구 강화 및 설정 데이터
     totalScore = 0,
     metaUpgrades = {
-        skills = { 0, 0, 0, 0, 0, 0, 0 },  -- 7 active skills starting level offsets
-        upgrades = { 0, 0, 0, 0, 0, 0 }     -- 6 passive traits starting level offsets
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },  -- 9 active skills starting level offsets
+        upgrades = { 0, 0, 0, 0, 0, 0, 0 }     -- 7 passive traits starting level offsets
     },
     showStars = true, -- 설정: 성간 배경 먼지 그리기 여부
     muted = false     -- 설정: 음소거 여부 (필요 시 효과음 제어용)
@@ -78,7 +81,7 @@ game.saveGame = function()
     local dataStr = string.format("totalScore:%d\nshowStars:%s\nmuted:%s\n",
         totalScoreVal, tostring(game.showStars), tostring(game.muted))
     
-    for i = 1, 7 do
+    for i = 1, 9 do
         dataStr = dataStr .. string.format("skill_%d:%d\n", i, game.metaUpgrades.skills[i] or 0)
     end
     for i = 1, 6 do
@@ -92,8 +95,8 @@ end
 game.loadGame = function()
     game.totalScore = 0
     game.metaUpgrades = {
-        skills = { 0, 0, 0, 0, 0, 0, 0 },
-        upgrades = { 0, 0, 0, 0, 0, 0 }
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        upgrades = { 0, 0, 0, 0, 0, 0, 0 }
     }
     game.showStars = true
     game.muted = false
@@ -108,7 +111,7 @@ game.loadGame = function()
                 elseif k == "muted" then game.muted = (v == "true")
                 elseif k:match("^skill_%d+$") then
                     local idx = tonumber(k:match("skill_(%d+)"))
-                    if idx and idx >= 1 and idx <= 7 then
+                    if idx and idx >= 1 and idx <= 9 then
                         game.metaUpgrades.skills[idx] = val or 0
                     end
                 elseif k:match("^upgrade_%d+$") then
@@ -143,8 +146,8 @@ function love.load()
     if not love.filesystem.getInfo("reset_done.txt") then
         game.totalScore = 0
         game.metaUpgrades = {
-            skills = { 0, 0, 0, 0, 0, 0, 0 },
-            upgrades = { 0, 0, 0, 0, 0, 0 }
+            skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            upgrades = { 0, 0, 0, 0, 0, 0, 0 }
         }
         game.saveGame()
         love.filesystem.write("reset_done.txt", "done")
@@ -180,6 +183,10 @@ local function startGame(skillIndex)
     game.meteors = {}  -- 운석 스킬 프로젝타일
     game.firePatches = {} -- 운석 불장판
     game.enemyBullets = {} -- 적 탄환 프로젝타일
+    game.thornsVisuals = {} -- 가시 이펙트 데칼/비주얼
+    game.pendingThornsAttackers = {} -- 피격 시 가시 발동 예약을 위한 리스트
+    game.chains = {}   -- 체인 스킬 프로젝타일
+    game.chainTimer = 0 -- 체인 발사 타이머
     game.score = 0
     game.time = 0
 
@@ -398,20 +405,20 @@ function love.draw()
     love.graphics.setLineWidth(3)
     love.graphics.rectangle("line", 0, 0, game.world.width, game.world.height)
 
-    -- 플레이어 그리기
-    Player.draw(game)
-
-    -- 플레이어 UI 그리기 (체력바, 경험치바)
-    Player.drawUI(game)
-
     -- 스킬 그리기
     Skills.draw(game)
+
+    -- 경험치 구슬 그리기
+    Exp.draw(game)
 
     -- 적 그리기
     Enemy.draw(game)
 
-    -- 경험치 구슬 그리기
-    Exp.draw(game)
+    -- 플레이어 그리기 (플레이어 레이어가 가장 위에 오도록 나중에 렌더링)
+    Player.draw(game)
+
+    -- 플레이어 UI 그리기 (체력바, 경험치바)
+    Player.drawUI(game)
 
     -- 카메라 복원
     love.graphics.pop()
@@ -442,6 +449,18 @@ function love.keypressed(key)
             local Exp = require("progression.exp")
             Exp.checkLevelUp(game)
         end
+    end
+
+    -- 치트키 K: 즉시 다음 스테이지로 강제 이동 및 1웨이브 시작
+    if game.state == "playing" and (key == "k" or key == "K") then
+        game.enemies = {}
+        game.enemyBullets = {}
+        game.stage = (game.stage or 1) + 1
+        game.wave = 1
+        game.waveState = "playing"
+        game.bannerText = "STAGE " .. game.stage .. " START!"
+        game.bannerTimer = 3.0
+        Enemy.spawnWave(game, 1)
     end
 
     -- 치트키 I: 즉시 보스 웨이브(7웨이브)로 이동 및 보스 스폰

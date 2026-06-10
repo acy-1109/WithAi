@@ -55,6 +55,20 @@ local skillLevelDescriptions = {
         "Increases meteor count by 1 target",
         "Leaves burning fire patches on the ground that deal damage over time",
         "Increases meteor count by 1 target",
+    },
+    [8] = { -- 커터 (Cutter)
+        "Sharp energy blade extends from your body and rotates",
+        "Adds 1 blade & increases damage",
+        "Adds 1 blade & increases rotation speed",
+        "Adds 1 blade & increases damage",
+        "Adds 1 blade & increases rotation speed"
+    },
+    [9] = { -- 체인 (Chain)
+        "Fires a glowing chain that locks the closest enemy in place and damages them",
+        "Increases lock duration",
+        "Reaction: Chain cascades from locked enemy to another nearby enemy",
+        "Fires 2 chains targeting the 2 closest enemies",
+        "Reduces cooldown significantly"
     }
 }
 
@@ -454,7 +468,9 @@ function HUD.drawUI(game)
         -- HP 수치 텍스트
         love.graphics.setFont(getFont(12))
         love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
-        love.graphics.printf(boss.health .. " / " .. boss.maxHealth, barX, barY + 1, barWidth, "center")
+        local displayHp = math.max(0, math.ceil(boss.health))
+        local displayMaxHp = math.max(1, math.ceil(boss.maxHealth))
+        love.graphics.printf(displayHp .. " / " .. displayMaxHp, barX, barY + 1, barWidth, "center")
     end
 end
 
@@ -699,7 +715,9 @@ function HUD.drawMetaUpgrade(game)
         { index = 4, name = "Bullet",          baseCost = 1000, scale = 500, max = 5, desc = "Rapid direct projectile shot." },
         { index = 5, name = "Laser",           baseCost = 1200, scale = 600, max = 5, desc = "Continuous heavy plasma beam." },
         { index = 6, name = "Magnetic Field",  baseCost = 1200, scale = 600, max = 5, desc = "Spawns circular electric field." },
-        { index = 7, name = "Meteor",          baseCost = 1500, scale = 700, max = 5, desc = "Calls screen-shake fireballs." }
+        { index = 7, name = "Meteor",          baseCost = 1500, scale = 700, max = 5, desc = "Calls screen-shake fireballs." },
+        { index = 8, name = "Cutter",          baseCost = 1200, scale = 600, max = 5, desc = "Rotates sharp energy blades." },
+        { index = 9, name = "Chain",           baseCost = 1200, scale = 600, max = 5, desc = "Locks enemies in place with chains." }
     }
     
     local passiveUpgrades = {
@@ -740,10 +758,11 @@ function HUD.drawMetaUpgrade(game)
         local cost = up.baseCost + lv * up.scale
         local isMax = lv >= up.max
         
-        local row = math.ceil(i / 2)
-        local col = (i - 1) % 2 + 1
+        local row = math.ceil(i / 3)
+        local col = (i - 1) % 3 + 1
         
-        local rx = (col == 1) and (centerX - colWidth - colSpacing / 2) or (centerX + colSpacing / 2)
+        local totalW = 3 * colWidth + 2 * colSpacing
+        local rx = (screenWidth - totalW) / 2 + (col - 1) * (colWidth + colSpacing)
         local ry = startY + (row - 1) * gapY
         
         -- Item Box Body
@@ -879,7 +898,9 @@ function HUD.resetMetaUpgrades(game)
         { index = 4, name = "Bullet",          baseCost = 1000, scale = 500, max = 5, desc = "Rapid direct projectile shot." },
         { index = 5, name = "Laser",           baseCost = 1200, scale = 600, max = 5, desc = "Continuous heavy plasma beam." },
         { index = 6, name = "Magnetic Field",  baseCost = 1200, scale = 600, max = 5, desc = "Spawns circular electric field." },
-        { index = 7, name = "Meteor",          baseCost = 1500, scale = 700, max = 5, desc = "Calls screen-shake fireballs." }
+        { index = 7, name = "Meteor",          baseCost = 1500, scale = 700, max = 5, desc = "Calls screen-shake fireballs." },
+        { index = 8, name = "Cutter",          baseCost = 1200, scale = 600, max = 5, desc = "Rotates sharp energy blades." },
+        { index = 9, name = "Chain",           baseCost = 1200, scale = 600, max = 5, desc = "Locks enemies in place with chains." }
     }
     
     local passiveUpgrades = {
