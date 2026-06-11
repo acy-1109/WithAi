@@ -43,13 +43,14 @@ local game = {
         { name = "Magnetic Field", description = "Periodically deploy a circular magnetic field that damages nearby enemies" },
         { name = "Meteor",       description = "Call down devastating meteors from the sky that shake the screen and leave fire patches" },
         { name = "Cutter",       description = "Energy cutter blades extending from your body that rotate and slice through enemies" },
-        { name = "Chain",        description = "Fires glowing chains that lock enemies in place and deal damage" }
+        { name = "Chain",        description = "Fires glowing chains that lock enemies in place and deal damage" },
+        { name = "Seeker Orb",   description = "Spawns a charging orb that fires at the closest enemy." }
     },
     selectedSkill = nil,
     skillBoxes = {},
     skillOptions = {}, -- 선택창에 표시할 3개 스킬 인덱스
     upgrades = {
-        { name = "Magnet",       description = "Attract experience orbs from nearby" },
+        { name = "Magnet",       description = "Pull experience orbs from nearby" },
         { name = "Health Boost", description = "Increase max health by 20" },
         { name = "Speed Boost",  description = "Increase movement speed by 5%" },
         { name = "Damage Boost", description = "Increase orb damage by 10%" },
@@ -68,7 +69,7 @@ local game = {
     -- 영구 강화 및 설정 데이터
     totalScore = 0,
     metaUpgrades = {
-        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },  -- 9 active skills starting level offsets
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },  -- 10 active skills starting level offsets
         upgrades = { 0, 0, 0, 0, 0, 0, 0 }     -- 7 passive traits starting level offsets
     },
     showStars = true, -- 설정: 성간 배경 먼지 그리기 여부
@@ -81,7 +82,7 @@ game.saveGame = function()
     local dataStr = string.format("totalScore:%d\nshowStars:%s\nmuted:%s\n",
         totalScoreVal, tostring(game.showStars), tostring(game.muted))
     
-    for i = 1, 9 do
+    for i = 1, 10 do
         dataStr = dataStr .. string.format("skill_%d:%d\n", i, game.metaUpgrades.skills[i] or 0)
     end
     for i = 1, 6 do
@@ -95,7 +96,7 @@ end
 game.loadGame = function()
     game.totalScore = 0
     game.metaUpgrades = {
-        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         upgrades = { 0, 0, 0, 0, 0, 0, 0 }
     }
     game.showStars = true
@@ -111,7 +112,7 @@ game.loadGame = function()
                 elseif k == "muted" then game.muted = (v == "true")
                 elseif k:match("^skill_%d+$") then
                     local idx = tonumber(k:match("skill_(%d+)"))
-                    if idx and idx >= 1 and idx <= 9 then
+                    if idx and idx >= 1 and idx <= 10 then
                         game.metaUpgrades.skills[idx] = val or 0
                     end
                 elseif k:match("^upgrade_%d+$") then
@@ -146,7 +147,7 @@ function love.load()
     if not love.filesystem.getInfo("reset_done.txt") then
         game.totalScore = 0
         game.metaUpgrades = {
-            skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             upgrades = { 0, 0, 0, 0, 0, 0, 0 }
         }
         game.saveGame()
@@ -187,6 +188,9 @@ local function startGame(skillIndex)
     game.pendingThornsAttackers = {} -- 피격 시 가시 발동 예약을 위한 리스트
     game.chains = {}   -- 체인 스킬 프로젝타일
     game.chainTimer = 0 -- 체인 발사 타이머
+    game.seekerOrbs = {}   -- 추적 구체 스킬 프로젝타일
+    game.seekerOrbTimer = 0 -- 추적 구체 타이머
+    game.seekerExplosions = {} -- 추적 구체 폭발 이펙트 리스트
     game.score = 0
     game.time = 0
 
@@ -268,9 +272,9 @@ end
 -- ============================================================================
 
 function love.update(dt)
-    -- 메인메뉴, 설정, 강화 화면에서는 일반 루프 미가동
+    -- 메인메뉴, 설정, 강화 화면, 일시정지에서는 일반 루프 미가동
     if game.state == "main_menu" or game.state == "settings" or game.state == "meta_upgrade" or
-       game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or not game.running then
+       game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or game.state == "paused" or not game.running then
         
         -- 플레이 중이 아니었다가 gameover 상태가 된 순간 스코어 누적 및 세이브 처리
         if game.state == "gameover" and game.score > 0 then
@@ -425,6 +429,11 @@ function love.draw()
 
     -- 화면 UI 그리기 (HUD: 점수, 레벨, 시간)
     HUD.drawUI(game)
+
+    -- 일시정지 팝업 그리기
+    if game.state == "paused" then
+        HUD.drawPause(game)
+    end
 end
 
 -- ============================================================================
@@ -433,7 +442,16 @@ end
 
 function love.keypressed(key)
     if key == "escape" then
-        love.event.quit()
+        if game.state == "playing" then
+            game.state = "paused"
+            game.running = false
+        elseif game.state == "paused" then
+            game.state = "playing"
+            game.running = true
+        elseif game.state == "settings" then
+            game.state = game.prevSettingsState or "main_menu"
+            game.prevSettingsState = nil
+        end
     end
 
     if game.state == "playing" and (key == "p" or key == "P") then
@@ -496,6 +514,31 @@ function love.mousepressed(x, y, button)
                 end
             end
             
+        elseif game.state == "paused" then
+            if game.pauseButtons then
+                for _, btn in ipairs(game.pauseButtons) do
+                    if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                        if btn.action == "resume" then
+                            game.state = "playing"
+                            game.running = true
+                        elseif btn.action == "settings" then
+                            game.prevSettingsState = "paused"
+                            game.state = "settings"
+                        elseif btn.action == "title" then
+                            -- 타이틀로 이동 시 스코어 누적 및 세이브 처리
+                            game.totalScore = (game.totalScore or 0) + (game.score or 0)
+                            game.score = 0
+                            game.saveGame()
+                            game.state = "main_menu"
+                            game.running = false
+                        elseif btn.action == "exit" then
+                            love.event.quit()
+                        end
+                        break
+                    end
+                end
+            end
+            
         elseif game.state == "settings" then
             -- 체크박스 영역 클릭 처리
             if game.settingsCheckboxes then
@@ -511,7 +554,8 @@ function love.mousepressed(x, y, button)
             -- 뒤로 가기 버튼 클릭 처리
             local back = game.settingsBackBtn
             if back and x >= back.x and x <= back.x + back.w and y >= back.y and y <= back.y + back.h then
-                game.state = "main_menu"
+                game.state = game.prevSettingsState or "main_menu"
+                game.prevSettingsState = nil
             end
             
         elseif game.state == "meta_upgrade" then

@@ -69,6 +69,14 @@ local chainLevels = {
     { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 2.5, damage = 45 }
 }
 
+local seekerOrbLevels = {
+    { cooldown = 4.0, count = 1, damage = 20, chargeTime = 1.2, speed = 400, explode = false },
+    { cooldown = 4.0, count = 2, damage = 20, chargeTime = 1.2, speed = 400, explode = false },
+    { cooldown = 2.5, count = 2, damage = 35, chargeTime = 1.2, speed = 450, explode = false },
+    { cooldown = 2.5, count = 3, damage = 35, chargeTime = 1.2, speed = 450, explode = false },
+    { cooldown = 2.5, count = 3, damage = 50, chargeTime = 1.2, speed = 500, explode = true },
+}
+
 local function isEnemyAlive(game, enemy)
     if not game.enemies then return false end
     for _, e in ipairs(game.enemies) do
@@ -1073,6 +1081,191 @@ function Skills.update(game, dt)
             end
         end
     end
+
+    -- 12. 추적 구체 (Seeker Orb) 스킬 업데이트
+    if (player.skillLevels[10] or 0) > 0 then
+        game.seekerOrbTimer = (game.seekerOrbTimer or 0) + dt
+        
+        local level = player.skillLevels[10] or 0
+        local spec = seekerOrbLevels[math.min(level, #seekerOrbLevels)]
+        local cooldown = spec.cooldown
+        local count = spec.count
+        local damage = spec.damage
+        local chargeTime = spec.chargeTime
+        local speed = spec.speed
+        local explode = spec.explode
+        
+        if game.seekerOrbTimer >= cooldown then
+            game.seekerOrbTimer = 0
+            
+            -- Spawn 'count' orbs around the player
+            for c = 1, count do
+                local angle = (c - 1) * (2 * math.pi / count) + math.random() * 0.2
+                local dist = 50
+                table.insert(game.seekerOrbs, {
+                    state = "charging",
+                    relativeAngle = angle,
+                    distance = dist,
+                    x = player.x + player.width / 2 + math.cos(angle) * dist,
+                    y = player.y + player.height / 2 + math.sin(angle) * dist,
+                    timer = 0,
+                    chargeTime = chargeTime,
+                    speed = speed,
+                    damage = damage,
+                    explode = explode,
+                    size = 14,
+                    targetEnemy = nil,
+                    dirX = 0,
+                    dirY = 0,
+                    trail = {}
+                })
+            end
+        end
+    end
+
+    game.seekerOrbs = game.seekerOrbs or {}
+    local px_seeker = player.x + player.width / 2
+    local py_seeker = player.y + player.height / 2
+    
+    for i = #game.seekerOrbs, 1, -1 do
+        local orb = game.seekerOrbs[i]
+        
+        if orb.state == "charging" then
+            orb.timer = orb.timer + dt
+            -- Rotate slowly around player
+            orb.relativeAngle = orb.relativeAngle + 2.0 * dt
+            orb.x = px_seeker + math.cos(orb.relativeAngle) * orb.distance
+            orb.y = py_seeker + math.sin(orb.relativeAngle) * orb.distance
+            
+            -- Record trail
+            table.insert(orb.trail, 1, { x = orb.x, y = orb.y })
+            if #orb.trail > 6 then table.remove(orb.trail) end
+            
+            -- If charging finishes, transition to launched state
+            if orb.timer >= orb.chargeTime then
+                local target = Skills.findClosestEnemy(game)
+                if target then
+                    orb.state = "launched"
+                    orb.targetEnemy = target
+                    -- Calculate launch direction
+                    local tx = target.x + target.width / 2
+                    local ty = target.y + target.height / 2
+                    local dx = tx - orb.x
+                    local dy = ty - orb.y
+                    local dist = math.sqrt(dx * dx + dy * dy)
+                    if dist > 0 then
+                        orb.dirX = dx / dist
+                        orb.dirY = dy / dist
+                    else
+                        orb.dirX = 1
+                        orb.dirY = 0
+                    end
+                else
+                    -- No enemies? Discard
+                    table.remove(game.seekerOrbs, i)
+                end
+            end
+            
+        elseif orb.state == "launched" then
+            -- Fly towards target with homing tracking
+            if isEnemyAlive(game, orb.targetEnemy) then
+                local tx = orb.targetEnemy.x + orb.targetEnemy.width / 2
+                local ty = orb.targetEnemy.y + orb.targetEnemy.height / 2
+                local dx = tx - orb.x
+                local dy = ty - orb.y
+                local dist = math.sqrt(dx * dx + dy * dy)
+                if dist > 0 then
+                    local targetDirX = dx / dist
+                    local targetDirY = dy / dist
+                    orb.dirX = orb.dirX + (targetDirX - orb.dirX) * 5.0 * dt
+                    orb.dirY = orb.dirY + (targetDirY - orb.dirY) * 5.0 * dt
+                    local dlen = math.sqrt(orb.dirX * orb.dirX + orb.dirY * orb.dirY)
+                    if dlen > 0 then
+                        orb.dirX = orb.dirX / dlen
+                        orb.dirY = orb.dirY / dlen
+                    end
+                end
+            end
+            
+            orb.x = orb.x + orb.dirX * orb.speed * dt
+            orb.y = orb.y + orb.dirY * orb.speed * dt
+            
+            -- Record trail
+            table.insert(orb.trail, 1, { x = orb.x, y = orb.y })
+            if #orb.trail > 10 then table.remove(orb.trail) end
+            
+            -- Check boundary collision
+            if orb.x < -100 or orb.x > game.world.width + 100 or orb.y < -100 or orb.y > game.world.height + 100 then
+                table.remove(game.seekerOrbs, i)
+            else
+                -- Check collision with enemies
+                local hit = false
+                for j = #game.enemies, 1, -1 do
+                    local enemy = game.enemies[j]
+                    local ecx = enemy.x + enemy.width / 2
+                    local ecy = enemy.y + enemy.height / 2
+                    local dx = ecx - orb.x
+                    local dy = ecy - orb.y
+                    local dist = math.sqrt(dx * dx + dy * dy)
+                    
+                    if dist <= (orb.size / 2 + enemy.width / 2) then
+                        hit = true
+                        
+                        if orb.explode then
+                            -- AoE Damage
+                            local explRadius = 80
+                            local explDamage = orb.damage
+                            
+                            for k = #game.enemies, 1, -1 do
+                                local targetEnemy = game.enemies[k]
+                                local tcx = targetEnemy.x + targetEnemy.width / 2
+                                local tcy = targetEnemy.y + targetEnemy.height / 2
+                                local tdx = tcx - orb.x
+                                local tdy = tcy - orb.y
+                                local tdist = math.sqrt(tdx * tdx + tdy * tdy)
+                                if tdist <= (explRadius + targetEnemy.width / 2) then
+                                    local EnemyModule = require("enemy.spawner")
+                                    EnemyModule.damage(game, k, explDamage)
+                                end
+                            end
+                            
+                            if game.triggerShake then
+                                game.triggerShake(0.15, 4)
+                            end
+                            
+                            game.seekerExplosions = game.seekerExplosions or {}
+                            table.insert(game.seekerExplosions, {
+                                x = orb.x,
+                                y = orb.y,
+                                radius = explRadius,
+                                timer = 0,
+                                duration = 0.3
+                            })
+                        else
+                            -- Single Target Damage
+                            local EnemyModule = require("enemy.spawner")
+                            EnemyModule.damage(game, j, orb.damage)
+                        end
+                        break
+                    end
+                end
+                
+                if hit then
+                    table.remove(game.seekerOrbs, i)
+                end
+            end
+        end
+    end
+
+    -- Seeker Explosions Update
+    game.seekerExplosions = game.seekerExplosions or {}
+    for i = #game.seekerExplosions, 1, -1 do
+        local expl = game.seekerExplosions[i]
+        expl.timer = expl.timer + dt
+        if expl.timer >= expl.duration then
+            table.remove(game.seekerExplosions, i)
+        end
+    end
 end
 
 -- 스킬 투사체 렌더링
@@ -1608,6 +1801,71 @@ function Skills.draw(game)
                 end
             end
         end
+    end
+
+    -- 12. 추적 구체 (Seeker Orb) 그리기
+    game.seekerOrbs = game.seekerOrbs or {}
+    for _, orb in ipairs(game.seekerOrbs) do
+        local r = orb.size / 2
+        
+        -- Draw trail (Magenta/pink glowing trail)
+        if orb.trail then
+            local trailCount = #orb.trail
+            for t = 1, trailCount do
+                local p = orb.trail[t]
+                local alpha = (1 - t / (trailCount + 1)) * 0.3
+                local trailR = r * (1 - t / (trailCount + 2))
+                
+                love.graphics.setColor(0.9, 0.1, 0.6, alpha)
+                love.graphics.circle("fill", p.x, p.y, trailR)
+            end
+        end
+        
+        -- Orb Core & Aura
+        local pulse = 1.0 + math.sin(game.time * 12) * 0.1
+        if orb.state == "charging" then
+            -- Pulsing charge aura
+            love.graphics.setColor(0.7, 0.1, 0.9, 0.15)
+            love.graphics.circle("fill", orb.x, orb.y, r * 2.0 * pulse)
+            love.graphics.setColor(0.9, 0.1, 0.7, 0.4)
+            love.graphics.circle("fill", orb.x, orb.y, r * 1.3 * pulse)
+            
+            -- Floating ring
+            love.graphics.setLineWidth(1)
+            love.graphics.setColor(1.0, 0.3, 0.8, 0.3)
+            love.graphics.circle("line", orb.x, orb.y, r * 1.8)
+        else
+            -- Launched aura
+            love.graphics.setColor(0.9, 0.1, 0.7, 0.25)
+            love.graphics.circle("fill", orb.x, orb.y, r * 1.6)
+            love.graphics.setColor(1.0, 0.2, 0.8, 0.5)
+            love.graphics.circle("fill", orb.x, orb.y, r * 1.1)
+        end
+        
+        -- White hot core
+        love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+        love.graphics.circle("fill", orb.x, orb.y, r * 0.5)
+    end
+    
+    -- Draw explosions
+    game.seekerExplosions = game.seekerExplosions or {}
+    for _, expl in ipairs(game.seekerExplosions) do
+        local progress = expl.timer / expl.duration
+        local alpha = 1.0 - progress
+        local currentR = expl.radius * (0.3 + 0.7 * progress)
+        
+        -- Main explosion ring
+        love.graphics.setColor(0.9, 0.1, 0.7, alpha * 0.4)
+        love.graphics.circle("fill", expl.x, expl.y, currentR)
+        
+        -- Inner bright core
+        love.graphics.setColor(1.0, 0.6, 0.9, alpha * 0.6)
+        love.graphics.circle("fill", expl.x, expl.y, currentR * 0.6)
+        
+        -- Outer line border
+        love.graphics.setLineWidth(2)
+        love.graphics.setColor(1.0, 0.2, 0.8, alpha)
+        love.graphics.circle("line", expl.x, expl.y, currentR)
     end
 end
 

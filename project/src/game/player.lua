@@ -88,7 +88,7 @@ function Player.update(game, dt)
     end
 
     -- 플레이어 이동 처리
-    local speed = player.speed * dt
+    local speed = player.speed * (player.speedMultiplier or 1.0) * dt
     local dx = 0
     local dy = 0
 
