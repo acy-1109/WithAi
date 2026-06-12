@@ -328,7 +328,7 @@ function HUD.drawGameOver(game)
     love.graphics.printf("Press R to Restart", 0, screenHeight / 2 + 50, screenWidth, "center")
 end
 
--- 스테이지 클리어 화면 렌더링
+-- 스테이지 클리어 또는 게임 승리 화면 렌더링
 function HUD.drawStageClear(game)
     -- 반투명 어두운 배경으로 덮기 (인게임 상태가 살짝 비치도록 함)
     love.graphics.setColor(0.04, 0.04, 0.06, 0.85)
@@ -337,42 +337,115 @@ function HUD.drawStageClear(game)
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 
-    -- STAGE CLEARED 제목 (그린 네온 느낌)
-    love.graphics.setColor(0.2, 0.9, 0.4)
-    love.graphics.setFont(getFont(48))
-    love.graphics.printf("STAGE " .. (game.stage or 1) .. " CLEARED!", 0, screenHeight / 3 - 50, screenWidth, "center")
+    if game.stage == 9 then
+        -- VICTORY: SYSTEM RESTORED!
+        local goldPulse = 0.8 + 0.2 * math.sin(love.timer.getTime() * 4)
+        love.graphics.setColor(1.0, 0.8, 0.2, goldPulse)
+        love.graphics.setFont(getFont(44))
+        love.graphics.printf("VICTORY: SYSTEM RESTORED!", 0, screenHeight / 3 - 60, screenWidth, "center")
+
+        love.graphics.setColor(0.9, 0.9, 1.0)
+        love.graphics.setFont(getFont(20))
+        love.graphics.printf("You have defeated the Nebula Seraph and saved the system core!", 0, screenHeight / 3 + 10, screenWidth, "center")
+    else
+        -- STAGE CLEARED 제목 (그린 네온 느낌)
+        love.graphics.setColor(0.2, 0.9, 0.4)
+        love.graphics.setFont(getFont(48))
+        love.graphics.printf("STAGE " .. (game.stage or 1) .. " CLEARED!", 0, screenHeight / 3 - 50, screenWidth, "center")
+    end
 
     -- 스코어 표시
     love.graphics.setColor(1, 1, 1)
     love.graphics.setFont(getFont(24))
-    love.graphics.printf("Score: " .. game.score, 0, screenHeight / 3 + 30, screenWidth, "center")
+    love.graphics.printf("Score: " .. game.score, 0, screenHeight / 3 + 60, screenWidth, "center")
 
-    -- Next Stage 버튼 그리기 (네온 스타일 및 마우스 호버 효과)
-    local btnWidth = 240
-    local btnHeight = 60
-    local btnX = (screenWidth - btnWidth) / 2
-    local btnY = screenHeight / 2 + 50
-
+    -- Next Stage / Back to Main Menu 버튼 그리기 (네온 스타일 및 마우스 호버 효과)
     local mouseX, mouseY = love.mouse.getPosition()
-    local isHovered = mouseX >= btnX and mouseX <= btnX + btnWidth and
-                      mouseY >= btnY and mouseY <= btnY + btnHeight
 
-    if isHovered then
-        love.graphics.setColor(0.3, 0.8, 0.5, 0.95) -- 밝은 녹색 호버
+    if game.stage == 9 and not game.endlessMode then
+        local centerX = screenWidth / 2
+        local btn1Width = 260
+        local btn1Height = 60
+        local btn1X = centerX - 275
+        local btnY = screenHeight / 2 + 50
+
+        local btn2Width = 260
+        local btn2Height = 60
+        local btn2X = centerX + 15
+
+        local isHovered1 = mouseX >= btn1X and mouseX <= btn1X + btn1Width and
+                           mouseY >= btnY and mouseY <= btnY + btn1Height
+        local isHovered2 = mouseX >= btn2X and mouseX <= btn2X + btn2Width and
+                           mouseY >= btnY and mouseY <= btnY + btn2Height
+
+        -- Button 1: Start Endless Mode
+        if isHovered1 then
+            love.graphics.setColor(0.12, 0.55, 0.3, 0.95) -- 녹색 호버
+        else
+            love.graphics.setColor(0.08, 0.4, 0.2, 0.85) -- 녹색 기본
+        end
+        love.graphics.rectangle("fill", btn1X, btnY, btn1Width, btn1Height, 8, 8)
+        love.graphics.setColor(0.4, 1.0, 0.6, 0.9)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", btn1X, btnY, btn1Width, btn1Height, 8, 8)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.setFont(getFont(20))
+        love.graphics.printf("Start Endless Mode", btn1X, btnY + 18, btn1Width, "center")
+
+        -- Button 2: Back to Main Menu
+        if isHovered2 then
+            love.graphics.setColor(0.12, 0.3, 0.55, 0.95) -- 파란색 호버
+        else
+            love.graphics.setColor(0.08, 0.2, 0.4, 0.85) -- 파란색 기본
+        end
+        love.graphics.rectangle("fill", btn2X, btnY, btn2Width, btn2Height, 8, 8)
+        love.graphics.setColor(0.4, 0.75, 1.0, 0.9)
+        love.graphics.rectangle("line", btn2X, btnY, btn2Width, btn2Height, 8, 8)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.setFont(getFont(20))
+        love.graphics.printf("Back to Main Menu", btn2X, btnY + 18, btn2Width, "center")
     else
-        love.graphics.setColor(0.2, 0.6, 0.3, 0.85) -- 녹색 기본
+        local btnWidth = 280
+        local btnHeight = 60
+        local btnX = (screenWidth - btnWidth) / 2
+        local btnY = screenHeight / 2 + 50
+
+        local isHovered = mouseX >= btnX and mouseX <= btnX + btnWidth and
+                          mouseY >= btnY and mouseY <= btnY + btnHeight
+
+        if game.stage == 9 then
+            if isHovered then
+                love.graphics.setColor(0.12, 0.3, 0.55, 0.95) -- 파란색 호버
+            else
+                love.graphics.setColor(0.08, 0.2, 0.4, 0.85) -- 파란색 기본
+            end
+        else
+            if isHovered then
+                love.graphics.setColor(0.3, 0.8, 0.5, 0.95) -- 밝은 녹색 호버
+            else
+                love.graphics.setColor(0.2, 0.6, 0.3, 0.85) -- 녹색 기본
+            end
+        end
+        love.graphics.rectangle("fill", btnX, btnY, btnWidth, btnHeight, 8, 8)
+
+        if game.stage == 9 then
+            love.graphics.setColor(0.4, 0.75, 1.0, 0.9)
+        else
+            love.graphics.setColor(0.6, 1.0, 0.7, 0.9)
+        end
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", btnX, btnY, btnWidth, btnHeight, 8, 8)
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.setFont(getFont(22))
+        if game.stage == 9 then
+            love.graphics.printf("Back to Main Menu", btnX, btnY + 16, btnWidth, "center")
+        else
+            love.graphics.printf("Next Stage", btnX, btnY + 16, btnWidth, "center")
+        end
     end
-    love.graphics.rectangle("fill", btnX, btnY, btnWidth, btnHeight, 8, 8)
-
-    -- 버튼 테두리 (빛나는 연녹색 테두리)
-    love.graphics.setColor(0.6, 1.0, 0.7, 0.9)
-    love.graphics.setLineWidth(2)
-    love.graphics.rectangle("line", btnX, btnY, btnWidth, btnHeight, 8, 8)
-
-    -- 버튼 텍스트
-    love.graphics.setColor(1, 1, 1)
-    love.graphics.setFont(getFont(22))
-    love.graphics.printf("Next Stage", btnX, btnY + 16, btnWidth, "center")
 end
 
 -- 인게임 좌상단 기본 HUD 스탯 표시
@@ -432,52 +505,54 @@ function HUD.drawUI(game)
     end
 
     -- 보스 HP바 그리기 (보스가 존재하는 경우)
-    local boss = nil
+    local bosses = {}
     if game.enemies then
         for _, enemy in ipairs(game.enemies) do
             if enemy.type == "boss" then
-                boss = enemy
-                break
+                table.insert(bosses, enemy)
             end
         end
     end
 
-    if boss then
+    if #bosses > 0 then
         local screenWidth = love.graphics.getWidth()
         local barWidth = 450
         local barHeight = 16
         local barX = (screenWidth - barWidth) / 2
-        local barY = 40
         
-        -- 보스 이름 출력
-        love.graphics.setFont(getFont(18))
-        love.graphics.setColor(0.9, 0.2, 0.9) -- 보라색 네온 컬러 느낌
-        love.graphics.printf(boss.name or "BOSS", 0, barY - 24, screenWidth, "center")
-        
-        -- HP바 배경
-        love.graphics.setColor(0.1, 0.1, 0.1, 0.8)
-        love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 4, 4)
-        
-        -- HP바 내용물
-        local hpRatio = math.max(0, boss.health / boss.maxHealth)
-        love.graphics.setColor(0.8, 0.15, 0.15, 0.9)
-        love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight, 4, 4)
-        
-        -- HP바 광택 효과
-        love.graphics.setColor(1.0, 1.0, 1.0, 0.15)
-        love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight / 2, 4, 4)
-        
-        -- HP바 테두리 (네온 파란색/보라색 글로우 테두리)
-        love.graphics.setLineWidth(2)
-        love.graphics.setColor(0.5, 0.2, 0.9, 0.8)
-        love.graphics.rectangle("line", barX, barY, barWidth, barHeight, 4, 4)
-        
-        -- HP 수치 텍스트
-        love.graphics.setFont(getFont(12))
-        love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
-        local displayHp = math.max(0, math.ceil(boss.health))
-        local displayMaxHp = math.max(1, math.ceil(boss.maxHealth))
-        love.graphics.printf(displayHp .. " / " .. displayMaxHp, barX, barY + 1, barWidth, "center")
+        for idx, boss in ipairs(bosses) do
+            local barY = 40 + (idx - 1) * 50
+            
+            -- 보스 이름 출력
+            love.graphics.setFont(getFont(18))
+            love.graphics.setColor(0.9, 0.2, 0.9) -- 보라색 네온 컬러 느낌
+            love.graphics.printf(boss.name or "BOSS", 0, barY - 24, screenWidth, "center")
+            
+            -- HP바 배경
+            love.graphics.setColor(0.1, 0.1, 0.1, 0.8)
+            love.graphics.rectangle("fill", barX, barY, barWidth, barHeight, 4, 4)
+            
+            -- HP바 내용물
+            local hpRatio = math.max(0, boss.health / boss.maxHealth)
+            love.graphics.setColor(0.8, 0.15, 0.15, 0.9)
+            love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight, 4, 4)
+            
+            -- HP바 광택 효과
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.15)
+            love.graphics.rectangle("fill", barX, barY, barWidth * hpRatio, barHeight / 2, 4, 4)
+            
+            -- HP바 테두리 (네온 파란색/보라색 글로우 테두리)
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(0.5, 0.2, 0.9, 0.8)
+            love.graphics.rectangle("line", barX, barY, barWidth, barHeight, 4, 4)
+            
+            -- HP 수치 텍스트
+            love.graphics.setFont(getFont(12))
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+            local displayHp = math.max(0, math.ceil(boss.health))
+            local displayMaxHp = math.max(1, math.ceil(boss.maxHealth))
+            love.graphics.printf(displayHp .. " / " .. displayMaxHp, barX, barY + 1, barWidth, "center")
+        end
     end
 end
 
@@ -729,12 +804,13 @@ function HUD.drawMetaUpgrade(game)
     }
     
     local passiveUpgrades = {
-        { index = 1, name = "Gravity Core",    baseCost = 800,  scale = 400, max = 5, desc = "Pull experience from far." },
-        { index = 2, name = "Fortified Hull",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting HP +20." },
-        { index = 3, name = "Thruster Output",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent speed boost +5%." },
-        { index = 4, name = "Reactor Overload",baseCost = 1200, scale = 600, max = 5, desc = "Permanent weapon damage +10%." },
-        { index = 5, name = "Health Regen",    baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting regen +5%." },
-        { index = 6, name = "EXP Collector",   baseCost = 1200, scale = 600, max = 5, desc = "Permanent EXP collection +25%." }
+        { index = 1, name = "Gravity Core",    baseCost = 800,  scale = 400, max = 3, desc = "Pull experience from far." },
+        { index = 2, name = "Fortified Hull",  baseCost = 1000, scale = 500, max = 999, desc = "Permanent starting HP +20." },
+        { index = 3, name = "Thruster Output",  baseCost = 1000, scale = 500, max = 3, desc = "Permanent speed boost +5%." },
+        { index = 4, name = "Reactor Overload",baseCost = 1200, scale = 600, max = 999, desc = "Permanent weapon damage +10%." },
+        { index = 5, name = "Health Regen",    baseCost = 1000, scale = 500, max = 3, desc = "Permanent starting regen +5%." },
+        { index = 6, name = "EXP Collector",   baseCost = 1200, scale = 600, max = 3, desc = "Permanent EXP collection +25%." },
+        { index = 8, name = "Energy Shield",   baseCost = 1500, scale = 700, max = 3, desc = "Block 1 hit unconditionally every 12/9/6s." }
     }
     
     local itemsToShow = {}
@@ -783,15 +859,19 @@ function HUD.drawMetaUpgrade(game)
         love.graphics.setColor(0.2, 0.35, 0.5, 0.6)
         love.graphics.rectangle("line", rx, ry, colWidth, itemH, 6, 6)
         
-        -- Title (Name) 및 Level Info (Lv. X/Y) 1행 통합 배치
+        -- Title (Name)
         love.graphics.setFont(getFont(15))
         love.graphics.setColor(0.9, 0.95, 1.0)
         love.graphics.print(up.name, rx + 12, ry + 8)
         
-        local nameW = getFont(15):getWidth(up.name)
+        -- Level Info (Lv. X/Y) - 우측 상단으로 이동배치하여 BUY 버튼 및 긴 텍스트와 겹침 방지
         love.graphics.setFont(getFont(11))
         love.graphics.setColor(0.3, 0.8, 1.0)
-        love.graphics.print("Lv. " .. lv .. "/" .. up.max, rx + 12 + nameW + 8, ry + 12)
+        if up.max >= 999 then
+            love.graphics.printf("Lv. " .. lv, rx, ry + 12, colWidth - 100, "right")
+        else
+            love.graphics.printf("Lv. " .. lv .. "/" .. up.max, rx, ry + 12, colWidth - 100, "right")
+        end
         
         -- BUY Button dimensions & coordinates
         local btnW = 80
@@ -916,12 +996,13 @@ function HUD.resetMetaUpgrades(game)
     }
     
     local passiveUpgrades = {
-        { index = 1, name = "Gravity Core",    baseCost = 800,  scale = 400, max = 5, desc = "Attract experience from far." },
-        { index = 2, name = "Fortified Hull",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting HP +20." },
-        { index = 3, name = "Thruster Output",  baseCost = 1000, scale = 500, max = 5, desc = "Permanent speed boost +5%." },
-        { index = 4, name = "Reactor Overload",baseCost = 1200, scale = 600, max = 5, desc = "Permanent weapon damage +10%." },
-        { index = 5, name = "Health Regen",    baseCost = 1000, scale = 500, max = 5, desc = "Permanent starting regen +5%." },
-        { index = 6, name = "EXP Collector",   baseCost = 1200, scale = 600, max = 5, desc = "Permanent EXP collection +25%." }
+        { index = 1, name = "Gravity Core",    baseCost = 800,  scale = 400, max = 3, desc = "Attract experience from far." },
+        { index = 2, name = "Fortified Hull",  baseCost = 1000, scale = 500, max = 999, desc = "Permanent starting HP +20." },
+        { index = 3, name = "Thruster Output",  baseCost = 1000, scale = 500, max = 3, desc = "Permanent speed boost +5%." },
+        { index = 4, name = "Reactor Overload",baseCost = 1200, scale = 600, max = 999, desc = "Permanent weapon damage +10%." },
+        { index = 5, name = "Health Regen",    baseCost = 1000, scale = 500, max = 3, desc = "Permanent starting regen +5%." },
+        { index = 6, name = "EXP Collector",   baseCost = 1200, scale = 600, max = 3, desc = "Permanent EXP collection +25%." },
+        { index = 8, name = "Energy Shield",   baseCost = 1500, scale = 700, max = 3, desc = "Block 1 hit unconditionally every 12/9/6s." }
     }
 
     local refundPoints = 0

@@ -77,10 +77,14 @@ function Exp.checkLevelUp(game)
             availableSkills[i], availableSkills[j] = availableSkills[j], availableSkills[i]
         end
 
-        -- 2) 사용 가능한 특성 목록 추출 (최대 3레벨 미만)
+        -- 2) 사용 가능한 특성 목록 추출 (체력/공격력 상한 해제, 타 특성 3레벨 미만)
         local availableUpgrades = {}
         for i = 1, #game.upgrades do
-            if (player.upgradeLevels[i] or 0) < 3 then
+            local maxLvl = 3
+            if i == 2 or i == 4 then
+                maxLvl = 999
+            end
+            if (player.upgradeLevels[i] or 0) < maxLvl then
                 table.insert(availableUpgrades, i)
             end
         end

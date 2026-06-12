@@ -8,21 +8,21 @@ local Player = {}
 function Player.init(skillIndex, metaUpgrades)
     -- 메타 스킬/특성 강화 데이터 불러오기 (없으면 0레벨 디폴트)
     metaUpgrades = metaUpgrades or {
-        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        upgrades = { 0, 0, 0, 0, 0, 0, 0 }
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0 }
     }
     
     local skillLevels = {}
-    for i = 1, 9 do
+    for i = 1, 10 do
         skillLevels[i] = metaUpgrades.skills[i] or 0
     end
     -- 시작 스킬로 선택한 항목은 레벨 1 추가
-    if skillIndex and skillIndex >= 1 and skillIndex <= 9 then
+    if skillIndex and skillIndex >= 1 and skillIndex <= 10 then
         skillLevels[skillIndex] = skillLevels[skillIndex] + 1
     end
 
     local upgradeLevels = {}
-    for i = 1, 7 do
+    for i = 1, 8 do
         upgradeLevels[i] = metaUpgrades.upgrades[i] or 0
     end
 
@@ -40,7 +40,7 @@ function Player.init(skillIndex, metaUpgrades)
     -- 6번 EXP Boost
     local expModifier = 1.0 + upgradeLevels[6] * 0.25
 
-    return {
+    local stats = {
         x = 400,
         y = 300,
         width = 32,
@@ -50,6 +50,7 @@ function Player.init(skillIndex, metaUpgrades)
         maxHealth = maxHp,
         invincibleTime = 0,
         maxInvincibleTime = 0.6,
+        controlsInvertedTimer = 0,       -- 키보드 반전 디버프 타이머
         level = 1,
         experience = 0,
         maxExperience = 50,
@@ -59,11 +60,47 @@ function Player.init(skillIndex, metaUpgrades)
         upgradeLevels = upgradeLevels,     -- 영구 특성 레벨 반영
         damage = damage,
         regenRate = regenRate,             -- 영구 체력 재생률 반영
-        regenTimer = 0,                    -- 체력 재생 타이머
-        regenDelay = 3.0,                  -- 체력 재생 시작까지의 대기 시간
+        alwaysRegenTimer = 0,              -- 1초 주기 항상 체력 재생 타이머
         selectedSkill = skillIndex,        -- 선택한 스킬 인덱스
-        skillLevels = skillLevels          -- 영구 스킬 레벨 반영
+        skillLevels = skillLevels,          -- 영구 스킬 레벨 반영
+        
+        -- 에너지 실드 특성 상태 데이터
+        shieldActive = (upgradeLevels[8] > 0),
+        shieldTimer = 0,
+        shieldBreakVisualTimer = 0,
+        shieldRestoreVisualTimer = 0
     }
+
+    local proxy = {}
+    setmetatable(proxy, {
+        __index = function(t, k)
+            return stats[k]
+        end,
+        __newindex = function(t, k, v)
+            if k == "health" then
+                local current = stats.health
+                if v < current then
+                    -- 피해를 입었을 때 실드가 켜져있으면 무조건 무효화 처리
+                    if stats.shieldActive then
+                        stats.shieldActive = false
+                        stats.shieldTimer = 0 -- 실드가 깨졌을 때를 기점으로 쿨타임 시작
+                        stats.shieldBreakVisualTimer = 0.5 -- 0.5초 동안 파괴 팽창 이펙트
+                        stats.invincibleTime = stats.maxInvincibleTime -- 피격 판정 후 짧은 무적 시간 부여
+                        return
+                    end
+                end
+            end
+            stats[k] = v
+        end,
+        __pairs = function(t)
+            return pairs(stats)
+        end,
+        __ipairs = function(t)
+            return ipairs(stats)
+        end
+    })
+
+    return proxy
 end
 
 -- 플레이어 위치 및 타이머 상태 업데이트
@@ -76,13 +113,34 @@ function Player.update(game, dt)
         player.invincibleTime = player.invincibleTime - dt
     end
 
-    -- 체력 재생 로직
-    if player.regenRate > 0 then
-        player.regenTimer = player.regenTimer + dt
+    -- 에너지 실드 타이머 및 쿨타임 업데이트
+    if player.shieldBreakVisualTimer and player.shieldBreakVisualTimer > 0 then
+        player.shieldBreakVisualTimer = player.shieldBreakVisualTimer - dt
+    end
+    if player.shieldRestoreVisualTimer and player.shieldRestoreVisualTimer > 0 then
+        player.shieldRestoreVisualTimer = player.shieldRestoreVisualTimer - dt
+    end
 
-        if player.regenTimer >= player.regenDelay then
-            -- 체력 재생
-            local regenAmount = player.maxHealth * (player.regenRate / 100) * dt
+    if player.upgradeLevels and player.upgradeLevels[8] and player.upgradeLevels[8] > 0 then
+        if not player.shieldActive then
+            local level = player.upgradeLevels[8] or 1
+            local maxCooldown = 15 - 3 * level -- Level 1 = 12초, Level 2 = 9초, Level 3 = 6초
+            player.shieldTimer = (player.shieldTimer or 0) + dt
+            if player.shieldTimer >= maxCooldown then
+                player.shieldActive = true
+                player.shieldTimer = 0
+                player.shieldRestoreVisualTimer = 0.4
+            end
+        end
+    end
+
+    -- 체력 재생 로직 (전투 여부와 무관하게 1초마다 회복)
+    if player.regenRate > 0 then
+        player.alwaysRegenTimer = (player.alwaysRegenTimer or 0) + dt
+        if player.alwaysRegenTimer >= 1.0 then
+            player.alwaysRegenTimer = player.alwaysRegenTimer - 1.0
+            -- regenRate % 만큼 체력 회복 (예: 1레벨 5% 회복)
+            local regenAmount = player.maxHealth * (player.regenRate / 100)
             player.health = math.min(player.health + regenAmount, player.maxHealth)
         end
     end
@@ -103,6 +161,13 @@ function Player.update(game, dt)
     end
     if love.keyboard.isDown("d") or love.keyboard.isDown("right") then
         dx = dx + 1
+    end
+
+    -- 키보드 제어 반전 디버프 타이머 및 키 입력 벡터 반전 처리
+    if player.controlsInvertedTimer and player.controlsInvertedTimer > 0 then
+        player.controlsInvertedTimer = player.controlsInvertedTimer - dt
+        dx = -dx
+        dy = -dy
     end
 
     -- 대각선 이동 시 속도 정규화
@@ -173,6 +238,33 @@ function Player.draw(game)
     love.graphics.setLineWidth(1.5)
     love.graphics.setColor(0.3, 0.8, 1.0, 0.45 + math.sin(game.time * 12) * 0.05)
     love.graphics.circle("line", cx, cy, r * 1.6 * shieldPulse)
+
+    -- 에너지 실드 패시브 특성 (블로킹 실드 비주얼) 그리기
+    if player.shieldActive then
+        local blockPulse = 1 + math.sin(game.time * 8) * 0.04
+        -- 복합 색상 네온 아웃라인 (황금빛/오렌지빛 일렁임)
+        love.graphics.setLineWidth(2.0)
+        love.graphics.setColor(1.0, 0.75, 0.0, 0.85 + math.sin(game.time * 15) * 0.1) -- Gold
+        love.graphics.circle("line", cx, cy, r * 2.0 * blockPulse)
+        
+        -- 실드 복구 시 순간적인 백색 광원 플래시
+        if player.shieldRestoreVisualTimer and player.shieldRestoreVisualTimer > 0 then
+            local flashAlpha = (player.shieldRestoreVisualTimer / 0.4) * 0.6
+            love.graphics.setColor(1.0, 0.92, 0.6, flashAlpha)
+            love.graphics.circle("fill", cx, cy, r * 2.0 * blockPulse)
+        else
+            love.graphics.setColor(1.0, 0.75, 0.0, 0.13 + math.sin(game.time * 8) * 0.03) -- 투명한 황금빛 채우기
+            love.graphics.circle("fill", cx, cy, r * 2.0 * blockPulse)
+        end
+    elseif player.shieldBreakVisualTimer and player.shieldBreakVisualTimer > 0 then
+        -- 실드 파괴 시 폭발적으로 팽창하며 사라지는 주황색 링
+        local progress = 1.0 - (player.shieldBreakVisualTimer / 0.5)
+        local breakPulse = 1.0 + progress * 0.7
+        local alpha = (1.0 - progress) * 0.7
+        love.graphics.setLineWidth(3.0 * (1.0 - progress))
+        love.graphics.setColor(1.0, 0.4, 0.0, alpha)
+        love.graphics.circle("line", cx, cy, r * 2.0 * breakPulse)
+    end
 
     -- 무적(피격) 시 빨간 전자기 스파크/번쩍임 효과
     local blink = false

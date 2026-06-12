@@ -4,27 +4,27 @@
 
 -- 스킬별 레벨 스펙 데이터 테이블
 local thunderLevels = {
-    { cooldown = 3.0, damage = 20, count = 1 },
-    { cooldown = 2.2, damage = 30, count = 1 },
-    { cooldown = 2.2, damage = 30, count = 2 },
-    { cooldown = 1.4, damage = 45, count = 2 },
-    { cooldown = 1.4, damage = 45, count = 3 },
+    { cooldown = 3.0, damage = 40, count = 1 },
+    { cooldown = 2.2, damage = 50, count = 1 },
+    { cooldown = 2.2, damage = 50, count = 2 },
+    { cooldown = 1.4, damage = 65, count = 2 },
+    { cooldown = 1.4, damage = 65, count = 3 },
 }
 
 local bladeLevels = {
-    { cooldown = 2.0, damage = 15, count = 1, size = 10 },
-    { cooldown = 1.5, damage = 25, count = 1, size = 10 },
-    { cooldown = 1.5, damage = 25, count = 2, size = 10 },
-    { cooldown = 1.0, damage = 25, count = 2, size = 10 },
-    { cooldown = 1.0, damage = 25, count = 3, size = 18 },
+    { cooldown = 2.0, damage = 40, count = 1, size = 10 },
+    { cooldown = 1.5, damage = 50, count = 1, size = 10 },
+    { cooldown = 1.5, damage = 50, count = 2, size = 10 },
+    { cooldown = 1.0, damage = 55, count = 2, size = 10 },
+    { cooldown = 1.0, damage = 65, count = 3, size = 18 },
 }
 
 local bulletLevels = {
-    { cooldown = 1.5, pierce = false, count = 1, damage = 15 },
-    { cooldown = 1.2, pierce = true,  count = 1, damage = 15 },
-    { cooldown = 0.9, pierce = true,  count = 3, damage = 25 },
-    { cooldown = 0.7, pierce = true,  count = 3, damage = 25 },
-    { cooldown = 0.5, pierce = true,  count = 3, damage = 40 },
+    { cooldown = 1.5, pierce = false, count = 1, damage = 40 },
+    { cooldown = 1.2, pierce = true,  count = 1, damage = 45 },
+    { cooldown = 0.9, pierce = true,  count = 3, damage = 55 },
+    { cooldown = 0.7, pierce = true,  count = 3, damage = 55 },
+    { cooldown = 0.5, pierce = true,  count = 3, damage = 70 },
 }
 
 local laserLevels = {
@@ -52,29 +52,29 @@ local meteorLevels = {
 }
 
 local cutterLevels = {
-    { count = 1, damage = 15, speed = 2.5, length = 80 },
-    { count = 2, damage = 25, speed = 2.5, length = 85 },
-    { count = 3, damage = 25, speed = 3.5, length = 90 },
-    { count = 4, damage = 35, speed = 3.5, length = 95 },
-    { count = 5, damage = 35, speed = 5.0, length = 100 }
+    { count = 1, damage = 40, speed = 2.5, length = 80 },
+    { count = 2, damage = 50, speed = 2.5, length = 85 },
+    { count = 3, damage = 50, speed = 3.5, length = 90 },
+    { count = 4, damage = 60, speed = 3.5, length = 95 },
+    { count = 5, damage = 60, speed = 5.0, length = 100 }
 }
 
 local cutterCurvature = 0.7
 
 local chainLevels = {
-    { count = 1, rootDuration = 2.0, maxChains = 1, cooldown = 4.0, damage = 20 },
-    { count = 1, rootDuration = 3.5, maxChains = 1, cooldown = 4.0, damage = 25 },
-    { count = 1, rootDuration = 3.5, maxChains = 2, cooldown = 4.0, damage = 30 },
-    { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 4.0, damage = 35 },
-    { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 2.5, damage = 45 }
+    { count = 1, rootDuration = 2.0, maxChains = 1, cooldown = 4.0, damage = 40 },
+    { count = 1, rootDuration = 3.5, maxChains = 1, cooldown = 4.0, damage = 45 },
+    { count = 1, rootDuration = 3.5, maxChains = 2, cooldown = 4.0, damage = 50 },
+    { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 4.0, damage = 55 },
+    { count = 2, rootDuration = 3.5, maxChains = 2, cooldown = 2.5, damage = 65 }
 }
 
 local seekerOrbLevels = {
-    { cooldown = 4.0, count = 1, damage = 20, chargeTime = 1.2, speed = 400, explode = false },
-    { cooldown = 4.0, count = 2, damage = 20, chargeTime = 1.2, speed = 400, explode = false },
-    { cooldown = 2.5, count = 2, damage = 35, chargeTime = 1.2, speed = 450, explode = false },
-    { cooldown = 2.5, count = 3, damage = 35, chargeTime = 1.2, speed = 450, explode = false },
-    { cooldown = 2.5, count = 3, damage = 50, chargeTime = 1.2, speed = 500, explode = true },
+    { cooldown = 4.0, count = 1, damage = 40, chargeTime = 1.2, speed = 400, explode = false },
+    { cooldown = 4.0, count = 2, damage = 45, chargeTime = 1.2, speed = 400, explode = false },
+    { cooldown = 2.5, count = 2, damage = 55, chargeTime = 1.2, speed = 450, explode = false },
+    { cooldown = 2.5, count = 3, damage = 55, chargeTime = 1.2, speed = 450, explode = false },
+    { cooldown = 2.5, count = 3, damage = 70, chargeTime = 1.2, speed = 500, explode = true },
 }
 
 local function isEnemyAlive(game, enemy)
@@ -215,10 +215,10 @@ function Skills.syncOrbs(game)
         speed = 6.0
     end
 
-    -- 기본 대미지: player.damage, 4레벨 이상: player.damage * 1.5
-    local damage = player.damage
+    -- 기본 대미지: player.damage * 4.0 (1스테이지 적 원샷 보장), 4레벨 이상: player.damage * 4.0 * 1.5
+    local damage = player.damage * 4.0
     if level >= 4 then
-        damage = player.damage * 1.5
+        damage = player.damage * 4.0 * 1.5
     end
 
     for i = 1, level do
@@ -1891,7 +1891,11 @@ function Skills.applyUpgrade(game, boxIndex)
         local upgradeIndex = option.index
         local upgrade = game.upgrades[upgradeIndex]
 
-        if player.upgradeLevels[upgradeIndex] < 3 then
+        local maxLvl = 3
+        if upgradeIndex == 2 or upgradeIndex == 4 then
+            maxLvl = 999
+        end
+        if player.upgradeLevels[upgradeIndex] < maxLvl then
             player.upgradeLevels[upgradeIndex] = player.upgradeLevels[upgradeIndex] + 1
         end
 
@@ -1913,6 +1917,10 @@ function Skills.applyUpgrade(game, boxIndex)
             player.expModifier = (player.expModifier or 1.0) + 0.25
         elseif upgrade.name == "Thorns" then
             -- Thorns upgrade is matched here (no immediate stat updates required)
+        elseif upgrade.name == "Energy Shield" then
+            player.shieldActive = true
+            player.shieldTimer = 0
+            player.shieldRestoreVisualTimer = 0.4
         end
     end
 
