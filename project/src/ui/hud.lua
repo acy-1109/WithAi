@@ -120,6 +120,443 @@ local upgradeLevelDescriptions = {
     }
 }
 
+-- 카드 내에 심볼/아이콘을 그리는 함수 (인게임 비주얼 반영)
+function HUD.drawCardIcon(option, cx, cy, size)
+    love.graphics.push("all")
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setLineWidth(2)
+
+    local r = size / 2
+    local time = love.timer.getTime()
+
+    if option.type == "skill" then
+        if option.index == 1 then
+            -- Orbiting Orb
+            local rotAngle = time * 2.5
+            love.graphics.setColor(1.0, 0.75, 0.2, 0.4)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.circle("line", cx, cy, r * 1.3)
+
+            for k = 0, 3 do
+                local dotAngle = rotAngle + k * (math.pi / 2)
+                local dx = cx + math.cos(dotAngle) * (r * 1.3)
+                local dy = cy + math.sin(dotAngle) * (r * 1.3)
+                love.graphics.circle("fill", dx, dy, 2.5)
+            end
+
+            local pulse = 1 + math.sin(time * 6) * 0.08
+            love.graphics.setColor(1.0, 0.5, 0.0, 0.25)
+            love.graphics.circle("fill", cx, cy, r * 1.0 * pulse)
+
+            love.graphics.setColor(1.0, 0.8, 0.1, 0.5)
+            love.graphics.circle("fill", cx, cy, r * 0.7 * pulse)
+
+            love.graphics.setColor(1.0, 0.95, 0.3, 0.85)
+            love.graphics.circle("fill", cx, cy, r * 0.45)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.circle("fill", cx, cy, r * 0.22)
+
+        elseif option.index == 2 then
+            -- Thunder
+            love.graphics.setColor(0.3, 0.4, 1.0, 0.3)
+            love.graphics.setLineWidth(8)
+            local pts = {
+                cx - r * 0.2, cy - r * 0.8,
+                cx + r * 0.3, cy - r * 0.1,
+                cx - r * 0.3, cy + r * 0.1,
+                cx + r * 0.1, cy + r * 0.8
+            }
+            love.graphics.line(pts)
+
+            love.graphics.setColor(0.2, 0.8, 1.0, 0.6)
+            love.graphics.setLineWidth(4)
+            love.graphics.line(pts)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.line(pts)
+
+            love.graphics.setColor(0.6, 0.9, 1.0, 0.8)
+            love.graphics.circle("fill", cx - r * 0.5, cy - r * 0.3, 2.5)
+            love.graphics.circle("fill", cx + r * 0.6, cy + r * 0.3, 2.5)
+
+        elseif option.index == 3 then
+            -- Blade (Glaive)
+            local spinAngle = time * 4
+            love.graphics.setColor(0.5, 0.5, 0.5, 0.9)
+            love.graphics.circle("fill", cx, cy, r * 0.3)
+
+            for k = 0, 3 do
+                local theta = spinAngle + k * (math.pi / 2)
+                local tipX = cx + math.cos(theta) * (r * 1.1)
+                local tipY = cy + math.sin(theta) * (r * 1.1)
+
+                local leftAngle = theta + 0.4
+                local leftX = cx + math.cos(leftAngle) * (r * 0.35)
+                local leftY = cy + math.sin(leftAngle) * (r * 0.35)
+
+                local rightAngle = theta - 0.4
+                local rightX = cx + math.cos(rightAngle) * (r * 0.35)
+                local rightY = cy + math.sin(rightAngle) * (r * 0.35)
+
+                love.graphics.setColor(0.9, 0.9, 0.95, 0.95)
+                love.graphics.polygon("fill", cx, cy, leftX, leftY, tipX, tipY)
+
+                love.graphics.setColor(0.5, 0.5, 0.55, 0.95)
+                love.graphics.polygon("fill", cx, cy, rightX, rightY, tipX, tipY)
+
+                love.graphics.setColor(0.2, 1.0, 0.4, 0.9)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.line(leftX, leftY, tipX, tipY)
+            end
+            love.graphics.setColor(1.0, 1.0, 1.0)
+            love.graphics.circle("fill", cx, cy, r * 0.15)
+
+        elseif option.index == 4 then
+            -- Bullet
+            for k = 1, 3 do
+                local ox = (k - 2) * (r * 0.45)
+                local oy = (k - 2) * (r * 0.15)
+                local bx = cx + ox
+                local by = cy - oy
+
+                love.graphics.setColor(0.5, 0.5, 1.0, 0.35)
+                love.graphics.setLineWidth(5)
+                love.graphics.line(bx - r * 0.5, by + r * 0.15, bx, by)
+
+                love.graphics.setColor(0.6, 0.6, 1.0, 0.9)
+                love.graphics.circle("fill", bx, by, r * 0.25)
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.circle("fill", bx, by, r * 0.1)
+            end
+
+        elseif option.index == 5 then
+            -- Laser
+            love.graphics.setColor(1.0, 0.1, 0.4, 0.25)
+            love.graphics.setLineWidth(r * 0.5)
+            love.graphics.line(cx - r, cy + r * 0.4, cx + r, cy - r * 0.4)
+
+            love.graphics.setColor(1.0, 0.2, 0.2, 0.55)
+            love.graphics.setLineWidth(r * 0.25)
+            love.graphics.line(cx - r, cy + r * 0.4, cx + r, cy - r * 0.4)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.setLineWidth(r * 0.08)
+            love.graphics.line(cx - r, cy + r * 0.4, cx + r, cy - r * 0.4)
+
+            love.graphics.setColor(1.0, 0.8, 0.9, 0.8)
+            love.graphics.circle("fill", cx - r, cy + r * 0.4, r * 0.2)
+            love.graphics.circle("fill", cx + r, cy - r * 0.4, r * 0.2)
+
+        elseif option.index == 6 then
+            -- Magnetic Field
+            love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
+            love.graphics.circle("fill", cx, cy, 4)
+
+            love.graphics.setColor(0.1, 0.6, 1.0, 0.1)
+            love.graphics.circle("fill", cx, cy, r * 1.0)
+            love.graphics.setColor(0.2, 0.7, 1.0, 0.2)
+            love.graphics.circle("fill", cx, cy, r * 0.75)
+
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(0.3, 0.8, 1.0, 0.7)
+            love.graphics.circle("line", cx, cy, r * 1.0)
+            love.graphics.setLineWidth(1)
+            love.graphics.circle("line", cx, cy, r * 0.85)
+
+            local numSparks = 6
+            local rotAngle = time * 3
+            for k = 1, numSparks do
+                local angle = rotAngle + (k - 1) * (2 * math.pi / numSparks)
+                local sx = cx + math.cos(angle) * r
+                local sy = cy + math.sin(angle) * r
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+                love.graphics.circle("fill", sx, sy, 2)
+            end
+
+        elseif option.index == 7 then
+            -- Meteor
+            love.graphics.setColor(1.0, 0.15, 0.15, 0.4)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.circle("line", cx + r * 0.2, cy + r * 0.3, r * 0.65)
+            love.graphics.circle("fill", cx + r * 0.2, cy + r * 0.3, 2.5)
+
+            local mx = cx - r * 0.2
+            local my = cy - r * 0.3
+            love.graphics.setColor(1.0, 0.35, 0.0, 0.3)
+            love.graphics.circle("fill", mx - r * 0.3, my - r * 0.3, r * 0.45)
+            love.graphics.circle("fill", mx - r * 0.15, my - r * 0.15, r * 0.5)
+
+            love.graphics.setColor(1.0, 0.45, 0.05, 0.85)
+            love.graphics.circle("fill", mx, my, r * 0.4)
+            love.graphics.setColor(1.0, 0.95, 0.2, 0.95)
+            love.graphics.circle("fill", mx, my, r * 0.2)
+
+        elseif option.index == 8 then
+            -- Cutter
+            love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
+            love.graphics.circle("fill", cx, cy, 3.5)
+
+            local startAngle = time * 2
+            local endAngle = startAngle + 1.8
+            love.graphics.setLineWidth(8)
+            love.graphics.setColor(0.12, 0.12, 0.15, 0.6)
+            love.graphics.arc("line", "open", cx, cy, r * 0.9, startAngle, endAngle, 20)
+
+            love.graphics.setLineWidth(5)
+            love.graphics.setColor(0.65, 0.65, 0.7, 0.85)
+            love.graphics.arc("line", "open", cx, cy, r * 0.9, startAngle, endAngle, 20)
+
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.arc("line", "open", cx, cy, r * 0.9, startAngle, endAngle, 20)
+
+            local tipX = cx + math.cos(endAngle) * r * 0.9
+            local tipY = cy + math.sin(endAngle) * r * 0.9
+            love.graphics.push()
+            love.graphics.translate(tipX, tipY)
+            love.graphics.rotate(endAngle + math.pi / 2)
+            love.graphics.setColor(0.9, 0.9, 0.95, 0.95)
+            love.graphics.polygon("fill", 0, -5, 3.5, 0, 0, 5, -3.5, 0)
+            love.graphics.pop()
+
+        elseif option.index == 9 then
+            -- Chain
+            love.graphics.setColor(0.1, 0.8, 1.0, 0.25)
+            love.graphics.setLineWidth(8)
+            love.graphics.line(cx - r * 0.8, cy + r * 0.8, cx + r * 0.8, cy - r * 0.8)
+
+            local dx = r * 1.6
+            local dy = -r * 1.6
+            local dist = math.sqrt(dx*dx + dy*dy)
+            local ux, uy = dx/dist, dy/dist
+            local linkSpacing = r * 0.48
+            local numLinks = 4
+            love.graphics.setLineWidth(1.5)
+            local angle = math.atan2(dy, dx)
+
+            for k = 0, numLinks - 1 do
+                local t = k * linkSpacing - r * 0.72
+                local lx = cx + ux * t
+                local ly = cy + uy * t
+
+                love.graphics.push()
+                love.graphics.translate(lx, ly)
+                love.graphics.rotate(angle + (k % 2 == 0 and 0 or math.pi / 2))
+
+                love.graphics.setColor(0.4, 0.85, 1.0, 0.85)
+                love.graphics.ellipse("line", 0, 0, 6, 3)
+                love.graphics.setColor(0.1, 0.1, 0.15, 0.5)
+                love.graphics.ellipse("fill", 0, 0, 4, 1.5)
+
+                love.graphics.pop()
+            end
+
+        elseif option.index == 10 then
+            -- Seeker Orb
+            local pulse = 1.0 + math.sin(time * 10) * 0.1
+            love.graphics.setColor(0.7, 0.1, 0.9, 0.12)
+            love.graphics.circle("fill", cx, cy, r * 1.25 * pulse)
+            love.graphics.setColor(0.9, 0.1, 0.7, 0.3)
+            love.graphics.circle("fill", cx, cy, r * 0.75 * pulse)
+
+            love.graphics.setLineWidth(1.2)
+            love.graphics.setColor(1.0, 0.3, 0.8, 0.4)
+            love.graphics.circle("line", cx, cy, r * 0.95)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+            love.graphics.circle("fill", cx, cy, r * 0.32)
+        end
+
+    elseif option.type == "upgrade" then
+        if option.index == 1 then
+            -- Magnet
+            love.graphics.setLineWidth(8)
+            love.graphics.setColor(0.8, 0.2, 0.2)
+            love.graphics.arc("line", "open", cx, cy, r * 0.5, -math.pi, 0, 20)
+            love.graphics.setColor(0.2, 0.4, 0.8)
+            love.graphics.arc("line", "open", cx, cy, r * 0.5, 0, math.pi, 20)
+
+            love.graphics.setColor(0.9, 0.9, 0.9)
+            love.graphics.rectangle("fill", cx - r * 0.5 - 4, cy - 2, 8, 4)
+            love.graphics.rectangle("fill", cx + r * 0.5 - 4, cy - 2, 8, 4)
+
+            love.graphics.setColor(1.0, 0.8, 0.1, 0.8)
+            love.graphics.circle("fill", cx - r * 0.35, cy - r * 0.55, 3)
+            love.graphics.circle("fill", cx + r * 0.35, cy - r * 0.55, 3)
+
+        elseif option.index == 2 then
+            -- Health Boost (Heart)
+            love.graphics.setColor(0.95, 0.15, 0.15, 0.9)
+            local points = {}
+            local numPoints = 24
+            local hScale = r * 0.05
+            for step = 0, numPoints - 1 do
+                local theta = step * (2 * math.pi / numPoints)
+                local x = 16 * math.sin(theta)^3
+                local y = -(13 * math.cos(theta) - 5 * math.cos(2 * theta) - 2 * math.cos(3 * theta) - math.cos(4 * theta))
+                table.insert(points, cx + x * hScale)
+                table.insert(points, cy + y * hScale)
+            end
+            love.graphics.polygon("fill", points)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.35)
+            love.graphics.circle("fill", cx - r * 0.2, cy - r * 0.2, r * 0.12)
+
+        elseif option.index == 3 then
+            -- Speed Boost (Arrows / Wings)
+            love.graphics.setLineWidth(4)
+            love.graphics.setColor(0.3, 0.8, 1.0)
+            for offset = -14, 14, 14 do
+                love.graphics.line(cx + offset - 6, cy - r * 0.35, cx + offset + 6, cy, cx + offset - 6, cy + r * 0.35)
+            end
+            love.graphics.setLineWidth(2)
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.65)
+            love.graphics.line(cx - r * 0.5, cy - r * 0.1, cx + r * 0.5, cy - r * 0.1)
+            love.graphics.line(cx - r * 0.3, cy + r * 0.2, cx + r * 0.3, cy + r * 0.2)
+
+        elseif option.index == 4 then
+            -- Damage Boost (Sword)
+            love.graphics.push()
+            love.graphics.translate(cx, cy)
+            love.graphics.rotate(math.pi / 4)
+
+            love.graphics.setColor(0.85, 0.85, 0.9)
+            love.graphics.polygon("fill", -3, -r * 0.8, 3, -r * 0.8, 4, r * 0.2, -4, r * 0.2)
+            love.graphics.setColor(1.0, 1.0, 1.0)
+            love.graphics.line(0, -r * 0.8, 0, r * 0.2)
+
+            love.graphics.setColor(1.0, 0.75, 0.1)
+            love.graphics.rectangle("fill", -9, r * 0.2, 18, 4, 1, 1)
+
+            love.graphics.setColor(0.5, 0.35, 0.15)
+            love.graphics.rectangle("fill", -2, r * 0.2 + 4, 4, r * 0.35)
+
+            love.graphics.setColor(1.0, 0.75, 0.1)
+            love.graphics.circle("fill", 0, r * 0.2 + 4 + r * 0.35, 3)
+
+            love.graphics.pop()
+
+        elseif option.index == 5 then
+            -- Health Regen (Green Heart with +)
+            love.graphics.setColor(0.15, 0.85, 0.15, 0.9)
+            local points = {}
+            local numPoints = 24
+            local hScale = r * 0.05
+            for step = 0, numPoints - 1 do
+                local theta = step * (2 * math.pi / numPoints)
+                local x = 16 * math.sin(theta)^3
+                local y = -(13 * math.cos(theta) - 5 * math.cos(2 * theta) - 2 * math.cos(3 * theta) - math.cos(4 * theta))
+                table.insert(points, cx + x * hScale)
+                table.insert(points, cy + y * hScale)
+            end
+            love.graphics.polygon("fill", points)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.setLineWidth(3)
+            love.graphics.line(cx - r * 0.18, cy, cx + r * 0.18, cy)
+            love.graphics.line(cx, cy - r * 0.18, cx, cy + r * 0.18)
+
+        elseif option.index == 6 then
+            -- EXP Boost (Star)
+            love.graphics.setColor(1.0, 0.85, 0.15, 0.9)
+            local points = {}
+            local outerR = r * 0.95
+            local innerR = r * 0.36
+            for k = 0, 9 do
+                local angle = -math.pi / 2 + k * (2 * math.pi / 10)
+                local rad = (k % 2 == 0) and outerR or innerR
+                table.insert(points, cx + math.cos(angle) * rad)
+                table.insert(points, cy + math.sin(angle) * rad)
+            end
+            love.graphics.polygon("fill", points)
+
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.6)
+            love.graphics.circle("fill", cx - r * 0.85, cy - r * 0.85, 2)
+            love.graphics.circle("fill", cx + r * 0.85, cy + r * 0.75, 2.5)
+
+        elseif option.index == 7 then
+            -- Thorns (Spike ball)
+            love.graphics.setColor(0.0, 1.0, 0.6, 0.25)
+            love.graphics.circle("fill", cx, cy, r * 0.5)
+
+            love.graphics.setColor(0.3, 1.0, 0.8)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.circle("line", cx, cy, r * 0.5)
+
+            local numSpikes = 10
+            for s = 1, numSpikes do
+                local angle = (s - 1) * (2 * math.pi / numSpikes) + time
+                local ex = cx + math.cos(angle) * r * 0.95
+                local ey = cy + math.sin(angle) * r * 0.95
+
+                local angleLeft = angle + 0.15
+                local angleRight = angle - 0.15
+                local lx = cx + math.cos(angleLeft) * r * 0.48
+                local ly = cy + math.sin(angleLeft) * r * 0.48
+                local rx = cx + math.cos(angleRight) * r * 0.48
+                local ry = cy + math.sin(angleRight) * r * 0.48
+
+                love.graphics.setColor(0.0, 1.0, 0.6, 0.4)
+                love.graphics.polygon("fill", lx, ly, rx, ry, ex, ey)
+                love.graphics.setColor(0.3, 1.0, 0.8)
+                love.graphics.polygon("line", lx, ly, rx, ry, ex, ey)
+            end
+
+        elseif option.index == 8 then
+            -- Energy Shield
+            love.graphics.setColor(0.3, 0.6, 1.0, 0.22)
+            love.graphics.circle("fill", cx, cy, r * 1.0)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.setColor(0.5, 0.8, 1.0, 0.75)
+            love.graphics.circle("line", cx, cy, r * 1.0)
+
+            love.graphics.setColor(0.4, 0.6, 0.9, 0.9)
+            local shW = r * 0.45
+            local shH = r * 0.5
+            local shPoints = {
+                cx - shW, cy - shH,
+                cx + shW, cy - shH,
+                cx + shW, cy,
+                cx, cy + shH,
+                cx - shW, cy
+            }
+            love.graphics.polygon("fill", shPoints)
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.setLineWidth(1.5)
+            love.graphics.polygon("line", shPoints)
+
+        elseif option.index == 9 then
+            -- Defense Boost (Heavy Shield)
+            local shW = r * 0.5
+            local shH = r * 0.6
+            local shPoints = {
+                cx - shW, cy - shH,
+                cx + shW, cy - shH,
+                cx + shW, cy * 0.95 + shH * 0.1,
+                cx, cy + shH,
+                cx - shW, cy * 0.95 + shH * 0.1
+            }
+
+            love.graphics.setColor(0.3, 0.35, 0.4, 0.9)
+            love.graphics.polygon("fill", shPoints)
+
+            love.graphics.setColor(0.5, 0.55, 0.6, 0.9)
+            love.graphics.polygon("fill", cx - shW, cy - shH, cx, cy - shH, cx, cy + shH, cx - shW, cy * 0.95 + shH * 0.1)
+
+            love.graphics.setColor(1.0, 0.8, 0.2)
+            love.graphics.setLineWidth(2.5)
+            love.graphics.polygon("line", shPoints)
+
+            love.graphics.setColor(1.0, 0.8, 0.2)
+            love.graphics.polygon("fill", cx, cy - 8, cx + 5, cy, cx, cy + 8, cx - 5, cy)
+        end
+    end
+
+    love.graphics.pop()
+end
+
 -- 스킬 선택 박스 레이아웃 계산 (3등분)
 function HUD.calculateSkillBoxes(game)
     local screenWidth = love.graphics.getWidth()
@@ -299,14 +736,20 @@ function HUD.drawMenu(game)
                 descText = upgrade.description
             end
 
+            -- Draw icon/symbol
+            local iconCx = box.x + box.width / 2
+            local iconCy = box.y + box.height * 0.30
+            local iconSize = 80
+            HUD.drawCardIcon(option, iconCx, iconCy, iconSize)
+
             -- Title Name
             love.graphics.setColor(1, 1, 1)
-            love.graphics.setFont(getFont(32))
-            love.graphics.printf(nameText, box.x, box.y + box.height * 0.35, box.width, "center")
+            love.graphics.setFont(getFont(28))
+            love.graphics.printf(nameText, box.x, box.y + box.height * 0.44, box.width, "center")
 
             -- Description (wrapped with font size 13 to avoid overflow)
             love.graphics.setFont(getFont(13))
-            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.44, box.width - 40, "center")
+            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.54, box.width - 40, "center")
         end
     end
 
@@ -367,8 +810,6 @@ function HUD.drawUpgrade(game)
 
             -- Prepare text rendering
             love.graphics.setColor(1, 1, 1)
-            love.graphics.setFont(getFont(32))
-
             local nameText, descText = "", ""
             local levelText = ""
 
@@ -404,19 +845,26 @@ function HUD.drawUpgrade(game)
                 end
             end
 
+            -- Draw icon/symbol
+            local iconCx = box.x + box.width / 2
+            local iconCy = box.y + box.height * 0.30
+            local iconSize = 80
+            HUD.drawCardIcon(option, iconCx, iconCy, iconSize)
+
             -- Draw card name
-            love.graphics.printf(nameText, box.x, box.y + box.height * 0.32, box.width, "center")
+            love.graphics.setFont(getFont(28))
+            love.graphics.printf(nameText, box.x, box.y + box.height * 0.44, box.width, "center")
 
             -- Draw card description (wrapped, font size 13 to prevent box overflow)
             love.graphics.setFont(getFont(13))
-            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.44, box.width - 40, "center")
+            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.54, box.width - 40, "center")
 
             -- Draw card footer info
             if option.type == "skill" then
                 -- Skills: Render level text
                 love.graphics.setColor(0.9, 0.9, 0.9)
                 love.graphics.setFont(getFont(16))
-                love.graphics.printf(levelText, box.x, box.y + box.height * 0.72, box.width, "center")
+                love.graphics.printf(levelText, box.x, box.y + box.height * 0.76, box.width, "center")
             else
                 -- Traits: Renders level diamonds or level text if infinite
                 local player = game.player
@@ -428,13 +876,13 @@ function HUD.drawUpgrade(game)
                         local levelText = "Level: " .. upgradeLevel .. " -> " .. (upgradeLevel + 1)
                         love.graphics.setColor(0.9, 0.9, 0.9)
                         love.graphics.setFont(getFont(16))
-                        love.graphics.printf(levelText, box.x, box.y + box.height * 0.72, box.width, "center")
+                        love.graphics.printf(levelText, box.x, box.y + box.height * 0.76, box.width, "center")
                     else
                         local starSize = 15
                         local starSpacing = 18
                         local totalWidth = 2 * starSpacing + starSize
                         local startX = box.x + (box.width - totalWidth) / 2
-                        local starY = box.y + box.height * 0.72
+                        local starY = box.y + box.height * 0.76
 
                         for j = 1, 3 do
                             local x = startX + (j - 1) * starSpacing
