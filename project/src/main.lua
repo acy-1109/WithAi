@@ -35,46 +35,47 @@ local game = {
         height = 2000
     },
     skills = {
-        { name = "Orbiting Orb", description = "Orb orbits player and damages enemies" },
-        { name = "Thunder",      description = "Strike lightning on enemies periodically" },
-        { name = "Blade",        description = "Auto-attack enemies with tracking blades" },
-        { name = "Bullet",       description = "Auto-target enemies and fire bullets" },
-        { name = "Laser",        description = "Fire a slow-charging laser beam that follows your position" },
-        { name = "Magnetic Field", description = "Periodically deploy a circular magnetic field that damages nearby enemies" },
-        { name = "Meteor",       description = "Call down devastating meteors from the sky that shake the screen and leave fire patches" },
-        { name = "Cutter",       description = "Energy cutter blades extending from your body that rotate and slice through enemies" },
-        { name = "Chain",        description = "Fires glowing chains that lock enemies in place and deal damage" },
-        { name = "Seeker Orb",   description = "Spawns a charging orb that fires at the closest enemy." }
+        { name = "Orbiting Orb",   description = "Orbiting damage aura" },
+        { name = "Thunder",        description = "Strike lightning periodically" },
+        { name = "Blade",          description = "Fire homing curved glaives" },
+        { name = "Bullet",         description = "Fire rapid projectiles" },
+        { name = "Laser",          description = "Fire continuous plasma beam" },
+        { name = "Magnetic Field", description = "Deploy circular electric field" },
+        { name = "Meteor",         description = "Call down meteors from sky" },
+        { name = "Cutter",         description = "Rotate energy blades" },
+        { name = "Chain",          description = "Lock enemies with chains" },
+        { name = "Seeker Orb",     description = "Spawn homing orbs" }
     },
     selectedSkill = nil,
     skillBoxes = {},
     skillOptions = {}, -- 선택창에 표시할 3개 스킬 인덱스
     upgrades = {
-        { name = "Magnet",       description = "Pull experience orbs from nearby" },
-        { name = "Health Boost", description = "Increase max health (+20 per level)" },
-        { name = "Speed Boost",  description = "Increase movement speed by 5%" },
-        { name = "Damage Boost", description = "Increase weapon damage (+10% per level)" },
-        { name = "Health Regen", description = "Regenerate health when not taking damage" },
-        { name = "EXP Boost",    description = "Increase experience gained by 25%" },
-        { name = "Thorns",       description = "30% chance per level to retaliate and damage nearby enemies when hit" },
-        { name = "Energy Shield", description = "Generate a block shield every 12/9/6 seconds" }
+        { name = "Magnet",        description = "Pull experience orbs" },
+        { name = "Health Boost",  description = "Increase max health by 10%" },
+        { name = "Speed Boost",   description = "Increase movement speed" },
+        { name = "Damage Boost",  description = "Increase weapon damage" },
+        { name = "Health Regen",  description = "Regenerate health" },
+        { name = "EXP Boost",     description = "Increase experience gained" },
+        { name = "Thorns",        description = "Retaliate when hit" },
+        { name = "Energy Shield", description = "Generate block shield" },
+        { name = "Defense Boost", description = "Reduce damage taken" }
     },
-    upgradeOptions = {}, -- 현재 레벨업 시 표시할 특성 3개 (인덱스)
+    upgradeOptions = {},  -- 현재 레벨업 시 표시할 특성 3개 (인덱스)
     upgradeBoxes = {},
-    thunders = {},       -- 벼락 스킬 프로젝타일
-    blades = {},         -- 칼날 스킬 프로젝타일
-    bullets = {},        -- 총알 스킬 프로젝타일
-    lasers = {},         -- 레이저 스킬 프로젝타일
+    thunders = {},        -- 벼락 스킬 프로젝타일
+    blades = {},          -- 칼날 스킬 프로젝타일
+    bullets = {},         -- 총알 스킬 프로젝타일
+    lasers = {},          -- 레이저 스킬 프로젝타일
     skillUpgradeBox = {}, -- 스킬 업그레이드 박스
-    
+
     -- 영구 강화 및 설정 데이터
     totalScore = 0,
     metaUpgrades = {
-        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },  -- 10 active skills starting level offsets
-        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0 }     -- 8 passive traits starting level offsets
+        skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, -- 10 active skills starting level offsets
+        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }   -- 9 passive traits starting level offsets
     },
-    showStars = true, -- 설정: 성간 배경 먼지 그리기 여부
-    muted = false     -- 설정: 음소거 여부 (필요 시 효과음 제어용)
+    showStars = true,                              -- 설정: 성간 배경 먼지 그리기 여부
+    muted = false                                  -- 설정: 음소거 여부 (필요 시 효과음 제어용)
 }
 
 -- 세이브 파일 저장 기능
@@ -82,14 +83,14 @@ game.saveGame = function()
     local totalScoreVal = game.totalScore or 0
     local dataStr = string.format("totalScore:%d\nshowStars:%s\nmuted:%s\n",
         totalScoreVal, tostring(game.showStars), tostring(game.muted))
-    
+
     for i = 1, 10 do
         dataStr = dataStr .. string.format("skill_%d:%d\n", i, game.metaUpgrades.skills[i] or 0)
     end
-    for i = 1, 8 do
+    for i = 1, 9 do
         dataStr = dataStr .. string.format("upgrade_%d:%d\n", i, game.metaUpgrades.upgrades[i] or 0)
     end
-    
+
     love.filesystem.write("save.txt", dataStr)
 end
 
@@ -98,19 +99,22 @@ game.loadGame = function()
     game.totalScore = 0
     game.metaUpgrades = {
         skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0 }
+        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
     }
     game.showStars = true
     game.muted = false
-    
+
     if love.filesystem.getInfo("save.txt") then
         for line in love.filesystem.lines("save.txt") do
             local k, v = line:match("([^:]+):([^%s]+)")
             if k and v then
                 local val = tonumber(v)
-                if k == "totalScore" then game.totalScore = val or 0
-                elseif k == "showStars" then game.showStars = (v == "true")
-                elseif k == "muted" then game.muted = (v == "true")
+                if k == "totalScore" then
+                    game.totalScore = val or 0
+                elseif k == "showStars" then
+                    game.showStars = (v == "true")
+                elseif k == "muted" then
+                    game.muted = (v == "true")
                 elseif k:match("^skill_%d+$") then
                     local idx = tonumber(k:match("skill_(%d+)"))
                     if idx and idx >= 1 and idx <= 10 then
@@ -118,21 +122,22 @@ game.loadGame = function()
                     end
                 elseif k:match("^upgrade_%d+$") then
                     local idx = tonumber(k:match("upgrade_(%d+)"))
-                    if idx and idx >= 1 and idx <= 8 then
+                    if idx and idx >= 1 and idx <= 9 then
                         local loadedVal = val or 0
                         local maxLvl = 3
-                        if idx == 2 or idx == 4 then
+                        if idx == 2 or idx == 4 or idx == 9 then
                             maxLvl = 999
                         end
                         if loadedVal > maxLvl then
                             local refundConfigs = {
-                                [1] = { base = 800,  scale = 400 },
+                                [1] = { base = 800, scale = 400 },
                                 [2] = { base = 1000, scale = 500 },
                                 [3] = { base = 1000, scale = 500 },
                                 [4] = { base = 1200, scale = 600 },
                                 [5] = { base = 1000, scale = 500 },
                                 [6] = { base = 1200, scale = 600 },
-                                [8] = { base = 1500, scale = 700 }
+                                [8] = { base = 1500, scale = 700 },
+                                [9] = { base = 1200, scale = 600 }
                             }
                             local conf = refundConfigs[idx]
                             if conf then
@@ -179,7 +184,7 @@ function love.load()
         game.totalScore = 0
         game.metaUpgrades = {
             skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            upgrades = { 0, 0, 0, 0, 0, 0, 0, 0 }
+            upgrades = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
         }
         game.saveGame()
         love.filesystem.write("reset_done.txt", "done")
@@ -188,7 +193,7 @@ function love.load()
     game.state = "main_menu"
     game.selectedSkill = nil
     game.metaUpgradePage = 1 -- Default to page 1 (Active Skills)
-    
+
     HUD.calculateSkillBoxes(game)
     HUD.shuffleSkills(game)
     print("Game loaded successfully")
@@ -205,23 +210,23 @@ local function initBackground(game)
     -- 1. 스테이지별 네뷸라(성운) 색상 팔레트 및 생성
     local nebulaPalettes = {
         -- Stage 1: 공허 구역 - 차가운 블루/바이올렛/다크 사이언
-        [1] = { {0.06, 0.04, 0.16}, {0.03, 0.06, 0.15}, {0.04, 0.1, 0.14} },
+        [1] = { { 0.06, 0.04, 0.16 }, { 0.03, 0.06, 0.15 }, { 0.04, 0.1, 0.14 } },
         -- Stage 2: 붉은 연옥 - 마그마 크림슨/다크 오렌지
-        [2] = { {0.18, 0.03, 0.03}, {0.15, 0.06, 0.02}, {0.12, 0.01, 0.04} },
+        [2] = { { 0.18, 0.03, 0.03 }, { 0.15, 0.06, 0.02 }, { 0.12, 0.01, 0.04 } },
         -- Stage 3: 네온 매트릭스 - 일렉트릭 그린/사이버 사이언
-        [3] = { {0.01, 0.15, 0.06}, {0.02, 0.12, 0.1}, {0.01, 0.06, 0.12} },
+        [3] = { { 0.01, 0.15, 0.06 }, { 0.02, 0.12, 0.1 }, { 0.01, 0.06, 0.12 } },
         -- Stage 4: 뇌전 폐허 - 먹구름 인디고/다크 플럼
-        [4] = { {0.1, 0.05, 0.18}, {0.06, 0.03, 0.15}, {0.04, 0.04, 0.12} },
+        [4] = { { 0.1, 0.05, 0.18 }, { 0.06, 0.03, 0.15 }, { 0.04, 0.04, 0.12 } },
         -- Stage 5: 우주 성역 - 신성한 골든 옐로우/브론즈
-        [5] = { {0.18, 0.13, 0.03}, {0.15, 0.1, 0.01}, {0.12, 0.12, 0.04} },
+        [5] = { { 0.18, 0.13, 0.03 }, { 0.15, 0.1, 0.01 }, { 0.12, 0.12, 0.04 } },
         -- Stage 6: 시간의 특이점 - 에메랄드 그린/에테르 골드/크로노 블랙
-        [6] = { {0.03, 0.16, 0.1}, {0.12, 0.1, 0.03}, {0.06, 0.06, 0.1} },
+        [6] = { { 0.03, 0.16, 0.1 }, { 0.12, 0.1, 0.03 }, { 0.06, 0.06, 0.1 } },
         -- Stage 7: 시스템 코어 - 일렉트릭 마젠타/사이버 사이언/다크 플럼
-        [7] = { {0.16, 0.02, 0.12}, {0.02, 0.12, 0.16}, {0.06, 0.06, 0.12} },
+        [7] = { { 0.16, 0.02, 0.12 }, { 0.02, 0.12, 0.16 }, { 0.06, 0.06, 0.12 } },
         -- Stage 8: 특이점 코어 - 중력 바이올렛/다크 블루/블랙
-        [8] = { {0.1, 0.02, 0.18}, {0.02, 0.04, 0.15}, {0.04, 0.01, 0.08} },
+        [8] = { { 0.1, 0.02, 0.18 }, { 0.02, 0.04, 0.15 }, { 0.04, 0.01, 0.08 } },
         -- Stage 9: 성운의 성소 - 세레스티얼 골드/신성한 백색광/앰버
-        [9] = { {0.2, 0.15, 0.04}, {0.18, 0.18, 0.1}, {0.15, 0.12, 0.02} }
+        [9] = { { 0.2, 0.15, 0.04 }, { 0.18, 0.18, 0.1 }, { 0.15, 0.12, 0.02 } }
     }
 
     local palette = nebulaPalettes[stage] or nebulaPalettes[1]
@@ -248,7 +253,7 @@ local function initBackground(game)
                 size = math.random(1, 3),
                 alpha = math.random(15, 55) / 100,
                 type = "dust",
-                color = {0.4, 0.6, 1.0}
+                color = { 0.4, 0.6, 1.0 }
             })
         end
     elseif stage == 2 then
@@ -261,7 +266,7 @@ local function initBackground(game)
                 alpha = math.random(25, 70) / 100,
                 type = "ash",
                 speed = math.random(25, 55),
-                color = {1.0, math.random(20, 60)/100, 0.05}
+                color = { 1.0, math.random(20, 60) / 100, 0.05 }
             })
         end
         -- 바닥 용암 분출구 (Magma Vents) - 이펙터
@@ -284,7 +289,7 @@ local function initBackground(game)
                 size = math.random(2, 4),
                 alpha = math.random(20, 55) / 100,
                 type = "node",
-                color = {0.2, 1.0, 0.5}
+                color = { 0.2, 1.0, 0.5 }
             })
         end
         -- 회로 기판 패턴 (Circuits)
@@ -307,7 +312,7 @@ local function initBackground(game)
                 size = math.random(1, 3),
                 alpha = math.random(15, 45) / 100,
                 type = "sparkle",
-                color = {0.65, 0.5, 1.0}
+                color = { 0.65, 0.5, 1.0 }
             })
         end
         -- 소형 정전기 방전구
@@ -331,7 +336,7 @@ local function initBackground(game)
                 alpha = math.random(30, 70) / 100,
                 type = "golden_dust",
                 speedY = math.random(12, 28),
-                color = {1.0, 0.85, 0.15}
+                color = { 1.0, 0.85, 0.15 }
             })
         end
         -- 바닥 성역의 빛나는 문양 (Celestial Halos)
@@ -354,7 +359,7 @@ local function initBackground(game)
                 size = math.random(1, 2.5),
                 alpha = math.random(20, 60) / 100,
                 type = "chrono_dust",
-                color = {0.1, 0.9, 0.6}
+                color = { 0.1, 0.9, 0.6 }
             })
         end
         -- 배경 시계 톱니바퀴 (Chrono Gears)
@@ -378,7 +383,7 @@ local function initBackground(game)
                 size = math.random(2, 4),
                 alpha = math.random(20, 60) / 100,
                 type = "glitch_node",
-                color = (math.random() > 0.5 and {1.0, 0.0, 0.4} or {0.0, 1.0, 1.0}), -- Cyan or Magenta
+                color = (math.random() > 0.5 and { 1.0, 0.0, 0.4 } or { 0.0, 1.0, 1.0 }), -- Cyan or Magenta
                 speed = math.random(40, 90)
             })
         end
@@ -406,7 +411,7 @@ local function initBackground(game)
                 size = math.random(1.5, 3.5),
                 alpha = math.random(30, 75) / 100,
                 type = "void_node",
-                color = (math.random() > 0.5 and {0.5, 0.2, 0.9} or {0.2, 0.3, 1.0}) -- Violet or Blue
+                color = (math.random() > 0.5 and { 0.5, 0.2, 0.9 } or { 0.2, 0.3, 1.0 }) -- Violet or Blue
             })
         end
     elseif stage == 9 then
@@ -420,7 +425,7 @@ local function initBackground(game)
                 type = "shimmer_star",
                 speed = math.random(15, 35),
                 pulseSpeed = math.random(3, 7),
-                color = {1.0, 0.9, 0.55}
+                color = { 1.0, 0.9, 0.55 }
             })
         end
         for i = 1, 8 do
@@ -450,21 +455,21 @@ local function startGame(skillIndex)
 
     game.enemies = {}
     game.orbs = {}
-    game.expOrbs = {}  -- 경험치 구슬
-    game.thunders = {} -- 벼락 스킬 프로젝타일
-    game.blades = {}   -- 칼날 스킬 프로젝타일
-    game.bullets = {}  -- 총알 스킬 프로젝타일
-    game.lasers = {}   -- 레이저 스킬 프로젝타일
-    game.meteors = {}  -- 운석 스킬 프로젝타일
-    game.firePatches = {} -- 운석 불장판
-    game.enemyBullets = {} -- 적 탄환 프로젝타일
-    game.thornsVisuals = {} -- 가시 이펙트 데칼/비주얼
+    game.expOrbs = {}                -- 경험치 구슬
+    game.thunders = {}               -- 벼락 스킬 프로젝타일
+    game.blades = {}                 -- 칼날 스킬 프로젝타일
+    game.bullets = {}                -- 총알 스킬 프로젝타일
+    game.lasers = {}                 -- 레이저 스킬 프로젝타일
+    game.meteors = {}                -- 운석 스킬 프로젝타일
+    game.firePatches = {}            -- 운석 불장판
+    game.enemyBullets = {}           -- 적 탄환 프로젝타일
+    game.thornsVisuals = {}          -- 가시 이펙트 데칼/비주얼
     game.pendingThornsAttackers = {} -- 피격 시 가시 발동 예약을 위한 리스트
-    game.chains = {}   -- 체인 스킬 프로젝타일
-    game.chainTimer = 0 -- 체인 발사 타이머
-    game.seekerOrbs = {}   -- 추적 구체 스킬 프로젝타일
-    game.seekerOrbTimer = 0 -- 추적 구체 타이머
-    game.seekerExplosions = {} -- 추적 구체 폭발 이펙트 리스트
+    game.chains = {}                 -- 체인 스킬 프로젝타일
+    game.chainTimer = 0              -- 체인 발사 타이머
+    game.seekerOrbs = {}             -- 추적 구체 스킬 프로젝타일
+    game.seekerOrbTimer = 0          -- 추적 구체 타이머
+    game.seekerExplosions = {}       -- 추적 구체 폭발 이펙트 리스트
     game.score = 0
     game.scoreAccumulated = false
     game.time = 0
@@ -519,10 +524,10 @@ local function startGame(skillIndex)
 
     game.nebulas = {}
     local nebulaColors = {
-        {0.1, 0.05, 0.2}, -- Purple
-        {0.05, 0.1, 0.2}, -- Blue/Cyan
-        {0.15, 0.05, 0.1}, -- Magenta/Pink
-        {0.05, 0.15, 0.1}  -- Green
+        { 0.1,  0.05, 0.2 }, -- Purple
+        { 0.05, 0.1,  0.2 }, -- Blue/Cyan
+        { 0.15, 0.05, 0.1 }, -- Magenta/Pink
+        { 0.05, 0.15, 0.1 }  -- Green
     }
     for i = 1, 6 do
         local col = nebulaColors[math.random(1, #nebulaColors)]
@@ -553,8 +558,7 @@ end
 function love.update(dt)
     -- 메인메뉴, 설정, 강화 화면, 일시정지에서는 일반 루프 미가동
     if game.state == "main_menu" or game.state == "settings" or game.state == "meta_upgrade" or
-       game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or game.state == "paused" or not game.running or game.showHelp then
-        
+        game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or game.state == "paused" or not game.running or game.showHelp then
         -- 플레이 중이 아니었다가 gameover 상태가 된 순간 스코어 누적 및 세이브 처리
         if game.state == "gameover" and not game.scoreAccumulated then
             game.totalScore = (game.totalScore or 0) + (game.score or 0)
@@ -620,8 +624,11 @@ function love.update(dt)
             for _, elem in ipairs(game.backgroundElements) do
                 if elem.type == "glitch_node" then
                     elem.x = elem.x + (math.random() - 0.5) * elem.speed * dt
-                    if elem.x < 0 then elem.x = game.world.width
-                    elseif elem.x > game.world.width then elem.x = 0 end
+                    if elem.x < 0 then
+                        elem.x = game.world.width
+                    elseif elem.x > game.world.width then
+                        elem.x = 0
+                    end
                 elseif elem.type == "glitch_line" then
                     elem.x = elem.x + elem.speed * dt
                     if elem.x > game.world.width then
@@ -704,15 +711,15 @@ function love.draw()
 
     -- 1. 배경 화면 지우기 (스테이지별 전용 테마 색상)
     local clearColors = {
-        [1] = {0.04, 0.04, 0.06}, -- 공허 구역: 심해 우주색
-        [2] = {0.07, 0.02, 0.02}, -- 붉은 연옥: 마그마 크림슨
-        [3] = {0.02, 0.04, 0.03}, -- 네온 매트릭스: 매트릭스 다크 그린
-        [4] = {0.05, 0.045, 0.07}, -- 뇌전 폐허: 먹구름 바이올렛
-        [5] = {0.07, 0.05, 0.02}, -- 우주 성역: 세크리드 앰버
-        [6] = {0.02, 0.04, 0.035}, -- 시간의 특이점: 크로노 다크 에메랄드
-        [7] = {0.015, 0.015, 0.03}, -- 시스템 코어: 사이버 딥 바이올렛/블랙
-        [8] = {0.005, 0.005, 0.015}, -- 특이점 코어: 중력 블랙홀 다크 블루
-        [9] = {0.05, 0.04, 0.02}    -- 성운의 성소: 코스믹 골든 아이보리
+        [1] = { 0.04, 0.04, 0.06 },    -- 공허 구역: 심해 우주색
+        [2] = { 0.07, 0.02, 0.02 },    -- 붉은 연옥: 마그마 크림슨
+        [3] = { 0.02, 0.04, 0.03 },    -- 네온 매트릭스: 매트릭스 다크 그린
+        [4] = { 0.05, 0.045, 0.07 },   -- 뇌전 폐허: 먹구름 바이올렛
+        [5] = { 0.07, 0.05, 0.02 },    -- 우주 성역: 세크리드 앰버
+        [6] = { 0.02, 0.04, 0.035 },   -- 시간의 특이점: 크로노 다크 에메랄드
+        [7] = { 0.015, 0.015, 0.03 },  -- 시스템 코어: 사이버 딥 바이올렛/블랙
+        [8] = { 0.005, 0.005, 0.015 }, -- 특이점 코어: 중력 블랙홀 다크 블루
+        [9] = { 0.05, 0.04, 0.02 }     -- 성운의 성소: 코스믹 골든 아이보리
     }
     local col = clearColors[game.stage or 1] or clearColors[1]
     love.graphics.clear(col[1], col[2], col[3])
@@ -736,15 +743,15 @@ function love.draw()
 
     -- 3. 바닥 격자 무늬(Grid Floor) 그리기 (스테이지별 전용 색상 테마)
     local gridColors = {
-        [1] = {0.12, 0.16, 0.25, 0.35}, -- 사이언 블루
-        [2] = {0.25, 0.08, 0.05, 0.45}, -- 크림슨 오렌지
-        [3] = {0.05, 0.35, 0.15, 0.45}, -- 매트릭스 네온 그린
-        [4] = {0.22, 0.12, 0.38, 0.4},  -- 일렉트릭 퍼플
-        [5] = {0.35, 0.28, 0.08, 0.45}, -- 홀리 골든 브론즈
-        [6] = {0.1, 0.32, 0.22, 0.4},   -- 크로노 에메랄드
-        [7] = {0.35, 0.05, 0.2, 0.45},   -- 사이버 글리치 일렉트릭 마젠타
-        [8] = {0.12, 0.15, 0.22, 0.35}, -- 그래비티 다크 블루
-        [9] = {0.5, 0.4, 0.1, 0.5}      -- 세레스티얼 골드 글로우
+        [1] = { 0.12, 0.16, 0.25, 0.35 }, -- 사이언 블루
+        [2] = { 0.25, 0.08, 0.05, 0.45 }, -- 크림슨 오렌지
+        [3] = { 0.05, 0.35, 0.15, 0.45 }, -- 매트릭스 네온 그린
+        [4] = { 0.22, 0.12, 0.38, 0.4 },  -- 일렉트릭 퍼플
+        [5] = { 0.35, 0.28, 0.08, 0.45 }, -- 홀리 골든 브론즈
+        [6] = { 0.1, 0.32, 0.22, 0.4 },   -- 크로노 에메랄드
+        [7] = { 0.35, 0.05, 0.2, 0.45 },  -- 사이버 글리치 일렉트릭 마젠타
+        [8] = { 0.12, 0.15, 0.22, 0.35 }, -- 그래비티 다크 블루
+        [9] = { 0.5, 0.4, 0.1, 0.5 }      -- 세레스티얼 골드 글로우
     }
     local gridCol = gridColors[game.stage or 1] or gridColors[1]
     love.graphics.setColor(gridCol[1], gridCol[2], gridCol[3], gridCol[4])
@@ -787,7 +794,6 @@ function love.draw()
                     love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
                     love.graphics.circle("fill", elem.x, elem.y, elem.size)
                 end
-                
             elseif elem.type == "vent" then
                 -- 2스테이지 용암 분출구
                 local p = 0.8 + 0.2 * math.sin(game.time * 2.0 + elem.pulse)
@@ -795,7 +801,6 @@ function love.draw()
                 love.graphics.circle("fill", elem.x, elem.y, elem.size)
                 love.graphics.setColor(0.55, 0.15, 0.05, elem.alpha * 0.55 * p)
                 love.graphics.circle("fill", elem.x, elem.y, elem.size * 0.6)
-                
             elseif elem.type == "circuit" then
                 -- 3스테이지 사이버 회로망
                 love.graphics.setColor(0.12, 0.45, 0.22, elem.alpha)
@@ -809,7 +814,6 @@ function love.draw()
                     love.graphics.setColor(0.2, 0.9, 0.4, elem.alpha * 1.6)
                     love.graphics.rectangle("fill", elem.x - 2.5, elem.y + elem.len - 2.5, 5, 5)
                 end
-                
             elseif elem.type == "electric_charge" then
                 -- 4스테이지 정전기 이펙터
                 local aPulse = 0.45 + 0.35 * math.sin(game.time * 9.0 + elem.timer)
@@ -817,38 +821,36 @@ function love.draw()
                 love.graphics.circle("fill", elem.x, elem.y, elem.size)
                 love.graphics.setColor(1.0, 1.0, 1.0, elem.alpha * 1.8 * aPulse)
                 love.graphics.circle("fill", elem.x, elem.y, elem.size * 0.3)
-                
             elseif elem.type == "celestial_halo" then
                 -- 5스테이지 황금빛 오라 링
                 love.graphics.push()
                 love.graphics.translate(elem.x, elem.y)
                 love.graphics.rotate(game.time * elem.rotSpeed)
-                
+
                 love.graphics.setColor(1.0, 0.85, 0.2, elem.alpha)
                 love.graphics.setLineWidth(1.6)
                 love.graphics.circle("line", 0, 0, elem.size)
                 love.graphics.circle("line", 0, 0, elem.size * 0.45)
-                
+
                 for k = 1, 4 do
-                    local angle = (k-1) * (math.pi / 2)
+                    local angle = (k - 1) * (math.pi / 2)
                     love.graphics.line(
                         math.cos(angle) * (elem.size * 0.45), math.sin(angle) * (elem.size * 0.45),
                         math.cos(angle) * elem.size, math.sin(angle) * elem.size
                     )
                 end
                 love.graphics.pop()
-                
             elseif elem.type == "chrono_gear" then
                 -- 6스테이지 크로노 시계 태엽
                 love.graphics.push()
                 love.graphics.translate(elem.x, elem.y)
                 love.graphics.rotate(elem.angle)
-                
+
                 love.graphics.setColor(0.1, 0.82, 0.52, elem.alpha)
                 love.graphics.setLineWidth(1.8)
                 love.graphics.circle("line", 0, 0, elem.size * 0.75)
                 love.graphics.circle("line", 0, 0, elem.size * 0.3)
-                
+
                 for tooth = 1, 8 do
                     local tAngle = (tooth - 1) * (2 * math.pi / 8)
                     love.graphics.push()
@@ -864,7 +866,8 @@ function love.draw()
                     if math.random() < 0.08 then
                         love.graphics.rectangle("fill", elem.x - 5, elem.y - 1, 10, 2)
                     else
-                        love.graphics.rectangle("fill", elem.x - elem.size/2, elem.y - elem.size/2, elem.size, elem.size)
+                        love.graphics.rectangle("fill", elem.x - elem.size / 2, elem.y - elem.size / 2, elem.size,
+                            elem.size)
                     end
                 end
             elseif elem.type == "glitch_line" then
@@ -872,7 +875,7 @@ function love.draw()
                 love.graphics.setColor(0.0, 1.0, 1.0, elem.alpha * 0.7)
                 love.graphics.setLineWidth(1)
                 love.graphics.line(elem.x, elem.y, elem.x + elem.len, elem.y)
-                
+
                 love.graphics.setColor(1.0, 0.0, 0.4, elem.alpha * 1.5)
                 love.graphics.rectangle("fill", elem.x + elem.len - 3, elem.y - 1.5, 6, 3)
             elseif elem.type == "void_node" then
@@ -900,9 +903,9 @@ function love.draw()
                 love.graphics.setLineWidth(1.5)
                 love.graphics.circle("line", elem.x, elem.y, r)
                 love.graphics.circle("line", elem.x, elem.y, r * 0.75)
-                
+
                 for k = 1, 12 do
-                    local angle = (k-1) * (2 * math.pi / 12) + game.time * (elem.rotSpeed or 0.2)
+                    local angle = (k - 1) * (2 * math.pi / 12) + game.time * (elem.rotSpeed or 0.2)
                     love.graphics.line(
                         elem.x + math.cos(angle) * (r * 0.75), elem.y + math.sin(angle) * (r * 0.75),
                         elem.x + math.cos(angle) * r, elem.y + math.sin(angle) * r
@@ -945,17 +948,17 @@ function love.draw()
     if game.player and game.player.controlsInvertedTimer and game.player.controlsInvertedTimer > 0 then
         local w = love.graphics.getWidth()
         local h = love.graphics.getHeight()
-        
+
         -- 임의로 깜빡이는 사이언/마젠타 반투명 레이어 틴트
         local glitchIntensity = game.player.controlsInvertedTimer / 2.5
         local randOffset = (math.random() - 0.5) * 12 * glitchIntensity
-        
+
         -- Chromatic Aberration 모사: 마젠타 빔과 사이언 빔을 오프셋 시켜 드로우
         love.graphics.setColor(1.0, 0.0, 0.4, 0.14 * glitchIntensity)
         love.graphics.rectangle("fill", randOffset, 0, w, h)
         love.graphics.setColor(0.0, 1.0, 1.0, 0.14 * glitchIntensity)
         love.graphics.rectangle("fill", -randOffset, 0, w, h)
-        
+
         -- 화면에 가로로 찢어지는 글리치 라인 노이즈 그리기
         love.graphics.setLineWidth(math.random(1, 4))
         for line = 1, math.random(2, 6) do
@@ -966,18 +969,19 @@ function love.draw()
             love.graphics.rectangle("fill", lx, ly, w, lh)
         end
         love.graphics.setLineWidth(1)
-        
+
         -- 경고 텍스트 출력
         local pulse = 0.8 + 0.2 * math.sin(game.time * 25)
         love.graphics.setColor(1.0, 0.1, 0.4, 0.95 * pulse)
         local font = love.graphics.newFont(20)
         love.graphics.setFont(font)
         love.graphics.printf("⚠️ WARNING: SYSTEM HACKED ⚠️", 0, 80, w, "center")
-        
+
         local subFont = love.graphics.newFont(12)
         love.graphics.setFont(subFont)
         love.graphics.setColor(0.0, 1.0, 1.0, 0.9 * pulse)
-        love.graphics.printf("CONTROLS INVERTED (" .. string.format("%.1fs", game.player.controlsInvertedTimer) .. ")", 0, 115, w, "center")
+        love.graphics.printf("CONTROLS INVERTED (" .. string.format("%.1fs", game.player.controlsInvertedTimer) .. ")", 0,
+            115, w, "center")
     end
 
     -- 화면 UI 그리기 (HUD: 점수, 레벨, 시간)
@@ -1106,7 +1110,6 @@ function love.mousepressed(x, y, button)
                     end
                 end
             end
-            
         elseif game.state == "paused" then
             if game.pauseButtons then
                 for _, btn in ipairs(game.pauseButtons) do
@@ -1131,7 +1134,6 @@ function love.mousepressed(x, y, button)
                     end
                 end
             end
-            
         elseif game.state == "settings" then
             -- 체크박스 영역 클릭 처리
             if game.settingsCheckboxes then
@@ -1143,14 +1145,13 @@ function love.mousepressed(x, y, button)
                     end
                 end
             end
-            
+
             -- 뒤로 가기 버튼 클릭 처리
             local back = game.settingsBackBtn
             if back and x >= back.x and x <= back.x + back.w and y >= back.y and y <= back.y + back.h then
                 game.state = game.prevSettingsState or "main_menu"
                 game.prevSettingsState = nil
             end
-            
         elseif game.state == "meta_upgrade" then
             -- 탭 클릭 처리
             if game.metaUpgradeTabs then
@@ -1179,7 +1180,7 @@ function love.mousepressed(x, y, button)
                     end
                 end
             end
-            
+
             -- 뒤로 가기 버튼 클릭 처리
             local back = game.upgradeBackBtn
             if back and x >= back.x and x <= back.x + back.w and y >= back.y and y <= back.y + back.h then
@@ -1191,7 +1192,6 @@ function love.mousepressed(x, y, button)
             if reset and x >= reset.x and x <= reset.x + reset.w and y >= reset.y and y <= reset.y + reset.h then
                 HUD.resetMetaUpgrades(game)
             end
-            
         elseif game.state == "menu" then
             for i, box in ipairs(game.skillBoxes) do
                 if x >= box.x and x <= box.x + box.width and
@@ -1201,7 +1201,6 @@ function love.mousepressed(x, y, button)
                     break
                 end
             end
-            
         elseif game.state == "upgrade" then
             for i, box in ipairs(game.upgradeBoxes) do
                 if x >= box.x and x <= box.x + box.width and
@@ -1210,7 +1209,6 @@ function love.mousepressed(x, y, button)
                     break
                 end
             end
-            
         elseif game.state == "stage_clear" then
             local screenWidth = love.graphics.getWidth()
             local screenHeight = love.graphics.getHeight()
@@ -1235,7 +1233,7 @@ function love.mousepressed(x, y, button)
                     game.state = "playing"
                     game.running = true
                     initBackground(game)
-                    
+
                     local EnemyModule = require("enemy.spawner")
                     EnemyModule.spawnWave(game, 1)
                 elseif x >= btn2X and x <= btn2X + btn2Width and y >= btnY and y <= btnY + btnHeight then
@@ -1266,7 +1264,7 @@ function love.mousepressed(x, y, button)
                         game.state = "playing"
                         game.running = true
                         initBackground(game)
-                        
+
                         local EnemyModule = require("enemy.spawner")
                         EnemyModule.spawnWave(game, 1)
                     end

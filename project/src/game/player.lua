@@ -11,7 +11,7 @@ function Player.init(skillIndex, metaUpgrades)
         skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
         upgrades = { 0, 0, 0, 0, 0, 0, 0, 0 }
     }
-    
+
     local skillLevels = {}
     for i = 1, 10 do
         skillLevels[i] = metaUpgrades.skills[i] or 0
@@ -22,15 +22,15 @@ function Player.init(skillIndex, metaUpgrades)
     end
 
     local upgradeLevels = {}
-    for i = 1, 8 do
+    for i = 1, 9 do
         upgradeLevels[i] = metaUpgrades.upgrades[i] or 0
     end
 
     -- 영구 강화 스탯 적용
     -- 1번 Magnet
     local magnetRange = 100 * (1.03 ^ upgradeLevels[1])
-    -- 2번 Health Boost
-    local maxHp = 100 + upgradeLevels[2] * 20
+    -- 2번 Health Boost (비율 기반, 메타 업그레이드와 게임 내 업그레이드 통일)
+    local maxHp = 100 * (1.1 ^ upgradeLevels[2])
     -- 3번 Speed Boost
     local speed = 200 * (1.05 ^ upgradeLevels[3])
     -- 4번 Damage Boost
@@ -39,6 +39,8 @@ function Player.init(skillIndex, metaUpgrades)
     local regenRate = upgradeLevels[5] * 5
     -- 6번 EXP Boost
     local expModifier = 1.0 + upgradeLevels[6] * 0.25
+    -- 9번 Defense Boost (받는 데미지 감소)
+    local defenseReduction = upgradeLevels[9] * 0.05
 
     local stats = {
         x = 400,
@@ -50,20 +52,21 @@ function Player.init(skillIndex, metaUpgrades)
         maxHealth = maxHp,
         invincibleTime = 0,
         maxInvincibleTime = 0.6,
-        controlsInvertedTimer = 0,       -- 키보드 반전 디버프 타이머
+        controlsInvertedTimer = 0, -- 키보드 반전 디버프 타이머
         level = 1,
         experience = 0,
         maxExperience = 50,
         expModifier = expModifier,
         hasMagnet = (upgradeLevels[1] > 0),
         magnetRange = magnetRange,
-        upgradeLevels = upgradeLevels,     -- 영구 특성 레벨 반영
+        upgradeLevels = upgradeLevels,       -- 영구 특성 레벨 반영
         damage = damage,
-        regenRate = regenRate,             -- 영구 체력 재생률 반영
-        alwaysRegenTimer = 0,              -- 1초 주기 항상 체력 재생 타이머
-        selectedSkill = skillIndex,        -- 선택한 스킬 인덱스
-        skillLevels = skillLevels,          -- 영구 스킬 레벨 반영
-        
+        regenRate = regenRate,               -- 영구 체력 재생률 반영
+        alwaysRegenTimer = 0,                -- 1초 주기 항상 체력 재생 타이머
+        selectedSkill = skillIndex,          -- 선택한 스킬 인덱스
+        skillLevels = skillLevels,           -- 영구 스킬 레벨 반영
+        defenseReduction = defenseReduction, -- 방어력 감소율 (레벨당 5%)
+
         -- 에너지 실드 특성 상태 데이터
         shieldActive = (upgradeLevels[8] > 0),
         shieldTimer = 0,
@@ -83,11 +86,15 @@ function Player.init(skillIndex, metaUpgrades)
                     -- 피해를 입었을 때 실드가 켜져있으면 무조건 무효화 처리
                     if stats.shieldActive then
                         stats.shieldActive = false
-                        stats.shieldTimer = 0 -- 실드가 깨졌을 때를 기점으로 쿨타임 시작
-                        stats.shieldBreakVisualTimer = 0.5 -- 0.5초 동안 파괴 팽창 이펙트
+                        stats.shieldTimer = 0                          -- 실드가 깨졌을 때를 기점으로 쿨타임 시작
+                        stats.shieldBreakVisualTimer = 0.5             -- 0.5초 동안 파괴 팽창 이펙트
                         stats.invincibleTime = stats.maxInvincibleTime -- 피격 판정 후 짧은 무적 시간 부여
                         return
                     end
+                    -- 방어력 감소 적용 (받는 데미지 감소)
+                    local damage = current - v
+                    local reducedDamage = damage * (1 - stats.defenseReduction)
+                    v = current - reducedDamage
                 end
             end
             stats[k] = v
@@ -234,7 +241,7 @@ function Player.draw(game)
     local shieldPulse = 1 + math.sin(game.time * 6) * 0.05
     love.graphics.setColor(0.2, 0.8, 1.0, 0.12)
     love.graphics.circle("fill", cx, cy, r * 1.6 * shieldPulse)
-    
+
     love.graphics.setLineWidth(1.5)
     love.graphics.setColor(0.3, 0.8, 1.0, 0.45 + math.sin(game.time * 12) * 0.05)
     love.graphics.circle("line", cx, cy, r * 1.6 * shieldPulse)
@@ -246,7 +253,7 @@ function Player.draw(game)
         love.graphics.setLineWidth(2.0)
         love.graphics.setColor(1.0, 0.75, 0.0, 0.85 + math.sin(game.time * 15) * 0.1) -- Gold
         love.graphics.circle("line", cx, cy, r * 2.0 * blockPulse)
-        
+
         -- 실드 복구 시 순간적인 백색 광원 플래시
         if player.shieldRestoreVisualTimer and player.shieldRestoreVisualTimer > 0 then
             local flashAlpha = (player.shieldRestoreVisualTimer / 0.4) * 0.6
@@ -270,7 +277,7 @@ function Player.draw(game)
     local blink = false
     if player.invincibleTime > 0 then
         blink = math.floor(player.invincibleTime * 20) % 2 == 0
-        
+
         -- 경고 전자기 스파크 그리기
         love.graphics.setColor(1.0, 0.3, 0.3, 0.8)
         love.graphics.setLineWidth(1)
@@ -289,12 +296,12 @@ function Player.draw(game)
     love.graphics.push()
     love.graphics.translate(cx, cy)
     love.graphics.rotate(game.time * 1.5) -- 부드럽게 회전
-    
+
     for k = 1, 4 do
         local angle = (k * math.pi / 2)
         love.graphics.push()
         love.graphics.rotate(angle)
-        
+
         -- 장갑 모듈 색상 (피격 시 붉은색 틴팅)
         if blink then
             love.graphics.setColor(0.9, 0.2, 0.2, 0.9)
@@ -303,7 +310,7 @@ function Player.draw(game)
         end
         -- 모듈 채우기
         love.graphics.rectangle("fill", -5, -r - 2, 10, 5, 1, 1)
-        
+
         -- 네온 테두리
         if blink then
             love.graphics.setColor(1.0, 0.4, 0.4, 0.95)
@@ -312,7 +319,7 @@ function Player.draw(game)
         end
         love.graphics.setLineWidth(1)
         love.graphics.rectangle("line", -5, -r - 2, 10, 5, 1, 1)
-        
+
         love.graphics.pop()
     end
     love.graphics.pop()
@@ -321,7 +328,7 @@ function Player.draw(game)
     love.graphics.push()
     love.graphics.translate(cx, cy)
     love.graphics.rotate(-game.time * 2.2) -- 반대 방향 회전
-    
+
     if blink then
         love.graphics.setColor(0.8, 0.1, 0.1, 0.95)
     else
@@ -329,7 +336,7 @@ function Player.draw(game)
     end
     -- 마름모 그리기
     love.graphics.polygon("fill", 0, -r * 0.7, r * 0.7, 0, 0, r * 0.7, -r * 0.7, 0)
-    
+
     -- 마름모 테두리
     if blink then
         love.graphics.setColor(1.0, 0.4, 0.4, 0.95)
@@ -338,7 +345,7 @@ function Player.draw(game)
     end
     love.graphics.setLineWidth(1.5)
     love.graphics.polygon("line", 0, -r * 0.7, r * 0.7, 0, 0, r * 0.7, -r * 0.7, 0)
-    
+
     love.graphics.pop()
 
     -- 5. 눈부신 백색 중심부
@@ -348,7 +355,7 @@ function Player.draw(game)
         love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
     end
     love.graphics.circle("fill", cx, cy, r * 0.3)
-    
+
     -- 복구
     love.graphics.setColor(1, 1, 1)
     love.graphics.setLineWidth(1)

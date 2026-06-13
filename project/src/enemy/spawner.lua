@@ -90,7 +90,7 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
     local bossSpeed = 60
     local baseHealth = 60000
     local pointsVal = 500
-    
+
     if bossStageNum == 2 then
         bossName = "Infernus Leviathan"
         bossColor = { 1.0, 0.2, 0.1 }
@@ -2614,14 +2614,45 @@ function Enemy.update(game, dt)
         -- 플레이어와 충돌 (피격 판정 처리, 겹침 해소는 생략하여 겹칠 수 있도록 함)
         if Collision.check(enemy, player) then
             if player.invincibleTime <= 0 then
-                local dmg = 1
+                -- 적 종류별 기본 대미지
+                local baseDamage = 1
                 if enemy.type == "boss" then
-                    dmg = 20 -- 보스의 몸박 데미지는 강력하게 20!
+                    -- 보스 대미지는 플레이어 최대 체력의 5%로 고정
+                    baseDamage = player.maxHealth * 0.05
                 elseif enemy.type == "boss_clone" then
-                    dmg = 4  -- 분신의 몸박 데미지 4!
-                elseif enemy.type == "charger" and enemy.chargerState == "rushing" then
-                    dmg = 3  -- 돌격하는 돌진병 대미지 3!
+                    -- 보스 분신 대미지도 플레이어 최대 체력의 5%로 고정
+                    baseDamage = player.maxHealth * 0.05
+                elseif enemy.type == "tank" then
+                    baseDamage = 2
+                elseif enemy.type == "fast" then
+                    baseDamage = 1.5
+                elseif enemy.type == "ranged" then
+                    baseDamage = 1.2
+                elseif enemy.type == "charger" then
+                    baseDamage = enemy.chargerState == "rushing" and 2.5 or 1.8
+                elseif enemy.type == "aegis_shield" then
+                    baseDamage = 1.5
+                elseif enemy.type == "tesla_pylon" then
+                    baseDamage = 0.5
                 end
+
+                -- 웨이브별 대미지 배수 (웨이브 1: 1.0, 웨이브 2: 1.1, ...)
+                local waveMultiplier = 1.0 + (game.wave - 1) * 0.1
+
+                -- 스테이지별 대미지 배수
+                local stageMultiplier = 1.0 + ((game.stage or 1) - 1) * 0.5
+
+                -- 최종 대미지 계산
+                local dmg
+                if enemy.type == "boss" or enemy.type == "boss_clone" then
+                    -- 보스와 보스 분신은 체력 비율로 고정, 배수 미적용
+                    dmg = baseDamage
+                else
+                    -- 일반 적은 웨이브/스테이지 배수 적용
+                    dmg = baseDamage * waveMultiplier * stageMultiplier
+                end
+                dmg = math.floor(dmg * 10) / 10 -- 소수점 한 자리까지 반올림
+
                 player.health = player.health - dmg
                 player.invincibleTime = player.maxInvincibleTime
                 -- 체력 재생 타이머 리셋
@@ -2997,14 +3028,15 @@ function Enemy.draw(game)
             local col = echo.color or { 0.25, 0.95, 0.75 }
             local alpha = echo.alpha or 0.8
             love.graphics.setColor(col[1], col[2], col[3], alpha * 0.5)
-            
+
             local cx = echo.x + echo.width / 2
             local cy = echo.y + echo.height / 2
             local progress = echo.life / echo.maxLife
             local pulse = 1.0 - (1.0 - progress) * 0.3 -- 점점 작아지는 연출
-            
+
             love.graphics.circle("fill", cx, cy, (echo.width / 2) * pulse)
-            love.graphics.rectangle("line", echo.x + echo.width * (1 - pulse) / 2, echo.y + echo.height * (1 - pulse) / 2, echo.width * pulse, echo.height * pulse)
+            love.graphics.rectangle("line", echo.x + echo.width * (1 - pulse) / 2, echo.y + echo.height * (1 - pulse) / 2,
+                echo.width * pulse, echo.height * pulse)
         end
     end
 
@@ -3422,7 +3454,8 @@ function Enemy.draw(game)
                 love.graphics.setColor(eyeCol[1], eyeCol[2], eyeCol[3], 0.95 * baseAlpha)
                 love.graphics.circle("fill", cx, cy, 4 * eyePulse * eyeSizeMult)
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.9 * baseAlpha)
-                love.graphics.circle("fill", cx - 1.5 * eyePulse * eyeSizeMult, cy - 1.5 * eyePulse * eyeSizeMult, 1.5 * eyePulse * eyeSizeMult)
+                love.graphics.circle("fill", cx - 1.5 * eyePulse * eyeSizeMult, cy - 1.5 * eyePulse * eyeSizeMult,
+                    1.5 * eyePulse * eyeSizeMult)
 
                 love.graphics.setColor(1.0, 1.0, 1.0)
                 love.graphics.setLineWidth(1)
