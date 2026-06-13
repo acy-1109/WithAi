@@ -59,7 +59,7 @@ function Exp.checkLevelUp(game)
     if player.experience >= player.maxExperience then
         player.experience = player.experience - player.maxExperience
         player.level = player.level + 1
-        player.maxExperience = math.floor(player.maxExperience * 1.3)
+        player.maxExperience = math.floor(player.maxExperience * 1.15)
 
         -- 레벨업 보너스 (체력 회복)
         player.health = math.min(player.health + 20, player.maxHealth)

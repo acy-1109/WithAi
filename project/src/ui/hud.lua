@@ -12,70 +12,111 @@ local function getFont(size)
     return fontCache[size]
 end
 
--- 스킬 레벨별 세부 설명 룩업 테이블
+-- Detailed lookup table for skill descriptions by level
 local skillLevelDescriptions = {
-    [2] = { -- 벼락 (Thunder)
+    [1] = { -- Orbiting Orb
+        "Spawns an orbiting orb that damages enemies",
+        "Adds 1 orbiting orb",
+        "Adds 1 orb & increases rotation speed",
+        "Adds 1 orb & increases damage",
+        "Adds 1 orb & increases rotation speed further",
+    },
+    [2] = { -- Thunder
         "Strike lightning on the closest enemy",
         "Reduces cooldown & increases damage",
         "Increases lightning count to 2 targets",
         "Reduces cooldown & increases damage",
         "Increases lightning count to 3 targets",
     },
-    [3] = { -- 칼날 (Blade)
+    [3] = { -- Blade
         "Fires a tracking blade at the closest enemy",
         "Reduces cooldown & increases damage",
         "Fires 2 blades sequentially",
         "Reduces cooldown",
         "Fires 3 blades sequentially & increases blade size",
     },
-    [4] = { -- 총알 (Bullet)
+    [4] = { -- Bullet
         "Fires a bullet at the closest enemy",
         "Adds piercing effect & reduces cooldown",
         "Fires triple shot spread, increases damage & reduces cooldown",
         "Reduces cooldown",
         "Increases damage & reduces cooldown",
     },
-    [5] = { -- 레이저 (Laser)
+    [5] = { -- Laser
         "Fires a slow-charging laser beam that follows you for a short duration",
         "Increases damage & duration slightly",
         "Increases laser thickness, damage & duration",
         "Reduces cooldown slightly",
         "Hyper Laser: Colossal damage, maximum thickness & longest duration",
     },
-    [6] = { -- 자기장 (Magnetic Field)
+    [6] = { -- Magnetic Field
         "Deploys a circular magnetic field around you",
         "Increases damage & reduces cooldown",
         "Increases duration",
         "Increases radius & damage",
         "Reduces cooldown",
     },
-    [7] = { -- 운석 (Meteor)
+    [7] = { -- Meteor
         "Call down a meteor from the sky that damages enemies and shakes the screen",
         "Reduces cooldown & increases meteor damage",
         "Increases meteor count by 1 target",
         "Leaves burning fire patches on the ground that deal damage over time",
         "Increases meteor count by 1 target",
     },
-    [8] = { -- 커터 (Cutter)
+    [8] = { -- Cutter
         "Sharp energy blade extends from your body and rotates",
         "Adds 1 blade & increases damage",
         "Adds 1 blade & increases rotation speed",
         "Adds 1 blade & increases damage",
         "Adds 1 blade & increases rotation speed"
     },
-    [9] = { -- 체인 (Chain)
+    [9] = { -- Chain
         "Fires a glowing chain that locks the closest enemy in place and damages them",
         "Increases lock duration",
         "Reaction: Chain cascades from locked enemy to another nearby enemy",
         "Fires 2 chains targeting the 2 closest enemies",
         "Reduces cooldown significantly"
     },
-    [10] = { -- 추적 구체 (Seeker Orb)
+    [10] = { -- Seeker Orb
         "Spawns a charging orb that fires at the closest enemy",
         "Increases the number of spawned orbs to 2",
         "Reduces cooldown and increases orb damage",
         "Increases the number of spawned orbs to 3",
         "Adds a powerful explosion on impact (AoE damage)"
+    }
+}
+
+-- Detailed lookup table for upgrade descriptions by level
+local upgradeLevelDescriptions = {
+    [1] = { -- Magnet
+        "Attract experience orbs from nearby (+3% range)",
+        "Increase attraction range (+6% range)",
+        "Increase attraction range further (+9% range)"
+    },
+    [3] = { -- Speed Boost
+        "Increase movement speed by 5%",
+        "Increase movement speed by 10%",
+        "Increase movement speed by 15%"
+    },
+    [5] = { -- Health Regen
+        "Regenerate 5% of max health every second",
+        "Regenerate 10% of max health every second",
+        "Regenerate 15% of max health every second"
+    },
+    [6] = { -- EXP Boost
+        "Increase experience gained by 25%",
+        "Increase experience gained by 50%",
+        "Increase experience gained by 75%"
+    },
+    [7] = { -- Thorns
+        "30% chance to retaliate and damage nearby enemies when hit",
+        "60% chance to retaliate and damage nearby enemies when hit",
+        "90% chance to retaliate and damage nearby enemies when hit"
+    },
+    [8] = { -- Energy Shield
+        "Generate a block shield every 12 seconds",
+        "Generate a block shield every 9 seconds",
+        "Generate a block shield every 6 seconds"
     }
 }
 
@@ -142,12 +183,12 @@ function HUD.drawMenu(game)
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 
-    -- 스킬 박스 그리기
+    -- Draw skill selection boxes
     for i, box in ipairs(game.skillBoxes) do
         local skillIndex = game.skillOptions[i]
         local skill = game.skills[skillIndex]
 
-        -- 박스 배경 및 호버 효과
+        -- Box background and hover effect
         local mouseX, mouseY = love.mouse.getPosition()
         local isHovered = mouseX >= box.x and mouseX <= box.x + box.width and
             mouseY >= box.y and mouseY <= box.y + box.height
@@ -159,26 +200,26 @@ function HUD.drawMenu(game)
         end
         love.graphics.rectangle("fill", box.x, box.y, box.width, box.height)
 
-        -- 박스 테두리
+        -- Box borders
         love.graphics.setColor(0.6, 0.6, 0.8)
         love.graphics.rectangle("line", box.x, box.y, box.width, box.height)
 
-        -- 스킬 이름 (카드 상단 영역 배치)
+        -- Skill name
         love.graphics.setColor(1, 1, 1)
         love.graphics.setFont(getFont(32))
-        love.graphics.printf(skill.name, box.x, box.y + box.height * 0.38, box.width, "center")
+        love.graphics.printf(skill.name, box.x, box.y + box.height * 0.35, box.width, "center")
 
-        -- 스킬 설명 (카드 중앙 영역에 좌우 패딩을 주어 자동 줄바꿈)
-        love.graphics.setFont(getFont(16))
-        love.graphics.printf(skill.description, box.x + 20, box.y + box.height * 0.48, box.width - 40, "center")
+        -- Skill description (wrapped with font size 13 to avoid overflow)
+        love.graphics.setFont(getFont(13))
+        love.graphics.printf(skill.description, box.x + 20, box.y + box.height * 0.44, box.width - 40, "center")
     end
 
-    -- 메인 제목
+    -- Main title
     love.graphics.setColor(1, 1, 1)
     love.graphics.setFont(getFont(48))
     love.graphics.printf("Roguelike Survivor", 0, 50, screenWidth, "center")
 
-    -- 하단 안내
+    -- Footer guidance
     love.graphics.setFont(getFont(24))
     love.graphics.printf("Select a skill", 0, screenHeight - 50, screenWidth, "center")
 end
@@ -200,14 +241,14 @@ function HUD.drawUpgrade(game)
                 mouseY >= box.y and mouseY <= box.y + box.height
 
             if option.type == "skill" then
-                -- 스킬 카드: 청회색 계열 (시작 스킬 메뉴와 일관성 부여)
+                -- Skill card styling
                 if isHovered then
                     love.graphics.setColor(0.4, 0.4, 0.6)
                 else
                     love.graphics.setColor(0.3, 0.3, 0.5)
                 end
             else
-                -- 특성 카드: 초록색 계열
+                -- Trait card styling
                 if isHovered then
                     love.graphics.setColor(0.4, 0.6, 0.4)
                 else
@@ -216,7 +257,7 @@ function HUD.drawUpgrade(game)
             end
             love.graphics.rectangle("fill", box.x, box.y, box.width, box.height)
 
-            -- 박스 테두리 그리기
+            -- Draw card borders
             if option.type == "skill" then
                 love.graphics.setColor(0.6, 0.6, 0.8)
             else
@@ -224,7 +265,7 @@ function HUD.drawUpgrade(game)
             end
             love.graphics.rectangle("line", box.x, box.y, box.width, box.height)
 
-            -- 텍스트 렌더링 준비
+            -- Prepare text rendering
             love.graphics.setColor(1, 1, 1)
             love.graphics.setFont(getFont(32))
 
@@ -252,47 +293,64 @@ function HUD.drawUpgrade(game)
             else
                 local upgrade = game.upgrades[option.index]
                 nameText = upgrade.name
-                descText = upgrade.description
+                
+                local currentLevel = game.player.upgradeLevels[option.index] or 0
+                local nextLevel = currentLevel + 1
+                local descList = upgradeLevelDescriptions[option.index]
+                if descList and descList[nextLevel] then
+                    descText = descList[nextLevel]
+                else
+                    descText = upgrade.description
+                end
             end
 
-            -- 이름 출력 (카드 상단 영역 배치)
-            love.graphics.printf(nameText, box.x, box.y + box.height * 0.35, box.width, "center")
+            -- Draw card name
+            love.graphics.printf(nameText, box.x, box.y + box.height * 0.32, box.width, "center")
 
-            -- 설명 출력 (카드 중앙 영역에 좌우 패딩을 주어 자동 줄바꿈)
-            love.graphics.setFont(getFont(16))
-            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.48, box.width - 40, "center")
+            -- Draw card description (wrapped, font size 13 to prevent box overflow)
+            love.graphics.setFont(getFont(13))
+            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.44, box.width - 40, "center")
 
-            -- 하단 부가 정보 렌더링
+            -- Draw card footer info
             if option.type == "skill" then
-                -- 스킬: 레벨 텍스트 표시
+                -- Skills: Render level text
                 love.graphics.setColor(0.9, 0.9, 0.9)
                 love.graphics.setFont(getFont(16))
-                love.graphics.printf(levelText, box.x, box.y + box.height * 0.68, box.width, "center")
+                love.graphics.printf(levelText, box.x, box.y + box.height * 0.72, box.width, "center")
             else
-                -- 특성: 별 표시 (3회 누적 업그레이드 표시)
+                -- Traits: Renders level diamonds or level text if infinite
                 local player = game.player
                 if player then
                     local upgradeLevel = player.upgradeLevels[option.index] or 0
-                    local starSize = 15
-                    local starSpacing = 18
-                    local totalWidth = 2 * starSpacing + starSize
-                    local startX = box.x + (box.width - totalWidth) / 2
-                    local starY = box.y + box.height * 0.70
+                    local isInfinite = (option.index == 2 or option.index == 4)
 
-                    for j = 1, 3 do
-                        local x = startX + (j - 1) * starSpacing
-                        if j <= upgradeLevel then
-                            love.graphics.setColor(1.0, 0.8, 0.0) -- 획득한 레벨: 황금색
-                        else
-                            love.graphics.setColor(0.5, 0.5, 0.5) -- 미획득 레벨: 회색
+                    if isInfinite then
+                        local levelText = "Level: " .. upgradeLevel .. " -> " .. (upgradeLevel + 1)
+                        love.graphics.setColor(0.9, 0.9, 0.9)
+                        love.graphics.setFont(getFont(16))
+                        love.graphics.printf(levelText, box.x, box.y + box.height * 0.72, box.width, "center")
+                    else
+                        local starSize = 15
+                        local starSpacing = 18
+                        local totalWidth = 2 * starSpacing + starSize
+                        local startX = box.x + (box.width - totalWidth) / 2
+                        local starY = box.y + box.height * 0.72
+
+                        for j = 1, 3 do
+                            local x = startX + (j - 1) * starSpacing
+                            if j <= upgradeLevel then
+                                love.graphics.setColor(1.0, 0.8, 0.0) -- Gold
+                            else
+                                love.graphics.setColor(0.5, 0.5, 0.5) -- Grey
+                            end
+
+                            love.graphics.polygon("fill",
+                                x, starY - starSize / 2,
+                                x + starSize / 2, starY,
+                                x, starY + starSize / 2,
+                                x - starSize / 2, starY
+                            )
                         end
-
-                        love.graphics.polygon("fill",
-                            x, starY - starSize / 2,
-                            x + starSize / 2, starY,
-                            x, starY + starSize / 2,
-                            x - starSize / 2, starY
-                        )
                     end
                 end
             end
@@ -879,11 +937,30 @@ function HUD.drawMetaUpgrade(game)
         local btnX = rx + colWidth - btnW - 12
         local btnY = ry + (itemH - btnH) / 2
         
-        -- Description (2행 배치, 자동 줄바꿈으로 BUY 버튼 침범 차단)
+        -- Get level-specific description dynamically
+        local displayDesc = up.desc
+        local nextLevel = lv + 1
+        if isMax then
+            nextLevel = lv
+        end
+        
+        if itemType == "skill" then
+            local descList = skillLevelDescriptions[up.index]
+            if descList and descList[nextLevel] then
+                displayDesc = descList[nextLevel]
+            end
+        else
+            local descList = upgradeLevelDescriptions[up.index]
+            if descList and descList[nextLevel] then
+                displayDesc = descList[nextLevel]
+            end
+        end
+
+        -- Description (2-line layout, wrapped to avoid overlap with BUY button)
         love.graphics.setColor(0.65, 0.7, 0.75)
         love.graphics.setFont(getFont(11))
         local maxDescWidth = btnX - rx - 24
-        love.graphics.printf(up.desc, rx + 12, ry + 32, maxDescWidth, "left")
+        love.graphics.printf(displayDesc, rx + 12, ry + 32, maxDescWidth, "left")
         
         table.insert(game.upgradeStoreButtons, {
             x = btnX, y = btnY, w = btnW, h = btnH, type = itemType, index = up.index, cost = cost, max = up.max, lv = lv
@@ -1147,6 +1224,163 @@ function HUD.drawPause(game)
         local displayText = btn.label
         love.graphics.printf(displayText, drawX, drawY + 16, drawW, "center")
     end
+    
+    love.graphics.setLineWidth(1)
+end
+
+-- ============================================================================
+-- Help & Cheat Codes Overlay (F1 Window)
+-- ============================================================================
+function HUD.drawHelp(game)
+    local screenWidth = love.graphics.getWidth()
+    local screenHeight = love.graphics.getHeight()
+    local mx, my = love.mouse.getPosition()
+    
+    -- 1. Dark semi-transparent background overlay
+    love.graphics.setColor(0.02, 0.02, 0.03, 0.75)
+    love.graphics.rectangle("fill", 0, 0, screenWidth, screenHeight)
+    
+    -- 2. Glassmorphism popup container (560px width, 480px height)
+    local w, h = 560, 480
+    local px = (screenWidth - w) / 2
+    local py = (screenHeight - h) / 2
+    
+    -- Soft neon glow shadow layer behind popup
+    love.graphics.setColor(0.1, 0.5, 0.9, 0.15)
+    love.graphics.rectangle("fill", px - 6, py - 6, w + 12, h + 12, 16, 16)
+    
+    -- Main container panel body
+    love.graphics.setColor(0.06, 0.08, 0.12, 0.95)
+    love.graphics.rectangle("fill", px, py, w, h, 12, 12)
+    
+    -- Container neon border
+    love.graphics.setLineWidth(2)
+    love.graphics.setColor(0.2, 0.5, 0.85, 0.8)
+    love.graphics.rectangle("line", px, py, w, h, 12, 12)
+    
+    -- 3. Title: "GAME INFO & CHEATS" with pulsing aura
+    love.graphics.setFont(getFont(26))
+    local titleGlow = 0.85 + math.sin(love.timer.getTime() * 4) * 0.15
+    
+    -- Drop shadow for readability
+    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.printf("HELP AND CHEAT CODES", px + 2, py + 32, w, "center")
+    
+    -- Main cyan glowing title
+    love.graphics.setColor(0.3, 0.8, 1.0, titleGlow)
+    love.graphics.printf("HELP AND CHEAT CODES", px, py + 30, w, "center")
+    
+    -- Elegant separator line
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(0.2, 0.35, 0.5, 0.4)
+    love.graphics.line(px + 40, py + 75, px + w - 40, py + 75)
+    
+    -- 4. Left Column: CONTROLS
+    local colW = 220
+    local lx = px + 40
+    local ly = py + 95
+    
+    love.graphics.setFont(getFont(18))
+    love.graphics.setColor(0.3, 1.0, 0.5) -- Neon Green
+    love.graphics.print("CONTROLS", lx, ly)
+    
+    love.graphics.setFont(getFont(13))
+    love.graphics.setColor(0.85, 0.9, 0.95)
+    local controls = {
+        { key = "W, A, S, D", desc = "Move character" },
+        { key = "Arrow Keys", desc = "Move character" },
+        { key = "ESC Key", desc = "Pause / Go Back" },
+        { key = "F1 Key", desc = "Toggle Help Overlay" },
+        { key = "Auto Attack", desc = "All weapons fire automatically at regular intervals." }
+    }
+    
+    local textY = ly + 30
+    for _, ctrl in ipairs(controls) do
+        love.graphics.setColor(0.4, 0.75, 1.0) -- Key color (cyan)
+        love.graphics.print(ctrl.key, lx, textY)
+        love.graphics.setColor(0.8, 0.85, 0.9) -- Desc color
+        
+        if ctrl.key == "Auto Attack" then
+            love.graphics.printf(ctrl.desc, lx, textY + 18, colW, "left")
+            textY = textY + 50
+        else
+            love.graphics.print(" : " .. ctrl.desc, lx + 105, textY)
+            textY = textY + 22
+        end
+    end
+    
+    -- 5. Right Column: CHEAT CODES
+    local rx = px + w - colW - 40
+    local ry = py + 95
+    
+    love.graphics.setFont(getFont(18))
+    love.graphics.setColor(1.0, 0.4, 0.4) -- Neon Red
+    love.graphics.print("CHEAT CODES", rx, ry)
+    
+    love.graphics.setFont(getFont(13))
+    love.graphics.setColor(0.85, 0.9, 0.95)
+    local cheats = {
+        { key = "O Key", desc = "Instant Level Up (grants EXP)" },
+        { key = "K Key", desc = "Force Skip to Next Stage" },
+        { key = "I Key", desc = "Spawn Boss Wave (Wave 7 / Next 5th Wave)" },
+        { key = "P Key", desc = "Clear All Enemies & Bullets" }
+    }
+    
+    textY = ry + 30
+    for _, cheat in ipairs(cheats) do
+        love.graphics.setColor(1.0, 0.75, 0.2) -- Cheat key color (golden)
+        love.graphics.print(cheat.key, rx, textY)
+        love.graphics.setColor(0.8, 0.85, 0.9) -- Desc color
+        love.graphics.printf(cheat.desc, rx, textY + 18, colW, "left")
+        textY = textY + 52
+    end
+    
+    -- Elegant separator line before Close Button
+    love.graphics.setLineWidth(1)
+    love.graphics.setColor(0.2, 0.35, 0.5, 0.4)
+    love.graphics.line(px + 40, py + h - 75, px + w - 40, py + h - 75)
+    
+    -- 6. CLOSE Button
+    local btnW = 180
+    local btnH = 40
+    local btnX = px + (w - btnW) / 2
+    local btnY = py + h - 55
+    
+    game.helpCloseBtn = { x = btnX, y = btnY, w = btnW, h = btnH }
+    
+    local isHovered = mx >= btnX and mx <= btnX + btnW and my >= btnY and my <= btnY + btnH
+    
+    -- Scale micro-animation on hover
+    local scale = isHovered and 1.03 or 1.0
+    local drawW = btnW * scale
+    local drawH = btnH * scale
+    local drawX = btnX - (drawW - btnW) / 2
+    local drawY = btnY - (drawH - btnH) / 2
+    
+    if isHovered then
+        love.graphics.setColor(0.12, 0.22, 0.4, 0.95)
+        love.graphics.rectangle("fill", drawX, drawY, drawW, drawH, 6, 6)
+        
+        local borderPulse = 0.8 + math.sin(love.timer.getTime() * 8) * 0.2
+        love.graphics.setLineWidth(2)
+        love.graphics.setColor(0.3, 0.8, 1.0, borderPulse)
+        love.graphics.rectangle("line", drawX, drawY, drawW, drawH, 6, 6)
+    else
+        love.graphics.setColor(0.08, 0.1, 0.15, 0.8)
+        love.graphics.rectangle("fill", drawX, drawY, drawW, drawH, 6, 6)
+        
+        love.graphics.setLineWidth(1)
+        love.graphics.setColor(0.2, 0.35, 0.5, 0.6)
+        love.graphics.rectangle("line", drawX, drawY, drawW, drawH, 6, 6)
+    end
+    
+    love.graphics.setFont(getFont(14))
+    if isHovered then
+        love.graphics.setColor(1.0, 1.0, 1.0)
+    else
+        love.graphics.setColor(0.8, 0.85, 0.95)
+    end
+    love.graphics.printf("CLOSE", drawX, drawY + 11, drawW, "center")
     
     love.graphics.setLineWidth(1)
 end

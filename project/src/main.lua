@@ -553,7 +553,7 @@ end
 function love.update(dt)
     -- 메인메뉴, 설정, 강화 화면, 일시정지에서는 일반 루프 미가동
     if game.state == "main_menu" or game.state == "settings" or game.state == "meta_upgrade" or
-       game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or game.state == "paused" or not game.running then
+       game.state == "menu" or game.state == "upgrade" or game.state == "stage_clear" or game.state == "paused" or not game.running or game.showHelp then
         
         -- 플레이 중이 아니었다가 gameover 상태가 된 순간 스코어 누적 및 세이브 처리
         if game.state == "gameover" and not game.scoreAccumulated then
@@ -782,9 +782,11 @@ function love.draw()
     if game.backgroundElements then
         for _, elem in ipairs(game.backgroundElements) do
             if elem.type == "dust" or elem.type == "ash" or elem.type == "node" or elem.type == "sparkle" or elem.type == "golden_dust" or elem.type == "chrono_dust" then
-                -- 먼지/재/스파크/네온 노드
-                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
-                love.graphics.circle("fill", elem.x, elem.y, elem.size)
+                -- 먼지/재/스파크/네온 노드 (showStars 설정에 연동)
+                if game.showStars then
+                    love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
+                    love.graphics.circle("fill", elem.x, elem.y, elem.size)
+                end
                 
             elseif elem.type == "vent" then
                 -- 2스테이지 용암 분출구
@@ -857,11 +859,13 @@ function love.draw()
                 love.graphics.pop()
             elseif elem.type == "glitch_node" then
                 -- 7스테이지 사이버 글리치 노드
-                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
-                if math.random() < 0.08 then
-                    love.graphics.rectangle("fill", elem.x - 5, elem.y - 1, 10, 2)
-                else
-                    love.graphics.rectangle("fill", elem.x - elem.size/2, elem.y - elem.size/2, elem.size, elem.size)
+                if game.showStars then
+                    love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
+                    if math.random() < 0.08 then
+                        love.graphics.rectangle("fill", elem.x - 5, elem.y - 1, 10, 2)
+                    else
+                        love.graphics.rectangle("fill", elem.x - elem.size/2, elem.y - elem.size/2, elem.size, elem.size)
+                    end
                 end
             elseif elem.type == "glitch_line" then
                 -- 7스테이지 글리치 수평 스캔라인
@@ -873,17 +877,21 @@ function love.draw()
                 love.graphics.rectangle("fill", elem.x + elem.len - 3, elem.y - 1.5, 6, 3)
             elseif elem.type == "void_node" then
                 -- 8스테이지 특이점 블랙홀 입자
-                local centerX = game.world.width / 2
-                local centerY = game.world.height / 2
-                local px = centerX + math.cos(elem.angle) * elem.dist
-                local py = centerY + math.sin(elem.angle) * elem.dist
-                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
-                love.graphics.circle("fill", px, py, elem.size)
+                if game.showStars then
+                    local centerX = game.world.width / 2
+                    local centerY = game.world.height / 2
+                    local px = centerX + math.cos(elem.angle) * elem.dist
+                    local py = centerY + math.sin(elem.angle) * elem.dist
+                    love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
+                    love.graphics.circle("fill", px, py, elem.size)
+                end
             elseif elem.type == "shimmer_star" then
                 -- 9스테이지 천상의 황금 먼지
-                local pulse = 0.7 + 0.3 * math.sin(game.time * (elem.pulseSpeed or 5))
-                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha * pulse)
-                love.graphics.circle("fill", elem.x, elem.y, elem.size * pulse)
+                if game.showStars then
+                    local pulse = 0.7 + 0.3 * math.sin(game.time * (elem.pulseSpeed or 5))
+                    love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha * pulse)
+                    love.graphics.circle("fill", elem.x, elem.y, elem.size * pulse)
+                end
             elseif elem.type == "solar_halo" then
                 -- 9스테이지 태양 아우라
                 local sizePulse = 1.0 + math.sin(elem.pulse) * 0.08
@@ -979,6 +987,11 @@ function love.draw()
     if game.state == "paused" then
         HUD.drawPause(game)
     end
+
+    -- Render help overlay
+    if game.showHelp then
+        HUD.drawHelp(game)
+    end
 end
 
 -- ============================================================================
@@ -986,6 +999,18 @@ end
 -- ============================================================================
 
 function love.keypressed(key)
+    if key == "f1" then
+        game.showHelp = not game.showHelp
+        return
+    end
+
+    if game.showHelp then
+        if key == "escape" then
+            game.showHelp = false
+        end
+        return
+    end
+
     if key == "escape" then
         if game.state == "playing" then
             game.state = "paused"
@@ -1004,7 +1029,7 @@ function love.keypressed(key)
         game.enemyBullets = {}
     end
 
-    -- 치트키 O: 즉시 레벨업 경험치 지급
+    -- Cheat key O: Instant level up by granting maximum experience
     if game.state == "playing" and (key == "o" or key == "O") then
         local player = game.player
         if player then
@@ -1014,29 +1039,41 @@ function love.keypressed(key)
         end
     end
 
-    -- 치트키 K: 즉시 다음 스테이지로 강제 이동 및 1웨이브 시작
+    -- Cheat key K: Force skip to next stage and start wave 1
     if game.state == "playing" and (key == "k" or key == "K") then
         game.enemies = {}
         game.enemyBullets = {}
-        game.stage = (game.stage or 1) + 1
-        game.wave = 1
-        game.waveState = "playing"
-        game.bannerText = "STAGE " .. game.stage .. " START!"
-        game.bannerTimer = 3.0
-        initBackground(game)
-        Enemy.spawnWave(game, 1)
+        if game.stage == 9 then
+            game.state = "stage_clear"
+            game.running = false
+        else
+            game.stage = (game.stage or 1) + 1
+            game.wave = 1
+            game.waveState = "playing"
+            game.bannerText = "STAGE " .. game.stage .. " START!"
+            game.bannerTimer = 3.0
+            initBackground(game)
+            Enemy.spawnWave(game, 1)
+        end
     end
 
-    -- 치트키 I: 즉시 보스 웨이브(7웨이브)로 이동 및 보스 스폰
+    -- Cheat key I: Instant transition to Boss Wave (Wave 7 in normal, next 5th wave in endless) and spawn boss
     if game.state == "playing" and (key == "i" or key == "I") then
         game.enemies = {}
         game.enemyBullets = {}
-        game.wave = 7
-        game.waveState = "playing"
-        Enemy.spawnWave(game, 7)
+        if game.endlessMode then
+            local nextBossWave = math.floor(game.wave / 5) * 5 + 5
+            game.wave = nextBossWave
+            game.waveState = "playing"
+            Enemy.spawnWave(game, nextBossWave)
+        else
+            game.wave = 7
+            game.waveState = "playing"
+            Enemy.spawnWave(game, 7)
+        end
     end
 
-    -- 게임오버 시 R 누르면 스킬 선택이 아니라 메인메뉴로 이동
+    -- Pressing R on gameover returns to main menu instead of skill selection
     if game.state == "gameover" then
         if key == "r" or key == "R" then
             game.state = "main_menu"
@@ -1045,6 +1082,16 @@ function love.keypressed(key)
 end
 
 function love.mousepressed(x, y, button)
+    if game.showHelp then
+        if button == 1 and game.helpCloseBtn then
+            local btn = game.helpCloseBtn
+            if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                game.showHelp = false
+            end
+        end
+        return
+    end
+
     if button == 1 then
         if game.state == "main_menu" then
             if game.mainMenuButtons then

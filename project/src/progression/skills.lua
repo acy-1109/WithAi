@@ -85,6 +85,16 @@ local function isEnemyAlive(game, enemy)
     return false
 end
 
+local function isAlreadyChained(game, enemy)
+    if not game.chains then return false end
+    for _, chain in ipairs(game.chains) do
+        if chain.target == enemy and chain.state ~= "fading" then
+            return true
+        end
+    end
+    return false
+end
+
 local Skills = {}
 
 -- 플레이어와 가장 가까운 적 찾기
@@ -116,7 +126,7 @@ function Skills.findClosestEnemies(game, n, excludeBoss)
 
     local candidates = {}
     for _, enemy in ipairs(game.enemies) do
-        if not (excludeBoss and enemy.type == "boss") then
+        if not (excludeBoss and enemy.type == "boss") and not isAlreadyChained(game, enemy) then
             local dx = enemy.x + enemy.width / 2 - (player.x + player.width / 2)
             local dy = enemy.y + enemy.height / 2 - (player.y + player.height / 2)
             local distance = math.sqrt(dx * dx + dy * dy)
@@ -143,7 +153,7 @@ function Skills.findClosestEnemyFrom(game, fromX, fromY, excludeSet)
     local closestDistance = math.huge
 
     for _, enemy in ipairs(game.enemies) do
-        if enemy.type ~= "boss" and not excludeSet[enemy] then
+        if not excludeSet[enemy] and not isAlreadyChained(game, enemy) then
             local ecx = enemy.x + enemy.width / 2
             local ecy = enemy.y + enemy.height / 2
             local dx = ecx - fromX
@@ -942,8 +952,8 @@ function Skills.update(game, dt)
         if game.chainTimer >= spec.cooldown then
             game.chainTimer = game.chainTimer - spec.cooldown
             
-            -- Find the spec.count closest enemies (excluding boss)
-            local targets = Skills.findClosestEnemies(game, spec.count, true)
+            -- Find the spec.count closest enemies (including boss)
+            local targets = Skills.findClosestEnemies(game, spec.count, false)
             for _, targetEnemy in ipairs(targets) do
                 local excludeSet = {}
                 excludeSet[targetEnemy] = true
@@ -1022,7 +1032,12 @@ function Skills.update(game, dt)
                             end
                         end
                         if targetIdx then
-                            chain.target.rootedTimer = chain.rootDuration
+                            if chain.target.type == "boss" then
+                                chain.target.slowTimer = chain.rootDuration
+                                chain.target.slowMultiplier = 0.5
+                            else
+                                chain.target.rootedTimer = chain.rootDuration
+                            end
                             local EnemyModule = require("enemy.spawner")
                             EnemyModule.damage(game, targetIdx, chain.damage)
                         end

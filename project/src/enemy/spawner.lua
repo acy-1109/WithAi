@@ -9,20 +9,20 @@ local function checkLineCircleCollision(ax, ay, bx, by, cx, cy, r)
     local aby = by - ay
     local acx = cx - ax
     local acy = cy - ay
-    
+
     local ab_len_sq = abx * abx + aby * aby
     if ab_len_sq == 0 then
         local dx = cx - ax
         local dy = cy - ay
         return math.sqrt(dx * dx + dy * dy) < r
     end
-    
+
     local t = (acx * abx + acy * aby) / ab_len_sq
     t = math.max(0, math.min(1, t))
-    
+
     local closestX = ax + t * abx
     local closestY = ay + t * aby
-    
+
     local dx = cx - closestX
     local dy = cy - closestY
     return math.sqrt(dx * dx + dy * dy) < r
@@ -35,8 +35,8 @@ local function drawLightningBeam(x1, y1, x2, y2, segments, displacement)
     if totalDist == 0 then return end
     local dirX, dirY = dx / totalDist, dy / totalDist
     local perpX, perpY = -dirY, dirX
-    
-    local pts = {x1, y1}
+
+    local pts = { x1, y1 }
     for k = 1, segments - 1 do
         local ratio = k / segments
         local baseX = x1 + dx * ratio
@@ -47,7 +47,7 @@ local function drawLightningBeam(x1, y1, x2, y2, segments, displacement)
     end
     table.insert(pts, x2)
     table.insert(pts, y2)
-    
+
     love.graphics.line(pts)
 end
 
@@ -88,64 +88,64 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
     local bossColor = { 0.6, 0.1, 0.9 }
     local bossSize = 64
     local bossSpeed = 60
-    local baseHealth = 12000
+    local baseHealth = 60000
     local pointsVal = 500
-
+    
     if bossStageNum == 2 then
         bossName = "Infernus Leviathan"
         bossColor = { 1.0, 0.2, 0.1 }
         bossSize = 80
         bossSpeed = 70
-        baseHealth = 20000
+        baseHealth = 100000
         pointsVal = 1000
     elseif bossStageNum == 3 then
         bossName = "Phantom Stalker"
         bossColor = { 0.25, 0.95, 0.75 }
         bossSize = 60
         bossSpeed = 110
-        baseHealth = 32000
+        baseHealth = 160000
         pointsVal = 2000
     elseif bossStageNum == 4 then
         bossName = "Tesla Archon"
         bossColor = { 0.5, 0.4, 1.0 }
         bossSize = 70
         bossSpeed = 55
-        baseHealth = 48000
+        baseHealth = 240000
         pointsVal = 3000
     elseif bossStageNum == 5 then
         bossName = "Orbital Aegis"
         bossColor = { 1.0, 0.8, 0.1 }
         bossSize = 80
         bossSpeed = 40
-        baseHealth = 72000
+        baseHealth = 360000
         pointsVal = 4000
     elseif bossStageNum == 6 then
         bossName = "Chronos Weaver"
         bossColor = { 0.1, 0.9, 0.6 }
         bossSize = 75
         bossSpeed = 50
-        baseHealth = 100000
+        baseHealth = 500000
         pointsVal = 5000
     elseif bossStageNum == 7 then
         bossName = "Glitch Overlord"
         bossColor = { 1.0, 0.0, 0.4 }
         bossSize = 70
         bossSpeed = 65
-        baseHealth = 140000
+        baseHealth = 700000
         pointsVal = 8000
     elseif bossStageNum == 8 then
         bossName = "Singularity Nexus"
         bossColor = { 0.5, 0.1, 0.95 }
         bossSize = 72
         bossSpeed = 60
-        baseHealth = 180000
+        baseHealth = 900000
         pointsVal = 10000
     elseif bossStageNum >= 9 then
         bossName = "Nebula Seraph"
         bossColor = { 1.0, 0.85, 0.15 }
         bossSize = 75
         bossSpeed = 70
-        baseHealth = 240000
+        baseHealth = 1200000
         pointsVal = 15000
     end
 
@@ -250,8 +250,8 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
                 width = 24,
                 height = 24,
                 speed = 0,
-                health = 1500 * finalMultiplier,
-                maxHealth = 1500 * finalMultiplier,
+                health = 11250 * finalMultiplier,
+                maxHealth = 11250 * finalMultiplier,
                 type = "aegis_shield",
                 color = { 1.0, 0.8, 0.1 },
                 points = 150,
@@ -478,6 +478,33 @@ function Enemy.update(game, dt)
     local player = game.player
     if not player then return end
 
+    -- [NEW] 텔레포트 잔상(Echoes) 업데이트
+    if game.teleportEchoes then
+        for i = #game.teleportEchoes, 1, -1 do
+            local echo = game.teleportEchoes[i]
+            echo.life = echo.life - dt
+            if echo.life <= 0 then
+                table.remove(game.teleportEchoes, i)
+            else
+                echo.alpha = (echo.life / echo.maxLife) * 0.8
+            end
+        end
+    end
+
+    -- [NEW] 텔레포트 파티클 업데이트
+    if game.teleportParticles then
+        for i = #game.teleportParticles, 1, -1 do
+            local p = game.teleportParticles[i]
+            p.life = p.life - dt
+            if p.life <= 0 then
+                table.remove(game.teleportParticles, i)
+            else
+                p.x = p.x + p.vx * dt
+                p.y = p.y + p.vy * dt
+            end
+        end
+    end
+
     local isBossWave = (not game.endlessMode and game.wave == 7) or (game.endlessMode and game.wave % 5 == 0)
 
     -- Reset temporary speed debuffs
@@ -643,10 +670,23 @@ function Enemy.update(game, dt)
             enemy.cutterHitCooldown = enemy.cutterHitCooldown - dt
         end
 
+        -- [NEW] 텔레포트 페이드 타이머 차감
+        if enemy.teleportFade and enemy.teleportFade > 0 then
+            enemy.teleportFade = enemy.teleportFade - dt
+        end
+
         -- 플레이어 추적 및 뭉침 방지 (Separation)
         local isRooted = (enemy.rootedTimer and enemy.rootedTimer > 0)
         if isRooted then
             enemy.rootedTimer = enemy.rootedTimer - dt
+        end
+
+        local isSlowed = (enemy.slowTimer and enemy.slowTimer > 0)
+        if isSlowed then
+            enemy.slowTimer = enemy.slowTimer - dt
+            if enemy.slowTimer <= 0 then
+                enemy.slowMultiplier = nil
+            end
         end
 
         local dx = player.x - enemy.x
@@ -748,10 +788,10 @@ function Enemy.update(game, dt)
                         local pCenterY = player.y + player.height / 2
                         local teleAngle = math.random() * 2 * math.pi
                         local teleDist = 240
-                        
+
                         enemy.x = pCenterX + math.cos(teleAngle) * teleDist - enemy.width / 2
                         enemy.y = pCenterY + math.sin(teleAngle) * teleDist - enemy.height / 2
-                        
+
                         -- Keep inside world
                         enemy.x = math.max(50, math.min(game.world.width - enemy.width - 50, enemy.x))
                         enemy.y = math.max(50, math.min(game.world.height - enemy.height - 50, enemy.y))
@@ -922,37 +962,49 @@ function Enemy.update(game, dt)
                             enemy.bossState = "summoning"
                             enemy.stateTimer = 1.0
 
-                            -- Spawn 3 phantom clones radially
+                            -- Check which clone slots are already occupied by alive clones
+                            local slotOccupied = { [1] = false, [2] = false, [3] = false }
+                            for _, other in ipairs(game.enemies) do
+                                if other.type == "boss_clone" and other.parentBoss == enemy then
+                                    if other.cloneSlot and slotOccupied[other.cloneSlot] ~= nil then
+                                        slotOccupied[other.cloneSlot] = true
+                                    end
+                                end
+                            end
+
+                            -- Spawn missing phantom clones radially in empty slots
                             local bCenterX = enemy.x + enemy.width / 2
                             local bCenterY = enemy.y + enemy.height / 2
-                            local numClones = 3
                             local spawnRadius = 100
-                            for c = 1, numClones do
-                                local angle = (c - 1) * (2 * math.pi / numClones) + math.random() * 0.5
-                                local cx = bCenterX + math.cos(angle) * spawnRadius - 20
-                                local cy = bCenterY + math.sin(angle) * spawnRadius - 20
-                                cx = math.max(10, math.min(game.world.width - 50, cx))
-                                cy = math.max(10, math.min(game.world.height - 50, cy))
-                                table.insert(game.enemies, {
-                                    x = cx,
-                                    y = cy,
-                                    width = 40,
-                                    height = 40,
-                                    speed = 150,
-                                    health = 250 * stageMultiplier,
-                                    maxHealth = 250 * stageMultiplier,
-                                    type = "boss_clone",
-                                    color = { 0.25, 0.95, 0.75 },
-                                    points = 50,
-                                    velX = 0,
-                                    velY = 0,
-                                    parentBoss = enemy
-                                })
+                            for slot = 1, 3 do
+                                if not slotOccupied[slot] then
+                                    local angle = (slot - 1) * (2 * math.pi / 3) + math.random() * 0.5
+                                    local cx = bCenterX + math.cos(angle) * spawnRadius - 20
+                                    local cy = bCenterY + math.sin(angle) * spawnRadius - 20
+                                    cx = math.max(10, math.min(game.world.width - 50, cx))
+                                    cy = math.max(10, math.min(game.world.height - 50, cy))
+                                    table.insert(game.enemies, {
+                                        x = cx,
+                                        y = cy,
+                                        width = 40,
+                                        height = 40,
+                                        speed = 150,
+                                        health = 250 * stageMultiplier,
+                                        maxHealth = 250 * stageMultiplier,
+                                        type = "boss_clone",
+                                        color = { 0.25, 0.95, 0.75 },
+                                        points = 50,
+                                        velX = 0,
+                                        velY = 0,
+                                        parentBoss = enemy,
+                                        cloneSlot = slot
+                                    })
+                                end
                             end
                         elseif enemy.nextPattern == "crossfire" then
                             enemy.bossState = "charging_crossfire"
                             enemy.stateTimer = 1.0
-                            
+
                             -- Position main boss and all alive clones in 4 quadrants around player
                             local pCenterX = player.x + player.width / 2
                             local pCenterY = player.y + player.height / 2
@@ -962,6 +1014,23 @@ function Enemy.update(game, dt)
                                     table.insert(group, other)
                                 end
                             end
+
+                            -- [NEW] 원래 위치 잔상(Echoes) 생성
+                            game.teleportEchoes = game.teleportEchoes or {}
+                            for _, member in ipairs(group) do
+                                table.insert(game.teleportEchoes, {
+                                    x = member.x,
+                                    y = member.y,
+                                    width = member.width,
+                                    height = member.height,
+                                    color = member.color or { 0.25, 0.95, 0.75 },
+                                    alpha = 0.8,
+                                    life = 0.4,
+                                    maxLife = 0.4,
+                                    type = member.type
+                                })
+                            end
+
                             local angles = { math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4 }
                             local radius = 240
                             for idx, member in ipairs(group) do
@@ -972,9 +1041,28 @@ function Enemy.update(game, dt)
                                 member.y = math.max(20, math.min(game.world.height - member.height - 20, member.y))
                                 member.velX = 0
                                 member.velY = 0
-                                
+
+                                -- [NEW] 목적지 글리치 파티클 생성 및 페이드 타이머 설정
+                                member.teleportFade = 0.3
+                                game.teleportParticles = game.teleportParticles or {}
                                 local mCenterX = member.x + member.width / 2
                                 local mCenterY = member.y + member.height / 2
+                                local pCount = 12
+                                for k = 1, pCount do
+                                    local pAngle = (k - 1) * (2 * math.pi / pCount) + math.random() * 0.3
+                                    local pSpeed = 80 + math.random() * 100
+                                    table.insert(game.teleportParticles, {
+                                        x = mCenterX,
+                                        y = mCenterY,
+                                        vx = math.cos(pAngle) * pSpeed,
+                                        vy = math.sin(pAngle) * pSpeed,
+                                        life = 0.4 + math.random() * 0.2,
+                                        maxLife = 0.6,
+                                        size = 3 + math.random() * 4,
+                                        color = member.color or { 0.25, 0.95, 0.75 }
+                                    })
+                                end
+
                                 local mdx = pCenterX - mCenterX
                                 local mdy = pCenterY - mCenterY
                                 local mdist = math.sqrt(mdx * mdx + mdy * mdy)
@@ -996,7 +1084,6 @@ function Enemy.update(game, dt)
                         targetVelY = (dy / dist) * enemy.speed
                     end
                     if #enemy.trailHistory > 0 then enemy.trailHistory = {} end
-
                 elseif enemy.bossState == "charging_dash" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1018,7 +1105,6 @@ function Enemy.update(game, dt)
                         enemy.velX = enemy.rushDirX * 1200
                         enemy.velY = enemy.rushDirY * 1200
                     end
-
                 elseif enemy.bossState == "dashing" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX = enemy.rushDirX * 1200
@@ -1038,7 +1124,7 @@ function Enemy.update(game, dt)
                             -- Next consecutive dash
                             enemy.bossState = "charging_dash"
                             enemy.stateTimer = 0.5 -- slightly faster charge for subsequent dashes
-                            
+
                             -- Face player
                             local pCenterX, pCenterY = player.x + player.width / 2, player.y + player.height / 2
                             local bCenterX, bCenterY = enemy.x + enemy.width / 2, enemy.y + enemy.height / 2
@@ -1053,7 +1139,6 @@ function Enemy.update(game, dt)
                             enemy.stateTimer = 2.5
                         end
                     end
-
                 elseif enemy.bossState == "exhausted" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1065,7 +1150,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 3.5
                         enemy.nextPattern = "summon"
                     end
-
                 elseif enemy.bossState == "summoning" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1077,7 +1161,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 3.5
                         enemy.nextPattern = "crossfire"
                     end
-
                 elseif enemy.bossState == "charging_crossfire" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1143,7 +1226,6 @@ function Enemy.update(game, dt)
                             end
                         end
                     end
-
                 elseif enemy.bossState == "crossfire_firing" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1188,7 +1270,6 @@ function Enemy.update(game, dt)
                         targetVelX = (dx / dist) * enemy.speed
                         targetVelY = (dy / dist) * enemy.speed
                     end
-
                 elseif enemy.bossState == "tesla_pylons" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1226,7 +1307,6 @@ function Enemy.update(game, dt)
                         enemy.bossState = "tesla_pylons_active"
                         enemy.pylonAngle = angle
                     end
-
                 elseif enemy.bossState == "tesla_pylons_active" then
                     -- Count active pylons
                     local activePylons = 0
@@ -1268,7 +1348,7 @@ function Enemy.update(game, dt)
                         if player.invincibleTime <= 0 then
                             local pCenterX = player.x + player.width / 2
                             local pCenterY = player.y + player.height / 2
-                            
+
                             for _, other in ipairs(game.enemies) do
                                 if other.type == "tesla_pylon" then
                                     local pyCenterX = other.x + other.width / 2
@@ -1289,7 +1369,6 @@ function Enemy.update(game, dt)
                             end
                         end
                     end
-
                 elseif enemy.bossState == "magnetic_pull" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1303,7 +1382,7 @@ function Enemy.update(game, dt)
                     local pdx = bCenterX - pCenterX
                     local pdy = bCenterY - pCenterY
                     local pdist = math.sqrt(pdx * pdx + pdy * pdy)
-                    
+
                     local magneticRadius = 550
                     if pdist < magneticRadius and pdist > 20 then
                         local pullForce = 180
@@ -1316,7 +1395,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 4.0
                         enemy.nextPattern = "volt_discharge"
                     end
-
                 elseif enemy.bossState == "volt_discharge" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1352,7 +1430,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 4.0
                         enemy.nextPattern = "emp_storm"
                     end
-
                 elseif enemy.bossState == "emp_storm" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1441,7 +1518,6 @@ function Enemy.update(game, dt)
                         targetVelX = (dx / dist) * enemy.speed
                         targetVelY = (dy / dist) * enemy.speed
                     end
-
                 elseif enemy.bossState == "laser_grid" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     enemy.laserAngle = enemy.laserAngle + 0.5 * dt
@@ -1485,7 +1561,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 5.0
                         enemy.nextPattern = "orbital_strike"
                     end
-
                 elseif enemy.bossState == "orbital_strike" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1550,7 +1625,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 5.0
                         enemy.nextPattern = "laser_grid"
                     end
-
                 elseif enemy.bossState == "recharging" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1563,7 +1637,7 @@ function Enemy.update(game, dt)
                         local pdx = pCenterX - bCenterX
                         local pdy = pCenterY - bCenterY
                         local pdist = math.sqrt(pdx * pdx + pdy * pdy)
-                        
+
                         -- Shockwave recoil push player back by 150px if within 300px
                         if pdist < 300 then
                             local pushDist = 150
@@ -1573,7 +1647,7 @@ function Enemy.update(game, dt)
                             end
                             player.x = player.x + pushDirX * pushDist
                             player.y = player.y + pushDirY * pushDist
-                            
+
                             -- Clamp player position inside world
                             player.x = math.max(0, math.min(game.world.width - player.width, player.x))
                             player.y = math.max(0, math.min(game.world.height - player.height, player.y))
@@ -1644,7 +1718,6 @@ function Enemy.update(game, dt)
                         other.y = bCenterY + math.sin(angle) * 120 - 12
                     end
                 end
-
             elseif currentStage == 6 then
                 -- ==========================================
                 -- BOSS 6 (Chronos Weaver)
@@ -1658,7 +1731,7 @@ function Enemy.update(game, dt)
 
                 if enemy.bossState == "normal" then
                     enemy.patternTimer = enemy.patternTimer - dt
-                    
+
                     -- Record history coordinates (up to 180 entries = 3 seconds at 60fps)
                     table.insert(enemy.timeTrail, 1, { x = enemy.x, y = enemy.y })
                     if #enemy.timeTrail > 180 then
@@ -1684,7 +1757,6 @@ function Enemy.update(game, dt)
                         targetVelX = (dx / dist) * enemy.speed
                         targetVelY = (dy / dist) * enemy.speed
                     end
-
                 elseif enemy.bossState == "time_burst" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1720,7 +1792,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 6.0
                         enemy.nextPattern = "time_rewind"
                     end
-
                 elseif enemy.bossState == "time_rewind" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1748,7 +1819,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 5.0
                         enemy.nextPattern = "time_sweep"
                     end
-
                 elseif enemy.bossState == "time_sweep" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1762,10 +1832,10 @@ function Enemy.update(game, dt)
                     local minuteAngle = (game.time * 5.0) - math.pi / 2
                     local mx2 = bCenterX + math.cos(minuteAngle) * 900
                     local my2 = bCenterY + math.sin(minuteAngle) * 900
-                    
+
                     if checkLineCircleCollision(bCenterX, bCenterY, mx2, my2, pCenterX, pCenterY, player.width / 2 + 8) then
                         player.speedMultiplier = 0.4 -- Slow down by 60%
-                        
+
                         if player.invincibleTime <= 0 then
                             player.health = player.health - 6
                             player.invincibleTime = player.maxInvincibleTime
@@ -1803,7 +1873,6 @@ function Enemy.update(game, dt)
                         enemy.nextPattern = "time_burst"
                     end
                 end
-
             elseif currentStage == 7 then
                 -- ==========================================
                 -- BOSS 7 (Glitch Overlord)
@@ -1836,7 +1905,6 @@ function Enemy.update(game, dt)
                         targetVelX = (dx / dist) * enemy.speed
                         targetVelY = (dy / dist) * enemy.speed
                     end
-
                 elseif enemy.bossState == "system_hack" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1862,7 +1930,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 4.0
                         enemy.nextPattern = "corrupt_clone"
                     end
-
                 elseif enemy.bossState == "corrupt_clone" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1892,7 +1959,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 4.0
                         enemy.nextPattern = "memory_overflow"
                     end
-
                 elseif enemy.bossState == "memory_overflow" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1903,7 +1969,6 @@ function Enemy.update(game, dt)
                         enemy.stateTimer = 4.0
                         enemy.fireTimer = 0
                     end
-
                 elseif enemy.bossState == "overflow_firing" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1972,7 +2037,6 @@ function Enemy.update(game, dt)
                         targetVelX = (dx / dist) * enemy.speed
                         targetVelY = (dy / dist) * enemy.speed
                     end
-
                 elseif enemy.bossState == "gravity_well" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -1982,10 +2046,9 @@ function Enemy.update(game, dt)
                         enemy.bossState = "gravity_pulling"
                         enemy.stateTimer = 4.0
                     end
-
                 elseif enemy.bossState == "gravity_pulling" then
                     enemy.stateTimer = enemy.stateTimer - dt
-                    
+
                     -- Move slowly
                     if dist > 0 then
                         targetVelX = (dx / dist) * 30
@@ -2029,7 +2092,6 @@ function Enemy.update(game, dt)
                         enemy.patternTimer = 5.0
                         enemy.nextPattern = "event_horizon"
                     end
-
                 elseif enemy.bossState == "event_horizon" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -2040,7 +2102,6 @@ function Enemy.update(game, dt)
                         enemy.stateTimer = 3.0
                         enemy.ringsPassed = { false, false, false }
                     end
-
                 elseif enemy.bossState == "horizon_contracting" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -2082,7 +2143,6 @@ function Enemy.update(game, dt)
                         enemy.nextPattern = "phase_shift"
                         enemy.ringsPassed = nil
                     end
-
                 elseif enemy.bossState == "phase_shift" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -2091,7 +2151,7 @@ function Enemy.update(game, dt)
                     if enemy.stateTimer <= 0 then
                         enemy.bossState = "shifting_invulnerable"
                         enemy.invulnerable = true
-                        
+
                         -- Spawn 3 void anchors in a triangle around the boss
                         local numAnchors = 3
                         local spawnRadius = 200
@@ -2116,7 +2176,6 @@ function Enemy.update(game, dt)
                             })
                         end
                     end
-
                 elseif enemy.bossState == "shifting_invulnerable" then
                     targetVelX, targetVelY = 0, 0
                     enemy.velX, enemy.velY = 0, 0
@@ -2181,7 +2240,6 @@ function Enemy.update(game, dt)
                         targetVelX = (dx / dist) * enemy.speed
                         targetVelY = (dy / dist) * enemy.speed
                     end
-
                 elseif enemy.bossState == "supernova" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -2194,7 +2252,7 @@ function Enemy.update(game, dt)
                         local pdx = pCenterX - (enemy.shelterX or 0)
                         local pdy = pCenterY - (enemy.shelterY or 0)
                         local distToShelter = math.sqrt(pdx * pdx + pdy * pdy)
-                        
+
                         if distToShelter > (enemy.shelterRadius or 90) then
                             if player.invincibleTime <= 0 then
                                 player.health = player.health - 70
@@ -2215,15 +2273,14 @@ function Enemy.update(game, dt)
                         enemy.supernovaExplodeTimer = 0.5
                         enemy.supernovaExplodeX = bCenterX
                         enemy.supernovaExplodeY = bCenterY
-                        
+
                         enemy.shelterX = nil
                         enemy.shelterY = nil
-                        
+
                         enemy.bossState = "normal"
                         enemy.patternTimer = 5.0
                         enemy.nextPattern = "binary_star"
                     end
-
                 elseif enemy.bossState == "binary_star" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -2234,10 +2291,9 @@ function Enemy.update(game, dt)
                         enemy.stateTimer = 5.0
                         enemy.binaryAngle = 0
                     end
-
                 elseif enemy.bossState == "binary_laser" then
                     enemy.stateTimer = enemy.stateTimer - dt
-                    
+
                     -- Move slowly
                     if dist > 0 then
                         targetVelX = (dx / dist) * 35
@@ -2274,7 +2330,6 @@ function Enemy.update(game, dt)
                         enemy.nextPattern = "meteor_storm"
                         enemy.binaryAngle = nil
                     end
-
                 elseif enemy.bossState == "meteor_storm" then
                     enemy.stateTimer = enemy.stateTimer - dt
                     targetVelX, targetVelY = 0, 0
@@ -2285,10 +2340,9 @@ function Enemy.update(game, dt)
                         enemy.stateTimer = 4.0
                         enemy.meteorSpawnTimer = 0.0
                     end
-
                 elseif enemy.bossState == "meteor_falling" then
                     enemy.stateTimer = enemy.stateTimer - dt
-                    
+
                     -- Move slowly
                     if dist > 0 then
                         targetVelX = (dx / dist) * 40
@@ -2320,7 +2374,6 @@ function Enemy.update(game, dt)
                     end
                 end
             end
-
         elseif enemy.type == "charger" then
             -- Charger state machine
             enemy.chargerState = enemy.chargerState or "normal"
@@ -2380,7 +2433,12 @@ function Enemy.update(game, dt)
         else
             -- 원거리 적의 경우, 사거리 내에 들어오면 멈춰서 사격
             if dist > 0 then
-                if enemy.type == "ranged" and dist <= (enemy.shootRange or 250) then
+                if enemy.type == "boss_clone" and (enemy.bossState == "charging_crossfire" or enemy.bossState == "crossfire_firing") then
+                    targetVelX = 0
+                    targetVelY = 0
+                    enemy.velX = 0
+                    enemy.velY = 0
+                elseif enemy.type == "ranged" and dist <= (enemy.shootRange or 250) then
                     targetVelX = 0
                     targetVelY = 0
                 else
@@ -2395,7 +2453,7 @@ function Enemy.update(game, dt)
         local sepForceY = 0
         local sepRadius = 32 -- 서로 밀쳐낼 임계 거리
 
-        if enemy.type ~= "boss" and enemy.type ~= "tesla_pylon" and enemy.type ~= "aegis_shield" and enemy.type ~= "glitch_clone" and not isRooted then
+        if enemy.type ~= "boss" and enemy.type ~= "boss_clone" and enemy.type ~= "tesla_pylon" and enemy.type ~= "aegis_shield" and enemy.type ~= "glitch_clone" and not isRooted then
             for j = 1, #game.enemies do
                 if i ~= j then
                     local other = game.enemies[j]
@@ -2436,6 +2494,7 @@ function Enemy.update(game, dt)
                 maxAllowedSpeed = enemy.speed * 1.3
             end
         end
+
         if targetSpeed > maxAllowedSpeed and targetSpeed > 0 then
             targetVelX = (targetVelX / targetSpeed) * maxAllowedSpeed
             targetVelY = (targetVelY / targetSpeed) * maxAllowedSpeed
@@ -2443,7 +2502,7 @@ function Enemy.update(game, dt)
 
         -- 방향 부드럽게 변경 (lerp)
         local turnSpeed = 3.0
-        if isRooted or enemy.type == "tesla_pylon" or enemy.type == "aegis_shield" or enemy.type == "glitch_clone" then
+        if isRooted or enemy.type == "tesla_pylon" or enemy.type == "aegis_shield" or enemy.type == "glitch_clone" or (enemy.type == "boss_clone" and (enemy.bossState == "charging_crossfire" or enemy.bossState == "crossfire_firing")) then
             enemy.velX = 0
             enemy.velY = 0
         else
@@ -2451,9 +2510,16 @@ function Enemy.update(game, dt)
             enemy.velY = enemy.velY + (targetVelY - enemy.velY) * turnSpeed * dt
         end
 
-        -- 위치 갱신
-        enemy.x = enemy.x + enemy.velX * dt
-        enemy.y = enemy.y + enemy.velY * dt
+        -- 위치 갱신 (슬로우 상태인 경우 이동 속도 임시 감속 적용)
+        local vx = enemy.velX
+        local vy = enemy.velY
+        if isSlowed then
+            local mult = enemy.slowMultiplier or 0.5
+            vx = vx * mult
+            vy = vy * mult
+        end
+        enemy.x = enemy.x + vx * dt
+        enemy.y = enemy.y + vy * dt
 
         -- 월드 경계 제한 (적들이 맵 밖으로 나가지 않도록 설정)
         enemy.x = math.max(0, math.min(game.world.width - enemy.width, enemy.x))
@@ -2492,8 +2558,8 @@ function Enemy.update(game, dt)
                 enemy.shootTimer = 0.4
                 local bCenterX = enemy.x + enemy.width / 2
                 local bCenterY = enemy.y + enemy.height / 2
-                local texts = {"404", "FATAL", "ERROR", "NULL", "VOID", "CRASH"}
-                
+                local texts = { "404", "FATAL", "ERROR", "NULL", "VOID", "CRASH" }
+
                 game.enemyBullets = game.enemyBullets or {}
                 for k = 1, 8 do
                     local angle = (k - 1) * (2 * math.pi / 8)
@@ -2772,18 +2838,18 @@ function Enemy.update(game, dt)
             if distToPlayer > 0 then
                 local targetDirX = dx / distToPlayer
                 local targetDirY = dy / distToPlayer
-                
+
                 local homingStrength = 2.5 * dt
                 bullet.dirX = bullet.dirX + (targetDirX - bullet.dirX) * homingStrength
                 bullet.dirY = bullet.dirY + (targetDirY - bullet.dirY) * homingStrength
-                
+
                 local newLen = math.sqrt(bullet.dirX * bullet.dirX + bullet.dirY * bullet.dirY)
                 if newLen > 0 then
                     bullet.dirX = bullet.dirX / newLen
                     bullet.dirY = bullet.dirY / newLen
                 end
             end
-            
+
             local moveDist = bullet.speed * dt
             bullet.x = bullet.x + bullet.dirX * moveDist
             bullet.y = bullet.y + bullet.dirY * moveDist
@@ -2925,6 +2991,33 @@ end
 
 -- 적들의 렌더링
 function Enemy.draw(game)
+    -- [NEW] 텔레포트 잔상(Echoes) 그리기
+    if game.teleportEchoes then
+        for _, echo in ipairs(game.teleportEchoes) do
+            local col = echo.color or { 0.25, 0.95, 0.75 }
+            local alpha = echo.alpha or 0.8
+            love.graphics.setColor(col[1], col[2], col[3], alpha * 0.5)
+            
+            local cx = echo.x + echo.width / 2
+            local cy = echo.y + echo.height / 2
+            local progress = echo.life / echo.maxLife
+            local pulse = 1.0 - (1.0 - progress) * 0.3 -- 점점 작아지는 연출
+            
+            love.graphics.circle("fill", cx, cy, (echo.width / 2) * pulse)
+            love.graphics.rectangle("line", echo.x + echo.width * (1 - pulse) / 2, echo.y + echo.height * (1 - pulse) / 2, echo.width * pulse, echo.height * pulse)
+        end
+    end
+
+    -- [NEW] 텔레포트 파티클 그리기
+    if game.teleportParticles then
+        for _, p in ipairs(game.teleportParticles) do
+            local col = p.color or { 0.25, 0.95, 0.75 }
+            local alpha = math.max(0, p.life / p.maxLife)
+            love.graphics.setColor(col[1], col[2], col[3], alpha * 0.8)
+            love.graphics.circle("fill", p.x, p.y, p.size)
+        end
+    end
+
     for _, enemy in ipairs(game.enemies) do
         local col = enemy.color or { 1.0, 0.3, 0.3 }
 
@@ -3005,7 +3098,8 @@ function Enemy.draw(game)
                     -- Add a small targeting reticle/indicator at the player location
                     local p = game.player
                     if p then
-                        love.graphics.circle("line", p.x + p.width / 2, p.y + p.height / 2, 16 + math.sin(game.time * 15) * 4)
+                        love.graphics.circle("line", p.x + p.width / 2, p.y + p.height / 2,
+                            16 + math.sin(game.time * 15) * 4)
                     end
                 end
 
@@ -3146,6 +3240,17 @@ function Enemy.draw(game)
                 local isClone = (enemy.type == "boss_clone")
                 local baseAlpha = isClone and (0.55 + math.sin(game.time * 20) * 0.1) or 1.0
 
+                -- [NEW] 텔레포트 시 페이드 인 및 확장 연출 적용
+                local eyeSizeMult = 1.0
+                local fadeProgress = 1.0
+                if enemy.teleportFade and enemy.teleportFade > 0 then
+                    fadeProgress = 1 - (enemy.teleportFade / 0.3)
+                    baseAlpha = baseAlpha * fadeProgress
+                    pulse = pulse * (0.5 + 0.5 * fadeProgress)
+                    halfW = halfW * (0.5 + 0.5 * fadeProgress)
+                    eyeSizeMult = 0.5 + 0.5 * fadeProgress
+                end
+
                 -- 1. Motion blur trails (dashing state)
                 if enemy.bossState == "dashing" and enemy.trailHistory then
                     for idx, pos in ipairs(enemy.trailHistory) do
@@ -3154,7 +3259,7 @@ function Enemy.draw(game)
                         love.graphics.push()
                         love.graphics.translate(pos.x + halfW, pos.y + halfW)
                         love.graphics.rotate(game.time * 8.0 - idx * 0.3)
-                        
+
                         -- Draw simplified trail (4 blades)
                         local outerR = halfW * 1.15
                         local innerR = halfW * 0.35
@@ -3208,7 +3313,7 @@ function Enemy.draw(game)
                     love.graphics.setColor(1.0, 0.1, 0.1, (0.6 + math.sin(game.time * 15) * 0.25) * baseAlpha)
                     love.graphics.setLineWidth(3)
                     love.graphics.circle("line", cx, cy, enemy.width * 1.0 * vulPulse)
-                    
+
                     love.graphics.setColor(1.0, 0.1, 0.1, baseAlpha)
                     love.graphics.printf("VULNERABLE", cx - 100, enemy.y - 25, 200, "center")
                 end
@@ -3225,15 +3330,15 @@ function Enemy.draw(game)
                 local outerR = halfW * 1.25
                 if enemy.bossState == "dashing" then
                     rotationAngle = game.time * 15.0
-                    innerR = halfW * 0.35
+                    innerR = math.max(1, halfW * 0.35)
                     outerR = halfW * 1.3
                 elseif enemy.bossState == "charging_dash" or enemy.bossState == "charging_crossfire" then
                     rotationAngle = game.time * 8.0 + math.sin(game.time * 35) * 0.1
-                    innerR = halfW * 0.5
+                    innerR = math.max(1, halfW * 0.5)
                     outerR = halfW * 1.4
                 elseif enemy.bossState == "exhausted" then
                     rotationAngle = game.time * 0.3
-                    innerR = halfW * 0.4
+                    innerR = math.max(1, halfW * 0.4)
                     outerR = halfW * 1.0
                 end
 
@@ -3278,13 +3383,13 @@ function Enemy.draw(game)
                 love.graphics.translate(cx, cy)
                 local diamondRot = -rotationAngle * 0.5
                 love.graphics.rotate(diamondRot)
-                
+
                 local dW = halfW * 0.7
                 local dH = halfW * 0.7
-                
+
                 love.graphics.setColor(0.1, 0.15, 0.18, 0.9 * baseAlpha)
                 love.graphics.polygon("fill", 0, -dH, dW, 0, 0, dH, -dW, 0)
-                
+
                 local dBorderCol = { col[1] * 1.2, col[2] * 1.2, col[3] * 1.2 }
                 if enemy.bossState == "exhausted" then
                     dBorderCol = { 0.6, 0.6, 0.6 }
@@ -3311,13 +3416,13 @@ function Enemy.draw(game)
                 end
 
                 love.graphics.setColor(eyeCol[1], eyeCol[2], eyeCol[3], 0.35 * baseAlpha)
-                love.graphics.circle("fill", cx, cy, 14 * eyePulse)
+                love.graphics.circle("fill", cx, cy, 14 * eyePulse * eyeSizeMult)
                 love.graphics.setColor(0.04, 0.05, 0.08, 0.9 * baseAlpha)
-                love.graphics.circle("fill", cx, cy, 8 * eyePulse)
+                love.graphics.circle("fill", cx, cy, 8 * eyePulse * eyeSizeMult)
                 love.graphics.setColor(eyeCol[1], eyeCol[2], eyeCol[3], 0.95 * baseAlpha)
-                love.graphics.circle("fill", cx, cy, 4 * eyePulse)
+                love.graphics.circle("fill", cx, cy, 4 * eyePulse * eyeSizeMult)
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.9 * baseAlpha)
-                love.graphics.circle("fill", cx - 1.5 * eyePulse, cy - 1.5 * eyePulse, 1.5 * eyePulse)
+                love.graphics.circle("fill", cx - 1.5 * eyePulse * eyeSizeMult, cy - 1.5 * eyePulse * eyeSizeMult, 1.5 * eyePulse * eyeSizeMult)
 
                 love.graphics.setColor(1.0, 1.0, 1.0)
                 love.graphics.setLineWidth(1)
@@ -3328,21 +3433,21 @@ function Enemy.draw(game)
                     love.graphics.push()
                     love.graphics.translate(cx, cy)
                     love.graphics.rotate(game.time * 2.0)
-                    
+
                     -- Outer glowing diamond
                     love.graphics.setColor(0.6, 0.5, 1.0, 0.35 + math.sin(game.time * 15) * 0.15)
                     love.graphics.polygon("fill", 0, -18, 12, 0, 0, 18, -12, 0)
-                    
+
                     -- Inner core
                     love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
                     love.graphics.polygon("fill", 0, -8, 5, 0, 0, 8, -5, 0)
-                    
+
                     -- Edge line
                     love.graphics.setColor(0.7, 0.6, 1.0, 0.9)
                     love.graphics.setLineWidth(1.8)
                     love.graphics.polygon("line", 0, -18, 12, 0, 0, 18, -12, 0)
                     love.graphics.pop()
-                    
+
                     love.graphics.setColor(1.0, 1.0, 1.0)
                     love.graphics.setLineWidth(1)
                 else
@@ -3368,18 +3473,18 @@ function Enemy.draw(game)
                             if other.type == "tesla_pylon" and other.parentBoss == enemy then
                                 local pycx = other.x + other.width / 2
                                 local pycy = other.y + other.height / 2
-                                
+
                                 -- 3-layer glowing lightning beam
                                 -- 1) Base glow (purple)
                                 love.graphics.setColor(0.5, 0.2, 0.8, 0.3)
                                 love.graphics.setLineWidth(8)
                                 drawLightningBeam(cx, cy, pycx, pycy, 8, 16)
-                                
+
                                 -- 2) Mid glow (violet)
                                 love.graphics.setColor(0.7, 0.4, 1.0, 0.75)
                                 love.graphics.setLineWidth(4)
                                 drawLightningBeam(cx, cy, pycx, pycy, 8, 12)
-                                
+
                                 -- 3) Core (bright white)
                                 love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
                                 love.graphics.setLineWidth(1.5)
@@ -3393,7 +3498,7 @@ function Enemy.draw(game)
                         local scale = 1.0 + math.sin(game.time * 25) * 0.1
                         love.graphics.setColor(0.7, 0.5, 1.0, 0.25)
                         love.graphics.circle("fill", cx, cy, enemy.width * 1.3 * scale)
-                        
+
                         -- Collapsing ring
                         local progress = enemy.stateTimer / (enemy.bossState == "tesla_pylons" and 1.2 or 1.0)
                         love.graphics.setColor(0.6, 0.5, 1.0, 0.7)
@@ -3404,7 +3509,7 @@ function Enemy.draw(game)
                         local scale = 1.0 + math.sin(game.time * 20) * 0.15
                         love.graphics.setColor(0.5, 0.3, 0.9, 0.12)
                         love.graphics.circle("fill", cx, cy, enemy.width * 2.2 * scale)
-                        
+
                         love.graphics.setColor(0.6, 0.4, 1.0, 0.5 + math.sin(game.time * 30) * 0.2)
                         love.graphics.setLineWidth(2.5)
                         love.graphics.circle("line", cx, cy, enemy.width * 2.2 * scale)
@@ -3445,7 +3550,8 @@ function Enemy.draw(game)
                     -- small spikes on outer vertices
                     for v = 0, 2 do
                         local vAngle = v * (2 * math.pi / 3)
-                        love.graphics.circle("fill", math.cos(vAngle - math.pi/2) * rOuter, math.sin(vAngle - math.pi/2) * rOuter, 4)
+                        love.graphics.circle("fill", math.cos(vAngle - math.pi / 2) * rOuter,
+                            math.sin(vAngle - math.pi / 2) * rOuter, 4)
                     end
                     love.graphics.pop()
 
@@ -3500,648 +3606,652 @@ function Enemy.draw(game)
                     love.graphics.setColor(1.0, 1.0, 1.0)
                     love.graphics.setLineWidth(1)
                 end
-        elseif currentStage == 5 or enemy.type == "aegis_shield" then
-            if enemy.type == "aegis_shield" then
-                -- Draw Aegis Shield
+            elseif currentStage == 5 or enemy.type == "aegis_shield" then
+                if enemy.type == "aegis_shield" then
+                    -- Draw Aegis Shield
+                    love.graphics.push()
+                    love.graphics.translate(cx, cy)
+                    -- Find boss center to rotate shield to face outwards from boss
+                    local bCenterX, bCenterY = cx, cy
+                    local parent = enemy.parentBoss
+                    if not parent then
+                        for _, other in ipairs(game.enemies) do
+                            if other.type == "boss" then
+                                parent = other
+                                break
+                            end
+                        end
+                    end
+                    if parent then
+                        bCenterX = parent.x + parent.width / 2
+                        bCenterY = parent.y + parent.height / 2
+                    end
+                    local angle = math.atan2(cy - bCenterY, cx - bCenterX)
+                    love.graphics.rotate(angle)
+
+                    -- Draw a beautiful curved or hexagonal plate shield
+                    love.graphics.setColor(1.0, 0.8, 0.1, 0.25)
+                    love.graphics.rectangle("fill", -6, -16, 12, 32, 4, 4)
+                    love.graphics.setColor(1.0, 0.8, 0.1, 0.9)
+                    love.graphics.setLineWidth(2)
+                    love.graphics.rectangle("line", -6, -16, 12, 32, 4, 4)
+
+                    -- Add a glowing center highlight
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                    love.graphics.circle("fill", 0, 0, 4)
+                    love.graphics.pop()
+                else
+                    -- Draw Orbital Aegis Boss
+                    -- Draw outer rotating ring/halo (Aegis ring)
+                    love.graphics.push()
+                    love.graphics.translate(cx, cy)
+                    love.graphics.rotate(enemy.shieldAngle or 0)
+                    love.graphics.setColor(1.0, 0.8, 0.1, 0.15)
+                    love.graphics.circle("fill", 0, 0, halfW * 1.3)
+                    love.graphics.setColor(1.0, 0.8, 0.1, 0.8)
+                    love.graphics.setLineWidth(2.5)
+                    love.graphics.circle("line", 0, 0, halfW * 1.3)
+
+                    -- Draw 4 spikes on the rotating outer ring
+                    for k = 1, 4 do
+                        local angle = (k - 1) * (math.pi / 2)
+                        love.graphics.push()
+                        love.graphics.rotate(angle)
+                        love.graphics.polygon("fill", -6, -halfW * 1.3, 6, -halfW * 1.3, 0, -halfW * 1.5)
+                        love.graphics.pop()
+                    end
+                    love.graphics.pop()
+
+                    -- Draw main gear body (mechanical style)
+                    love.graphics.push()
+                    love.graphics.translate(cx, cy)
+                    love.graphics.rotate(-enemy.shieldAngle * 0.5)
+                    love.graphics.setColor(0.12, 0.10, 0.05, 0.95)
+                    local gearPts = {}
+                    local numTeeth = 12
+                    for t = 1, numTeeth * 2 do
+                        local r = (t % 2 == 0) and (halfW * 0.9) or (halfW * 0.7)
+                        local angle = (t - 1) * (math.pi / numTeeth)
+                        table.insert(gearPts, math.cos(angle) * r)
+                        table.insert(gearPts, math.sin(angle) * r)
+                    end
+                    love.graphics.polygon("fill", gearPts)
+                    love.graphics.setColor(col[1], col[2], col[3], 0.9)
+                    love.graphics.setLineWidth(2.2)
+                    love.graphics.polygon("line", gearPts)
+                    love.graphics.pop()
+
+                    -- Central reactor core
+                    local corePulse = 1.0 + math.sin(game.time * 10) * 0.1
+                    if enemy.bossState == "recharging" then
+                        corePulse = 0.7 + math.sin(game.time * 30) * 0.15
+                    elseif enemy.bossState == "laser_grid" or enemy.bossState == "orbital_strike" then
+                        corePulse = 1.3 + math.sin(game.time * 25) * 0.2
+                    end
+                    love.graphics.setColor(1.0, 0.8, 0.1, 0.35)
+                    love.graphics.circle("fill", cx, cy, halfW * 0.5 * corePulse)
+                    love.graphics.setColor(1.0, 0.9, 0.5, 0.95)
+                    love.graphics.circle("fill", cx, cy, halfW * 0.3 * corePulse)
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                    love.graphics.circle("fill", cx, cy, halfW * 0.15 * corePulse)
+
+                    -- Draw rotating cross lasers if in laser_grid state
+                    if enemy.bossState == "laser_grid" then
+                        for i = 1, 4 do
+                            local angle = enemy.laserAngle + (i - 1) * (math.pi / 2)
+                            local lx2 = cx + math.cos(angle) * 800
+                            local ly2 = cy + math.sin(angle) * 800
+
+                            -- Outer thick glow
+                            love.graphics.setColor(1.0, 0.7, 0.1, 0.35)
+                            love.graphics.setLineWidth(12)
+                            love.graphics.line(cx, cy, lx2, ly2)
+
+                            -- Mid line
+                            love.graphics.setColor(1.0, 0.85, 0.2, 0.8)
+                            love.graphics.setLineWidth(6)
+                            love.graphics.line(cx, cy, lx2, ly2)
+
+                            -- Core white line
+                            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                            love.graphics.setLineWidth(2)
+                            love.graphics.line(cx, cy, lx2, ly2)
+                        end
+                    end
+
+                    -- Draw Orbital Strike targeting lock / Fusion Beam
+                    if enemy.bossState == "orbital_strike" and enemy.strikeTargetX then
+                        local tx = enemy.strikeTargetX
+                        local ty = enemy.strikeTargetY
+                        if enemy.strikeLockTimer and enemy.strikeLockTimer > 0 then
+                            -- Targeting Crosshair & Collapsing target rings
+                            local progress = enemy.strikeLockTimer / 1.5
+                            love.graphics.setColor(1.0, 0.8, 0.1, 0.6 + math.sin(game.time * 15) * 0.2)
+                            love.graphics.setLineWidth(2)
+                            love.graphics.circle("line", tx, ty, 60 * (1 + progress * 2))
+                            love.graphics.circle("line", tx, ty, 8)
+                            love.graphics.line(tx - 20, ty, tx - 5, ty)
+                            love.graphics.line(tx + 5, ty, tx + 20, ty)
+                            love.graphics.line(tx, ty - 20, tx, ty - 5)
+                            love.graphics.line(tx, ty + 5, tx, ty + 20)
+                        else
+                            -- Fusion beam firing from space (down to target y)
+                            local beamAlpha = 0.75 + math.sin(game.time * 25) * 0.15
+                            -- Outer glow
+                            love.graphics.setColor(1.0, 0.8, 0.1, beamAlpha * 0.25)
+                            love.graphics.rectangle("fill", tx - 60, 0, 120, ty)
+                            love.graphics.circle("fill", tx, ty, 60)
+                            -- Mid beam
+                            love.graphics.setColor(1.0, 0.9, 0.3, beamAlpha * 0.6)
+                            love.graphics.rectangle("fill", tx - 30, 0, 60, ty)
+                            love.graphics.circle("fill", tx, ty, 30)
+                            -- Core white beam
+                            love.graphics.setColor(1.0, 1.0, 1.0, beamAlpha * 0.9)
+                            love.graphics.rectangle("fill", tx - 10, 0, 20, ty)
+                            love.graphics.circle("fill", tx, ty, 10)
+                        end
+                    end
+
+                    -- Draw Orbital Strike final explosion shockwave
+                    if enemy.strikeExplodeTimer and enemy.strikeExplodeX then
+                        local tx = enemy.strikeExplodeX
+                        local ty = enemy.strikeExplodeY
+                        local progress = (0.4 - enemy.strikeExplodeTimer) / 0.4
+                        local alpha = enemy.strikeExplodeTimer / 0.4
+                        local radius = 180 * progress
+                        love.graphics.setColor(1.0, 0.8, 0.1, alpha * 0.4)
+                        love.graphics.circle("fill", tx, ty, radius)
+                        love.graphics.setColor(1.0, 0.9, 0.5, alpha * 0.7)
+                        love.graphics.setLineWidth(3)
+                        love.graphics.circle("line", tx, ty, radius)
+                    end
+
+                    -- Draw shockwave ring expanding
+                    if enemy.shockwaveRadius then
+                        love.graphics.setColor(1.0, 0.8, 0.1, 0.6 * (1 - enemy.shockwaveTimer / enemy.shockwaveDuration))
+                        love.graphics.setLineWidth(4)
+                        love.graphics.circle("line", cx, cy, enemy.shockwaveRadius)
+                    end
+
+                    -- Vulnerable / Overloaded state visual effects
+                    if enemy.bossState == "recharging" then
+                        local vulPulse = 1.0 + math.sin(game.time * 20) * 0.12
+                        love.graphics.setColor(1.0, 0.8, 0.1, 0.5 + math.sin(game.time * 20) * 0.25)
+                        love.graphics.setLineWidth(3)
+                        love.graphics.circle("line", cx, cy, enemy.width * 0.9 * vulPulse)
+
+                        -- "OVERLOADED" text
+                        love.graphics.setColor(1.0, 0.8, 0.1, 0.95)
+                        love.graphics.printf("OVERLOADED", cx - 100, enemy.y - 25, 200, "center")
+                    end
+                end
+            elseif currentStage == 6 and enemy.type == "boss" then
+                -- ==========================================
+                -- BOSS 6 (Chronos Weaver) drawing
+                -- ==========================================
+                -- 1. Draw "TIME REWIND" or "TEMPORAL LASERS" warning / info text
+                if enemy.bossState == "time_rewind" then
+                    love.graphics.setColor(0.1, 0.9, 0.6, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("TIME REWIND", cx - 100, enemy.y - 25, 200, "center")
+                elseif enemy.bossState == "time_sweep" then
+                    love.graphics.setColor(1.0, 0.9, 0.4, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("TEMPORAL LASERS", cx - 100, enemy.y - 25, 200, "center")
+                end
+
+                -- 2. Draw warning indicator ring for charging time_burst
+                if enemy.bossState == "time_burst" and enemy.stateTimer then
+                    local progress = enemy.stateTimer / 1.0
+                    love.graphics.setColor(0.1, 0.9, 0.6, 0.6)
+                    love.graphics.setLineWidth(2)
+                    love.graphics.circle("line", cx, cy, enemy.width * 2.0 * progress)
+                    love.graphics.setColor(0.1, 0.9, 0.6, 0.15)
+                    love.graphics.circle("fill", cx, cy, enemy.width * 2.0)
+                end
+
+                -- 3. Draw neon green/emerald time trails (Time Ghosts) when rewinding
+                if enemy.bossState == "time_rewind" and enemy.timeTrail then
+                    -- Draw a semi-transparent ghost at every 15th position in history
+                    for j = 1, #enemy.timeTrail, 15 do
+                        local pos = enemy.timeTrail[j]
+                        local alpha = 0.35 * (1.0 - j / #enemy.timeTrail)
+                        love.graphics.setColor(0.1, 0.9, 0.6, alpha)
+
+                        -- Draw the ghost dial outline
+                        love.graphics.circle("line", pos.x + halfW, pos.y + halfW, halfW * 0.95)
+                    end
+                end
+
+                -- 3b. Draw ticking lasers if in time_sweep state
+                if enemy.bossState == "time_sweep" then
+                    -- Hour hand laser (Emerald/Green)
+                    local hourAngle = (game.time * 1.5) - math.pi / 2
+                    local hx2 = cx + math.cos(hourAngle) * 900
+                    local hy2 = cy + math.sin(hourAngle) * 900
+                    -- Outer glow
+                    love.graphics.setColor(0.1, 0.9, 0.6, 0.3)
+                    love.graphics.setLineWidth(12)
+                    love.graphics.line(cx, cy, hx2, hy2)
+                    -- Mid line
+                    love.graphics.setColor(0.1, 0.9, 0.6, 0.75)
+                    love.graphics.setLineWidth(5)
+                    love.graphics.line(cx, cy, hx2, hy2)
+                    -- Core white line
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                    love.graphics.setLineWidth(1.5)
+                    love.graphics.line(cx, cy, hx2, hy2)
+
+                    -- Minute hand laser (Gold/Yellow)
+                    local minuteAngle = (game.time * 5.0) - math.pi / 2
+                    local mx2 = cx + math.cos(minuteAngle) * 900
+                    local my2 = cy + math.sin(minuteAngle) * 900
+                    -- Outer glow
+                    love.graphics.setColor(1.0, 0.9, 0.4, 0.3)
+                    love.graphics.setLineWidth(8)
+                    love.graphics.line(cx, cy, mx2, my2)
+                    -- Mid line
+                    love.graphics.setColor(1.0, 0.9, 0.4, 0.75)
+                    love.graphics.setLineWidth(3.5)
+                    love.graphics.line(cx, cy, mx2, my2)
+                    -- Core white line
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                    love.graphics.setLineWidth(1.2)
+                    love.graphics.line(cx, cy, mx2, my2)
+                end
+
+                -- 4. Draw clock dial face
+                love.graphics.setColor(0.08, 0.15, 0.12, 0.95)
+                love.graphics.circle("fill", cx, cy, halfW * 0.95)
+
+                -- 5. Draw 12 clock ticks (tick lines on dial edge)
+                love.graphics.setLineWidth(1.8)
+                love.graphics.setColor(col[1], col[2], col[3], 0.95)
+                love.graphics.circle("line", cx, cy, halfW * 0.95)
+                for tick = 1, 12 do
+                    local angle = (tick - 1) * (2 * math.pi / 12)
+                    local x1 = cx + math.cos(angle) * (halfW * 0.8)
+                    local y1 = cy + math.sin(angle) * (halfW * 0.8)
+                    local x2 = cx + math.cos(angle) * (halfW * 0.95)
+                    local y2 = cy + math.sin(angle) * (halfW * 0.95)
+                    love.graphics.line(x1, y1, x2, y2)
+                end
+
+                -- 6. Draw hour and minute hands revolving at different speeds
+                -- Hour hand (slower)
+                local hourAngle = game.time * 0.5
+                if enemy.bossState == "time_sweep" then
+                    hourAngle = game.time * 1.5
+                end
+                local hx = cx + math.cos(hourAngle - math.pi / 2) * (halfW * 0.5)
+                local hy = cy + math.sin(hourAngle - math.pi / 2) * (halfW * 0.5)
+                love.graphics.setColor(col[1] * 0.8, col[2] * 1.2, col[3] * 0.9, 0.9)
+                love.graphics.setLineWidth(3.0)
+                love.graphics.line(cx, cy, hx, hy)
+
+                -- Minute hand (faster)
+                local minuteAngle = game.time * 4.0
+                if enemy.bossState == "time_sweep" then
+                    minuteAngle = game.time * 5.0
+                end
+                local mx = cx + math.cos(minuteAngle - math.pi / 2) * (halfW * 0.75)
+                local my = cy + math.sin(minuteAngle - math.pi / 2) * (halfW * 0.75)
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.setLineWidth(1.8)
+                love.graphics.line(cx, cy, mx, my)
+
+                -- Center clock pin/pivot
+                love.graphics.setColor(col[1], col[2], col[3], 0.95)
+                love.graphics.circle("fill", cx, cy, 6)
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.circle("fill", cx, cy, 2)
+
+                love.graphics.setColor(1.0, 1.0, 1.0)
+                love.graphics.setLineWidth(1)
+            elseif currentStage == 7 or enemy.type == "glitch_clone" then
+                -- ==========================================
+                -- BOSS 7 (Glitch Overlord) & Glitch Clone drawing
+                -- ==========================================
+                local isClone = (enemy.type == "glitch_clone")
+                local baseAlpha = isClone and (0.5 + math.sin(game.time * 25) * 0.15) or 1.0
+
+                -- Draw status text above boss/clone
+                if enemy.bossState == "system_hack" then
+                    love.graphics.setColor(1.0, 0.1, 0.4, baseAlpha * (0.85 + math.sin(game.time * 20) * 0.15))
+                    love.graphics.printf("SYSTEM HACKING", cx - 100, enemy.y - 25, 200, "center")
+                elseif enemy.bossState == "corrupt_clone" then
+                    love.graphics.setColor(0.1, 0.9, 0.9, baseAlpha * (0.85 + math.sin(game.time * 20) * 0.15))
+                    love.graphics.printf("CORRUPTING SYS", cx - 100, enemy.y - 25, 200, "center")
+                elseif enemy.bossState == "overflow_firing" or enemy.bossState == "memory_overflow" then
+                    love.graphics.setColor(0.9, 0.9, 0.1, baseAlpha * (0.85 + math.sin(game.time * 20) * 0.15))
+                    love.graphics.printf("MEMORY OVERFLOW", cx - 100, enemy.y - 25, 200, "center")
+                end
+
+                if isClone then
+                    love.graphics.setColor(0.1, 0.9, 0.9, baseAlpha * 0.75)
+                    love.graphics.printf("GLITCH CLONE", cx - 100, enemy.y - 20, 200, "center")
+                end
+
+                -- Warning indicator ring for system_hack channeling
+                if enemy.bossState == "system_hack" and enemy.stateTimer then
+                    local progress = (1.2 - enemy.stateTimer) / 1.2
+                    love.graphics.setColor(1.0, 0.1, 0.4, 0.4 * baseAlpha)
+                    love.graphics.setLineWidth(2)
+                    love.graphics.circle("line", cx, cy, 400 * progress)
+                    love.graphics.circle("line", cx, cy, 400)
+                end
+
+                -- 1. Draw three jittering overlapping cubes to simulate chromatic aberration
+                local jitterRange = 4
+                local rOffsetX = math.random(-jitterRange, jitterRange)
+                local rOffsetY = math.random(-jitterRange, jitterRange)
+                local cOffsetX = math.random(-jitterRange, jitterRange)
+                local cOffsetY = math.random(-jitterRange, jitterRange)
+
+                local sizeMult = pulse
+                local currentW = enemy.width * sizeMult
+
+                -- Red layer
+                love.graphics.setColor(1.0, 0.0, 0.3, baseAlpha * 0.7)
+                love.graphics.rectangle("fill", cx - currentW / 2 + rOffsetX, cy - currentW / 2 + rOffsetY, currentW,
+                    currentW)
+
+                -- Cyan layer
+                love.graphics.setColor(0.0, 1.0, 1.0, baseAlpha * 0.7)
+                love.graphics.rectangle("fill", cx - currentW / 2 + cOffsetX, cy - currentW / 2 + cOffsetY, currentW,
+                    currentW)
+
+                -- Main white/magenta core layer
+                if isClone then
+                    love.graphics.setColor(0.2, 0.8, 0.8, baseAlpha * 0.9)
+                else
+                    love.graphics.setColor(1.0, 1.0, 1.0, baseAlpha * 0.85)
+                end
+                love.graphics.rectangle("fill", cx - currentW / 2, cy - currentW / 2, currentW, currentW)
+                love.graphics.setColor(1.0, 1.0, 1.0)
+                love.graphics.setLineWidth(1)
+
+                -- 2. Draw random numeric glitch glyphs floating around the boss
+                love.graphics.setColor(0.1, 0.9, 0.5, baseAlpha * 0.6)
+                local glyphs = { "0", "1", "4", "A", "F", "X", "Y", "9", "3", "E" }
+                for k = 1, 6 do
+                    local angle = k * (2 * math.pi / 6) + game.time * 2.0
+                    local distOff = halfW * (1.2 + 0.3 * math.sin(game.time * 5 + k))
+                    local gx = cx + math.cos(angle) * distOff
+                    local gy = cy + math.sin(angle) * distOff
+                    local glyphIndex = math.floor((game.time * 12 + k * 4) % #glyphs) + 1
+                    local glyph = glyphs[glyphIndex]
+                    love.graphics.print(glyph, gx - 4, gy - 6)
+                end
+            elseif enemy.type == "void_anchor" then
+                -- Stationary pulsing violet crystal shape
                 love.graphics.push()
                 love.graphics.translate(cx, cy)
-                -- Find boss center to rotate shield to face outwards from boss
-                local bCenterX, bCenterY = cx, cy
-                local parent = enemy.parentBoss
-                if not parent then
-                    for _, other in ipairs(game.enemies) do
-                        if other.type == "boss" then
-                            parent = other
-                            break
+                love.graphics.rotate(game.time * 1.5)
+                local anchorPulse = 1.0 + math.sin(game.time * 10) * 0.12
+
+                -- Outer pulsing glow
+                love.graphics.setColor(0.7, 0.2, 0.9, 0.25)
+                love.graphics.polygon("fill", 0, -18 * anchorPulse, 12 * anchorPulse, 0, 0, 18 * anchorPulse,
+                    -12 * anchorPulse, 0)
+
+                -- Inner crystal core
+                love.graphics.setColor(0.9, 0.3, 1.0, 0.9)
+                love.graphics.polygon("fill", 0, -12 * anchorPulse, 8 * anchorPulse, 0, 0, 12 * anchorPulse,
+                    -8 * anchorPulse, 0)
+
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.circle("fill", 0, 0, 3 * anchorPulse)
+
+                love.graphics.setColor(0.8, 0.2, 0.9, 0.8)
+                love.graphics.setLineWidth(1.8)
+                love.graphics.polygon("line", 0, -18 * anchorPulse, 12 * anchorPulse, 0, 0, 18 * anchorPulse,
+                    -12 * anchorPulse, 0)
+                love.graphics.pop()
+            elseif currentStage == 8 and enemy.type == "boss" then
+                -- ==========================================
+                -- BOSS 8 (Singularity Nexus) drawing
+                -- ==========================================
+                love.graphics.setLineWidth(1.5)
+                for rIdx = 1, 3 do
+                    local ringPulse = ((game.time * 0.8 + rIdx / 3) % 1.0)
+                    local ringRadius = halfW * 1.8 * (1.0 - ringPulse)
+                    love.graphics.setColor(0.5, 0.2, 0.9, ringPulse * 0.45)
+                    love.graphics.circle("line", cx, cy, ringRadius)
+                end
+
+                -- If event horizon contracts, draw contracting rings
+                if enemy.bossState == "horizon_contracting" and enemy.ringsPassed then
+                    local ringStartRadii = { 1000, 1300, 1600 }
+                    local gapAngle = (game.time * 1.5) % (2 * math.pi)
+                    for k = 1, 3 do
+                        if not enemy.ringsPassed[k] then
+                            local r = ringStartRadii[k] * (enemy.stateTimer / 3.0)
+                            love.graphics.setLineWidth(3)
+                            love.graphics.setColor(0.6, 0.1, 0.9, 0.75)
+                            love.graphics.arc("line", cx, cy, r, gapAngle + 0.4, gapAngle - 0.4 + 2 * math.pi)
+
+                            love.graphics.setColor(0.2, 0.5, 1.0, 0.8)
+                            love.graphics.circle("fill", cx + math.cos(gapAngle) * r, cy + math.sin(gapAngle) * r, 8)
                         end
                     end
                 end
-                if parent then
-                    bCenterX = parent.x + parent.width / 2
-                    bCenterY = parent.y + parent.height / 2
-                end
-                local angle = math.atan2(cy - bCenterY, cx - bCenterX)
-                love.graphics.rotate(angle)
 
-                -- Draw a beautiful curved or hexagonal plate shield
-                love.graphics.setColor(1.0, 0.8, 0.1, 0.25)
-                love.graphics.rectangle("fill", -6, -16, 12, 32, 4, 4)
-                love.graphics.setColor(1.0, 0.8, 0.1, 0.9)
-                love.graphics.setLineWidth(2)
-                love.graphics.rectangle("line", -6, -16, 12, 32, 4, 4)
-
-                -- Add a glowing center highlight
-                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                love.graphics.circle("fill", 0, 0, 4)
-                love.graphics.pop()
-            else
-                -- Draw Orbital Aegis Boss
-                -- Draw outer rotating ring/halo (Aegis ring)
+                -- Accretion Disk (spinning dust/gas with colorful HSL-tailored particles)
                 love.graphics.push()
                 love.graphics.translate(cx, cy)
-                love.graphics.rotate(enemy.shieldAngle or 0)
-                love.graphics.setColor(1.0, 0.8, 0.1, 0.15)
-                love.graphics.circle("fill", 0, 0, halfW * 1.3)
-                love.graphics.setColor(1.0, 0.8, 0.1, 0.8)
-                love.graphics.setLineWidth(2.5)
-                love.graphics.circle("line", 0, 0, halfW * 1.3)
-                
-                -- Draw 4 spikes on the rotating outer ring
-                for k = 1, 4 do
-                    local angle = (k - 1) * (math.pi / 2)
+                love.graphics.rotate(game.time * 3.5)
+
+                -- Swirling dust layers
+                for dIdx = 1, 4 do
+                    local sizeScale = 1.0 + dIdx * 0.15
+                    local rotAngle = (dIdx - 1) * (math.pi / 4)
                     love.graphics.push()
-                    love.graphics.rotate(angle)
-                    love.graphics.polygon("fill", -6, -halfW * 1.3, 6, -halfW * 1.3, 0, -halfW * 1.5)
+                    love.graphics.rotate(rotAngle)
+                    love.graphics.setColor(0.4, 0.1, 0.8, 0.1)
+                    love.graphics.ellipse("fill", 0, 0, halfW * 1.6 * sizeScale, halfW * 0.9 * sizeScale)
+                    love.graphics.setColor(0.6, 0.2, 0.9, 0.75)
+                    love.graphics.setLineWidth(1.5)
+                    love.graphics.ellipse("line", 0, 0, halfW * 1.6 * sizeScale, halfW * 0.9 * sizeScale)
                     love.graphics.pop()
                 end
                 love.graphics.pop()
 
-                -- Draw main gear body (mechanical style)
+                -- Event Horizon (Pitch black center core)
+                local eventHorizonRadius = halfW * 0.65
+                love.graphics.setColor(0.0, 0.0, 0.0, 1.0)
+                love.graphics.circle("fill", cx, cy, eventHorizonRadius)
+
+                -- Glowing accretion rim (intense violet/blue highlight)
+                love.graphics.setColor(0.7, 0.2, 1.0, 0.9)
+                love.graphics.setLineWidth(3.0)
+                love.graphics.circle("line", cx, cy, eventHorizonRadius)
+
+                -- Warning indicators / status texts
+                if enemy.bossState == "gravity_well" then
+                    love.graphics.setColor(0.5, 0.2, 0.9, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("GRAVITY WELL CHARGING", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "gravity_pulling" then
+                    love.graphics.setColor(0.2, 0.6, 1.0, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("GRAVITATIONAL PULL", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "event_horizon" then
+                    love.graphics.setColor(0.8, 0.1, 0.8, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("EVENT HORIZON INCOMING", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "horizon_contracting" then
+                    love.graphics.setColor(1.0, 0.1, 0.1, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("HORIZON CONTRACTING", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "phase_shift" or enemy.bossState == "shifting_invulnerable" then
+                    love.graphics.setColor(0.9, 0.2, 0.9, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("PHASE SHIFT: INVULNERABLE", cx - 120, enemy.y - 25, 240, "center")
+                end
+            elseif currentStage >= 9 and enemy.type == "boss" then
+                -- ==========================================
+                -- BOSS 9 (Nebula Seraph) drawing
+                -- ==========================================
+                if enemy.bossState == "supernova" then
+                    love.graphics.setColor(1.0, 0.8, 0.2, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("SUPERNOVA INCOMING", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "binary_star" then
+                    love.graphics.setColor(1.0, 0.9, 0.5, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("BINARY SUNS IGNITING", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "binary_laser" then
+                    love.graphics.setColor(1.0, 0.5, 0.1, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("BINARY SOLAR LASERS", cx - 120, enemy.y - 25, 240, "center")
+                elseif enemy.bossState == "meteor_storm" or enemy.bossState == "meteor_falling" then
+                    love.graphics.setColor(1.0, 0.3, 0.1, 0.85 + math.sin(game.time * 20) * 0.15)
+                    love.graphics.printf("METEOR STORM CALLED", cx - 120, enemy.y - 25, 240, "center")
+                end
+
+                -- A. Supernova warning / charging shelter zone
+                if enemy.bossState == "supernova" then
+                    if enemy.shelterX and enemy.shelterY then
+                        local sx, sy, sr = enemy.shelterX, enemy.shelterY, enemy.shelterRadius
+                        local pulseRate = 0.8 + 0.2 * math.sin(game.time * 12)
+
+                        love.graphics.setColor(1.0, 0.85, 0.3, 0.15 * pulseRate)
+                        love.graphics.circle("fill", sx, sy, sr)
+
+                        love.graphics.setColor(1.0, 0.9, 0.5, 0.8 * pulseRate)
+                        love.graphics.setLineWidth(3)
+                        love.graphics.circle("line", sx, sy, sr)
+
+                        love.graphics.setColor(1.0, 0.9, 0.6, 0.9)
+                        love.graphics.printf("SHELTER", sx - 60, sy - 8, 120, "center")
+                    end
+
+                    local progress = (3.0 - enemy.stateTimer) / 3.0
+                    love.graphics.setColor(1.0, 0.75, 0.1, 0.35 * progress)
+                    love.graphics.setLineWidth(5)
+                    love.graphics.circle("line", cx, cy, 750 * (1.0 - progress))
+                end
+
+                -- Supernova Explosion Ring Flash
+                if enemy.supernovaExplodeTimer then
+                    local progress = (0.5 - enemy.supernovaExplodeTimer) / 0.5
+                    local alpha = enemy.supernovaExplodeTimer / 0.5
+                    love.graphics.setColor(1.0, 0.9, 0.4, alpha * 0.55)
+                    love.graphics.circle("fill", cx, cy, 900 * progress)
+                    love.graphics.setColor(1.0, 1.0, 1.0, alpha * 0.9)
+                    love.graphics.setLineWidth(5)
+                    love.graphics.circle("line", cx, cy, 900 * progress)
+                end
+
+                -- B. Binary Suns & Lasers
+                if enemy.bossState == "binary_laser" and enemy.binaryAngle then
+                    local orbitRadius = 185
+                    local s1x = cx + math.cos(enemy.binaryAngle) * orbitRadius
+                    local s1y = cy + math.sin(enemy.binaryAngle) * orbitRadius
+                    local s2x = cx + math.cos(enemy.binaryAngle + math.pi) * orbitRadius
+                    local s2y = cy + math.sin(enemy.binaryAngle + math.pi) * orbitRadius
+
+                    local lx1 = cx - math.cos(enemy.binaryAngle) * 900
+                    local ly1 = cy - math.sin(enemy.binaryAngle) * 900
+                    local lx2 = cx + math.cos(enemy.binaryAngle) * 900
+                    local ly2 = cy + math.sin(enemy.binaryAngle) * 900
+
+                    love.graphics.setColor(1.0, 0.5, 0.1, 0.3)
+                    love.graphics.setLineWidth(14)
+                    love.graphics.line(lx1, ly1, lx2, ly2)
+
+                    love.graphics.setColor(1.0, 0.85, 0.3, 0.75)
+                    love.graphics.setLineWidth(6)
+                    love.graphics.line(lx1, ly1, lx2, ly2)
+
+                    love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                    love.graphics.setLineWidth(1.8)
+                    love.graphics.line(lx1, ly1, lx2, ly2)
+
+                    for _, sunPos in ipairs({ { x = s1x, y = s1y }, { x = s2x, y = s2y } }) do
+                        local sunPulse = 1.0 + math.sin(game.time * 15) * 0.15
+                        love.graphics.setColor(1.0, 0.85, 0.2, 0.4)
+                        love.graphics.circle("fill", sunPos.x, sunPos.y, 22 * sunPulse)
+                        love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+                        love.graphics.circle("fill", sunPos.x, sunPos.y, 12 * sunPulse)
+                    end
+                elseif enemy.bossState == "binary_star" then
+                    local progress = (1.2 - enemy.stateTimer) / 1.2
+                    local orbitRadius = 185
+                    local s1x = cx + math.cos(0) * orbitRadius
+                    local s1y = cy + math.sin(0) * orbitRadius
+                    local s2x = cx + math.cos(math.pi) * orbitRadius
+                    local s2y = cy + math.sin(math.pi) * orbitRadius
+
+                    for _, sunPos in ipairs({ { x = s1x, y = s1y }, { x = s2x, y = s2y } }) do
+                        love.graphics.setColor(1.0, 0.8, 0.2, 0.5 * progress)
+                        love.graphics.setLineWidth(1.5)
+                        love.graphics.circle("line", sunPos.x, sunPos.y, 30 * (1.0 - progress))
+                        love.graphics.circle("fill", sunPos.x, sunPos.y, 10 * progress)
+                    end
+                end
+
+                -- C. Draw Meteor falling indicators
+                if game.cosmicMeteors then
+                    for _, met in ipairs(game.cosmicMeteors) do
+                        if not met.exploded then
+                            local progress = (1.2 - met.timer) / 1.2
+                            love.graphics.setColor(1.0, 0.35, 0.1, 0.65 * (0.3 + 0.7 * progress))
+                            love.graphics.setLineWidth(2)
+                            love.graphics.circle("line", met.x, met.y, met.radius)
+
+                            love.graphics.setColor(1.0, 0.5, 0.15, 0.15 * progress)
+                            love.graphics.circle("fill", met.x, met.y, met.radius * progress)
+                        end
+                    end
+                end
+
+                -- D. Main Celestial Wing Body (Seraph wing shapes)
                 love.graphics.push()
                 love.graphics.translate(cx, cy)
-                love.graphics.rotate(-enemy.shieldAngle * 0.5)
-                love.graphics.setColor(0.12, 0.10, 0.05, 0.95)
-                local gearPts = {}
-                local numTeeth = 12
-                for t = 1, numTeeth * 2 do
-                    local r = (t % 2 == 0) and (halfW * 0.9) or (halfW * 0.7)
-                    local angle = (t - 1) * (math.pi / numTeeth)
-                    table.insert(gearPts, math.cos(angle) * r)
-                    table.insert(gearPts, math.sin(angle) * r)
-                end
-                love.graphics.polygon("fill", gearPts)
-                love.graphics.setColor(col[1], col[2], col[3], 0.9)
-                love.graphics.setLineWidth(2.2)
-                love.graphics.polygon("line", gearPts)
+
+                love.graphics.rotate(game.time * 0.8)
+                love.graphics.setColor(1.0, 0.85, 0.15, 0.12)
+                love.graphics.circle("fill", 0, 0, halfW * 1.25)
+                love.graphics.setColor(1.0, 0.85, 0.15, 0.75)
+                love.graphics.setLineWidth(2)
+                love.graphics.circle("line", 0, 0, halfW * 1.25)
                 love.graphics.pop()
 
-                -- Central reactor core
-                local corePulse = 1.0 + math.sin(game.time * 10) * 0.1
-                if enemy.bossState == "recharging" then
-                    corePulse = 0.7 + math.sin(game.time * 30) * 0.15
-                elseif enemy.bossState == "laser_grid" or enemy.bossState == "orbital_strike" then
-                    corePulse = 1.3 + math.sin(game.time * 25) * 0.2
-                end
-                love.graphics.setColor(1.0, 0.8, 0.1, 0.35)
-                love.graphics.circle("fill", cx, cy, halfW * 0.5 * corePulse)
-                love.graphics.setColor(1.0, 0.9, 0.5, 0.95)
-                love.graphics.circle("fill", cx, cy, halfW * 0.3 * corePulse)
-                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                love.graphics.circle("fill", cx, cy, halfW * 0.15 * corePulse)
-
-                -- Draw rotating cross lasers if in laser_grid state
-                if enemy.bossState == "laser_grid" then
-                    for i = 1, 4 do
-                        local angle = enemy.laserAngle + (i - 1) * (math.pi / 2)
-                        local lx2 = cx + math.cos(angle) * 800
-                        local ly2 = cy + math.sin(angle) * 800
-                        
-                        -- Outer thick glow
-                        love.graphics.setColor(1.0, 0.7, 0.1, 0.35)
-                        love.graphics.setLineWidth(12)
-                        love.graphics.line(cx, cy, lx2, ly2)
-                        
-                        -- Mid line
-                        love.graphics.setColor(1.0, 0.85, 0.2, 0.8)
-                        love.graphics.setLineWidth(6)
-                        love.graphics.line(cx, cy, lx2, ly2)
-                        
-                        -- Core white line
-                        love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                        love.graphics.setLineWidth(2)
-                        love.graphics.line(cx, cy, lx2, ly2)
-                    end
-                end
-
-                -- Draw Orbital Strike targeting lock / Fusion Beam
-                if enemy.bossState == "orbital_strike" and enemy.strikeTargetX then
-                    local tx = enemy.strikeTargetX
-                    local ty = enemy.strikeTargetY
-                    if enemy.strikeLockTimer and enemy.strikeLockTimer > 0 then
-                        -- Targeting Crosshair & Collapsing target rings
-                        local progress = enemy.strikeLockTimer / 1.5
-                        love.graphics.setColor(1.0, 0.8, 0.1, 0.6 + math.sin(game.time * 15) * 0.2)
-                        love.graphics.setLineWidth(2)
-                        love.graphics.circle("line", tx, ty, 60 * (1 + progress * 2))
-                        love.graphics.circle("line", tx, ty, 8)
-                        love.graphics.line(tx - 20, ty, tx - 5, ty)
-                        love.graphics.line(tx + 5, ty, tx + 20, ty)
-                        love.graphics.line(tx, ty - 20, tx, ty - 5)
-                        love.graphics.line(tx, ty + 5, tx, ty + 20)
-                    else
-                        -- Fusion beam firing from space (down to target y)
-                        local beamAlpha = 0.75 + math.sin(game.time * 25) * 0.15
-                        -- Outer glow
-                        love.graphics.setColor(1.0, 0.8, 0.1, beamAlpha * 0.25)
-                        love.graphics.rectangle("fill", tx - 60, 0, 120, ty)
-                        love.graphics.circle("fill", tx, ty, 60)
-                        -- Mid beam
-                        love.graphics.setColor(1.0, 0.9, 0.3, beamAlpha * 0.6)
-                        love.graphics.rectangle("fill", tx - 30, 0, 60, ty)
-                        love.graphics.circle("fill", tx, ty, 30)
-                        -- Core white beam
-                        love.graphics.setColor(1.0, 1.0, 1.0, beamAlpha * 0.9)
-                        love.graphics.rectangle("fill", tx - 10, 0, 20, ty)
-                        love.graphics.circle("fill", tx, ty, 10)
-                    end
-                end
-
-                -- Draw Orbital Strike final explosion shockwave
-                if enemy.strikeExplodeTimer and enemy.strikeExplodeX then
-                    local tx = enemy.strikeExplodeX
-                    local ty = enemy.strikeExplodeY
-                    local progress = (0.4 - enemy.strikeExplodeTimer) / 0.4
-                    local alpha = enemy.strikeExplodeTimer / 0.4
-                    local radius = 180 * progress
-                    love.graphics.setColor(1.0, 0.8, 0.1, alpha * 0.4)
-                    love.graphics.circle("fill", tx, ty, radius)
-                    love.graphics.setColor(1.0, 0.9, 0.5, alpha * 0.7)
-                    love.graphics.setLineWidth(3)
-                    love.graphics.circle("line", tx, ty, radius)
-                end
-
-                -- Draw shockwave ring expanding
-                if enemy.shockwaveRadius then
-                    love.graphics.setColor(1.0, 0.8, 0.1, 0.6 * (1 - enemy.shockwaveTimer / enemy.shockwaveDuration))
-                    love.graphics.setLineWidth(4)
-                    love.graphics.circle("line", cx, cy, enemy.shockwaveRadius)
-                end
-
-                -- Vulnerable / Overloaded state visual effects
-                if enemy.bossState == "recharging" then
-                    local vulPulse = 1.0 + math.sin(game.time * 20) * 0.12
-                    love.graphics.setColor(1.0, 0.8, 0.1, 0.5 + math.sin(game.time * 20) * 0.25)
-                    love.graphics.setLineWidth(3)
-                    love.graphics.circle("line", cx, cy, enemy.width * 0.9 * vulPulse)
-
-                    -- "OVERLOADED" text
-                    love.graphics.setColor(1.0, 0.8, 0.1, 0.95)
-                    love.graphics.printf("OVERLOADED", cx - 100, enemy.y - 25, 200, "center")
-                end
-            end
-        elseif currentStage == 6 and enemy.type == "boss" then
-            -- ==========================================
-            -- BOSS 6 (Chronos Weaver) drawing
-            -- ==========================================
-            -- 1. Draw "TIME REWIND" or "TEMPORAL LASERS" warning / info text
-            if enemy.bossState == "time_rewind" then
-                love.graphics.setColor(0.1, 0.9, 0.6, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("TIME REWIND", cx - 100, enemy.y - 25, 200, "center")
-            elseif enemy.bossState == "time_sweep" then
-                love.graphics.setColor(1.0, 0.9, 0.4, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("TEMPORAL LASERS", cx - 100, enemy.y - 25, 200, "center")
-            end
-
-            -- 2. Draw warning indicator ring for charging time_burst
-            if enemy.bossState == "time_burst" and enemy.stateTimer then
-                local progress = enemy.stateTimer / 1.0
-                love.graphics.setColor(0.1, 0.9, 0.6, 0.6)
-                love.graphics.setLineWidth(2)
-                love.graphics.circle("line", cx, cy, enemy.width * 2.0 * progress)
-                love.graphics.setColor(0.1, 0.9, 0.6, 0.15)
-                love.graphics.circle("fill", cx, cy, enemy.width * 2.0)
-            end
-
-            -- 3. Draw neon green/emerald time trails (Time Ghosts) when rewinding
-            if enemy.bossState == "time_rewind" and enemy.timeTrail then
-                -- Draw a semi-transparent ghost at every 15th position in history
-                for j = 1, #enemy.timeTrail, 15 do
-                    local pos = enemy.timeTrail[j]
-                    local alpha = 0.35 * (1.0 - j / #enemy.timeTrail)
-                    love.graphics.setColor(0.1, 0.9, 0.6, alpha)
-                    
-                    -- Draw the ghost dial outline
-                    love.graphics.circle("line", pos.x + halfW, pos.y + halfW, halfW * 0.95)
-                end
-            end
-
-            -- 3b. Draw ticking lasers if in time_sweep state
-            if enemy.bossState == "time_sweep" then
-                -- Hour hand laser (Emerald/Green)
-                local hourAngle = (game.time * 1.5) - math.pi / 2
-                local hx2 = cx + math.cos(hourAngle) * 900
-                local hy2 = cy + math.sin(hourAngle) * 900
-                -- Outer glow
-                love.graphics.setColor(0.1, 0.9, 0.6, 0.3)
-                love.graphics.setLineWidth(12)
-                love.graphics.line(cx, cy, hx2, hy2)
-                -- Mid line
-                love.graphics.setColor(0.1, 0.9, 0.6, 0.75)
-                love.graphics.setLineWidth(5)
-                love.graphics.line(cx, cy, hx2, hy2)
-                -- Core white line
-                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                love.graphics.setLineWidth(1.5)
-                love.graphics.line(cx, cy, hx2, hy2)
-
-                -- Minute hand laser (Gold/Yellow)
-                local minuteAngle = (game.time * 5.0) - math.pi / 2
-                local mx2 = cx + math.cos(minuteAngle) * 900
-                local my2 = cy + math.sin(minuteAngle) * 900
-                -- Outer glow
-                love.graphics.setColor(1.0, 0.9, 0.4, 0.3)
-                love.graphics.setLineWidth(8)
-                love.graphics.line(cx, cy, mx2, my2)
-                -- Mid line
-                love.graphics.setColor(1.0, 0.9, 0.4, 0.75)
-                love.graphics.setLineWidth(3.5)
-                love.graphics.line(cx, cy, mx2, my2)
-                -- Core white line
-                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                love.graphics.setLineWidth(1.2)
-                love.graphics.line(cx, cy, mx2, my2)
-            end
-
-            -- 4. Draw clock dial face
-            love.graphics.setColor(0.08, 0.15, 0.12, 0.95)
-            love.graphics.circle("fill", cx, cy, halfW * 0.95)
-
-            -- 5. Draw 12 clock ticks (tick lines on dial edge)
-            love.graphics.setLineWidth(1.8)
-            love.graphics.setColor(col[1], col[2], col[3], 0.95)
-            love.graphics.circle("line", cx, cy, halfW * 0.95)
-            for tick = 1, 12 do
-                local angle = (tick - 1) * (2 * math.pi / 12)
-                local x1 = cx + math.cos(angle) * (halfW * 0.8)
-                local y1 = cy + math.sin(angle) * (halfW * 0.8)
-                local x2 = cx + math.cos(angle) * (halfW * 0.95)
-                local y2 = cy + math.sin(angle) * (halfW * 0.95)
-                love.graphics.line(x1, y1, x2, y2)
-            end
-
-            -- 6. Draw hour and minute hands revolving at different speeds
-            -- Hour hand (slower)
-            local hourAngle = game.time * 0.5
-            if enemy.bossState == "time_sweep" then
-                hourAngle = game.time * 1.5
-            end
-            local hx = cx + math.cos(hourAngle - math.pi / 2) * (halfW * 0.5)
-            local hy = cy + math.sin(hourAngle - math.pi / 2) * (halfW * 0.5)
-            love.graphics.setColor(col[1] * 0.8, col[2] * 1.2, col[3] * 0.9, 0.9)
-            love.graphics.setLineWidth(3.0)
-            love.graphics.line(cx, cy, hx, hy)
-
-            -- Minute hand (faster)
-            local minuteAngle = game.time * 4.0
-            if enemy.bossState == "time_sweep" then
-                minuteAngle = game.time * 5.0
-            end
-            local mx = cx + math.cos(minuteAngle - math.pi / 2) * (halfW * 0.75)
-            local my = cy + math.sin(minuteAngle - math.pi / 2) * (halfW * 0.75)
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-            love.graphics.setLineWidth(1.8)
-            love.graphics.line(cx, cy, mx, my)
-
-            -- Center clock pin/pivot
-            love.graphics.setColor(col[1], col[2], col[3], 0.95)
-            love.graphics.circle("fill", cx, cy, 6)
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-            love.graphics.circle("fill", cx, cy, 2)
-
-            love.graphics.setColor(1.0, 1.0, 1.0)
-            love.graphics.setLineWidth(1)
-
-        elseif currentStage == 7 or enemy.type == "glitch_clone" then
-            -- ==========================================
-            -- BOSS 7 (Glitch Overlord) & Glitch Clone drawing
-            -- ==========================================
-            local isClone = (enemy.type == "glitch_clone")
-            local baseAlpha = isClone and (0.5 + math.sin(game.time * 25) * 0.15) or 1.0
-
-            -- Draw status text above boss/clone
-            if enemy.bossState == "system_hack" then
-                love.graphics.setColor(1.0, 0.1, 0.4, baseAlpha * (0.85 + math.sin(game.time * 20) * 0.15))
-                love.graphics.printf("SYSTEM HACKING", cx - 100, enemy.y - 25, 200, "center")
-            elseif enemy.bossState == "corrupt_clone" then
-                love.graphics.setColor(0.1, 0.9, 0.9, baseAlpha * (0.85 + math.sin(game.time * 20) * 0.15))
-                love.graphics.printf("CORRUPTING SYS", cx - 100, enemy.y - 25, 200, "center")
-            elseif enemy.bossState == "overflow_firing" or enemy.bossState == "memory_overflow" then
-                love.graphics.setColor(0.9, 0.9, 0.1, baseAlpha * (0.85 + math.sin(game.time * 20) * 0.15))
-                love.graphics.printf("MEMORY OVERFLOW", cx - 100, enemy.y - 25, 200, "center")
-            end
-
-            if isClone then
-                love.graphics.setColor(0.1, 0.9, 0.9, baseAlpha * 0.75)
-                love.graphics.printf("GLITCH CLONE", cx - 100, enemy.y - 20, 200, "center")
-            end
-
-            -- Warning indicator ring for system_hack channeling
-            if enemy.bossState == "system_hack" and enemy.stateTimer then
-                local progress = (1.2 - enemy.stateTimer) / 1.2
-                love.graphics.setColor(1.0, 0.1, 0.4, 0.4 * baseAlpha)
-                love.graphics.setLineWidth(2)
-                love.graphics.circle("line", cx, cy, 400 * progress)
-                love.graphics.circle("line", cx, cy, 400)
-            end
-
-            -- 1. Draw three jittering overlapping cubes to simulate chromatic aberration
-            local jitterRange = 4
-            local rOffsetX = math.random(-jitterRange, jitterRange)
-            local rOffsetY = math.random(-jitterRange, jitterRange)
-            local cOffsetX = math.random(-jitterRange, jitterRange)
-            local cOffsetY = math.random(-jitterRange, jitterRange)
-            
-            local sizeMult = pulse
-            local currentW = enemy.width * sizeMult
-            
-            -- Red layer
-            love.graphics.setColor(1.0, 0.0, 0.3, baseAlpha * 0.7)
-            love.graphics.rectangle("fill", cx - currentW / 2 + rOffsetX, cy - currentW / 2 + rOffsetY, currentW, currentW)
-            
-            -- Cyan layer
-            love.graphics.setColor(0.0, 1.0, 1.0, baseAlpha * 0.7)
-            love.graphics.rectangle("fill", cx - currentW / 2 + cOffsetX, cy - currentW / 2 + cOffsetY, currentW, currentW)
-            
-            -- Main white/magenta core layer
-            if isClone then
-                love.graphics.setColor(0.2, 0.8, 0.8, baseAlpha * 0.9)
-            else
-                love.graphics.setColor(1.0, 1.0, 1.0, baseAlpha * 0.85)
-            end
-            love.graphics.rectangle("fill", cx - currentW / 2, cy - currentW / 2, currentW, currentW)
-            love.graphics.setColor(1.0, 1.0, 1.0)
-            love.graphics.setLineWidth(1)
-
-            -- 2. Draw random numeric glitch glyphs floating around the boss
-            love.graphics.setColor(0.1, 0.9, 0.5, baseAlpha * 0.6)
-            local glyphs = {"0", "1", "4", "A", "F", "X", "Y", "9", "3", "E"}
-            for k = 1, 6 do
-                local angle = k * (2 * math.pi / 6) + game.time * 2.0
-                local distOff = halfW * (1.2 + 0.3 * math.sin(game.time * 5 + k))
-                local gx = cx + math.cos(angle) * distOff
-                local gy = cy + math.sin(angle) * distOff
-                local glyphIndex = math.floor((game.time * 12 + k * 4) % #glyphs) + 1
-                local glyph = glyphs[glyphIndex]
-                love.graphics.print(glyph, gx - 4, gy - 6)
-            end
-        elseif enemy.type == "void_anchor" then
-            -- Stationary pulsing violet crystal shape
-            love.graphics.push()
-            love.graphics.translate(cx, cy)
-            love.graphics.rotate(game.time * 1.5)
-            local anchorPulse = 1.0 + math.sin(game.time * 10) * 0.12
-
-            -- Outer pulsing glow
-            love.graphics.setColor(0.7, 0.2, 0.9, 0.25)
-            love.graphics.polygon("fill", 0, -18 * anchorPulse, 12 * anchorPulse, 0, 0, 18 * anchorPulse, -12 * anchorPulse, 0)
-
-            -- Inner crystal core
-            love.graphics.setColor(0.9, 0.3, 1.0, 0.9)
-            love.graphics.polygon("fill", 0, -12 * anchorPulse, 8 * anchorPulse, 0, 0, 12 * anchorPulse, -8 * anchorPulse, 0)
-
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-            love.graphics.circle("fill", 0, 0, 3 * anchorPulse)
-            
-            love.graphics.setColor(0.8, 0.2, 0.9, 0.8)
-            love.graphics.setLineWidth(1.8)
-            love.graphics.polygon("line", 0, -18 * anchorPulse, 12 * anchorPulse, 0, 0, 18 * anchorPulse, -12 * anchorPulse, 0)
-            love.graphics.pop()
-        elseif currentStage == 8 and enemy.type == "boss" then
-            -- ==========================================
-            -- BOSS 8 (Singularity Nexus) drawing
-            -- ==========================================
-            love.graphics.setLineWidth(1.5)
-            for rIdx = 1, 3 do
-                local ringPulse = ((game.time * 0.8 + rIdx / 3) % 1.0)
-                local ringRadius = halfW * 1.8 * (1.0 - ringPulse)
-                love.graphics.setColor(0.5, 0.2, 0.9, ringPulse * 0.45)
-                love.graphics.circle("line", cx, cy, ringRadius)
-            end
-
-            -- If event horizon contracts, draw contracting rings
-            if enemy.bossState == "horizon_contracting" and enemy.ringsPassed then
-                local ringStartRadii = { 1000, 1300, 1600 }
-                local gapAngle = (game.time * 1.5) % (2 * math.pi)
-                for k = 1, 3 do
-                    if not enemy.ringsPassed[k] then
-                        local r = ringStartRadii[k] * (enemy.stateTimer / 3.0)
-                        love.graphics.setLineWidth(3)
-                        love.graphics.setColor(0.6, 0.1, 0.9, 0.75)
-                        love.graphics.arc("line", cx, cy, r, gapAngle + 0.4, gapAngle - 0.4 + 2 * math.pi)
-                        
-                        love.graphics.setColor(0.2, 0.5, 1.0, 0.8)
-                        love.graphics.circle("fill", cx + math.cos(gapAngle) * r, cy + math.sin(gapAngle) * r, 8)
-                    end
-                end
-            end
-
-            -- Accretion Disk (spinning dust/gas with colorful HSL-tailored particles)
-            love.graphics.push()
-            love.graphics.translate(cx, cy)
-            love.graphics.rotate(game.time * 3.5)
-            
-            -- Swirling dust layers
-            for dIdx = 1, 4 do
-                local sizeScale = 1.0 + dIdx * 0.15
-                local rotAngle = (dIdx - 1) * (math.pi / 4)
+                -- Draw Angel Wings (6 radiating wings)
                 love.graphics.push()
-                love.graphics.rotate(rotAngle)
-                love.graphics.setColor(0.4, 0.1, 0.8, 0.1)
-                love.graphics.ellipse("fill", 0, 0, halfW * 1.6 * sizeScale, halfW * 0.9 * sizeScale)
-                love.graphics.setColor(0.6, 0.2, 0.9, 0.75)
-                love.graphics.setLineWidth(1.5)
-                love.graphics.ellipse("line", 0, 0, halfW * 1.6 * sizeScale, halfW * 0.9 * sizeScale)
-                love.graphics.pop()
-            end
-            love.graphics.pop()
+                love.graphics.translate(cx, cy)
+                local wingRot = game.time * 0.4
+                love.graphics.rotate(wingRot)
+                for wIdx = 1, 6 do
+                    local angle = (wIdx - 1) * (2 * math.pi / 6)
+                    love.graphics.push()
+                    love.graphics.rotate(angle)
 
-            -- Event Horizon (Pitch black center core)
-            local eventHorizonRadius = halfW * 0.65
-            love.graphics.setColor(0.0, 0.0, 0.0, 1.0)
-            love.graphics.circle("fill", cx, cy, eventHorizonRadius)
-            
-            -- Glowing accretion rim (intense violet/blue highlight)
-            love.graphics.setColor(0.7, 0.2, 1.0, 0.9)
-            love.graphics.setLineWidth(3.0)
-            love.graphics.circle("line", cx, cy, eventHorizonRadius)
-            
-            -- Warning indicators / status texts
-            if enemy.bossState == "gravity_well" then
-                love.graphics.setColor(0.5, 0.2, 0.9, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("GRAVITY WELL CHARGING", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "gravity_pulling" then
-                love.graphics.setColor(0.2, 0.6, 1.0, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("GRAVITATIONAL PULL", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "event_horizon" then
-                love.graphics.setColor(0.8, 0.1, 0.8, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("EVENT HORIZON INCOMING", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "horizon_contracting" then
-                love.graphics.setColor(1.0, 0.1, 0.1, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("HORIZON CONTRACTING", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "phase_shift" or enemy.bossState == "shifting_invulnerable" then
-                love.graphics.setColor(0.9, 0.2, 0.9, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("PHASE SHIFT: INVULNERABLE", cx - 120, enemy.y - 25, 240, "center")
-            end
-        elseif currentStage >= 9 and enemy.type == "boss" then
-            -- ==========================================
-            -- BOSS 9 (Nebula Seraph) drawing
-            -- ==========================================
-            if enemy.bossState == "supernova" then
-                love.graphics.setColor(1.0, 0.8, 0.2, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("SUPERNOVA INCOMING", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "binary_star" then
-                love.graphics.setColor(1.0, 0.9, 0.5, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("BINARY SUNS IGNITING", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "binary_laser" then
-                love.graphics.setColor(1.0, 0.5, 0.1, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("BINARY SOLAR LASERS", cx - 120, enemy.y - 25, 240, "center")
-            elseif enemy.bossState == "meteor_storm" or enemy.bossState == "meteor_falling" then
-                love.graphics.setColor(1.0, 0.3, 0.1, 0.85 + math.sin(game.time * 20) * 0.15)
-                love.graphics.printf("METEOR STORM CALLED", cx - 120, enemy.y - 25, 240, "center")
-            end
+                    love.graphics.setColor(1.0, 0.95, 0.7, 0.95)
+                    love.graphics.polygon("fill",
+                        0, 0,
+                        -10, -halfW * 1.3,
+                        0, -halfW * 1.6,
+                        10, -halfW * 1.3
+                    )
 
-            -- A. Supernova warning / charging shelter zone
-            if enemy.bossState == "supernova" then
-                if enemy.shelterX and enemy.shelterY then
-                    local sx, sy, sr = enemy.shelterX, enemy.shelterY, enemy.shelterRadius
-                    local pulseRate = 0.8 + 0.2 * math.sin(game.time * 12)
-                    
-                    love.graphics.setColor(1.0, 0.85, 0.3, 0.15 * pulseRate)
-                    love.graphics.circle("fill", sx, sy, sr)
-                    
-                    love.graphics.setColor(1.0, 0.9, 0.5, 0.8 * pulseRate)
-                    love.graphics.setLineWidth(3)
-                    love.graphics.circle("line", sx, sy, sr)
-                    
-                    love.graphics.setColor(1.0, 0.9, 0.6, 0.9)
-                    love.graphics.printf("SHELTER", sx - 60, sy - 8, 120, "center")
+                    love.graphics.setColor(1.0, 0.8, 0.1, 0.9)
+                    love.graphics.setLineWidth(2)
+                    love.graphics.polygon("line",
+                        0, 0,
+                        -10, -halfW * 1.3,
+                        0, -halfW * 1.6,
+                        10, -halfW * 1.3
+                    )
+                    love.graphics.pop()
                 end
-                
-                local progress = (3.0 - enemy.stateTimer) / 3.0
-                love.graphics.setColor(1.0, 0.75, 0.1, 0.35 * progress)
-                love.graphics.setLineWidth(5)
-                love.graphics.circle("line", cx, cy, 750 * (1.0 - progress))
-            end
+                love.graphics.pop()
 
-            -- Supernova Explosion Ring Flash
-            if enemy.supernovaExplodeTimer then
-                local progress = (0.5 - enemy.supernovaExplodeTimer) / 0.5
-                local alpha = enemy.supernovaExplodeTimer / 0.5
-                love.graphics.setColor(1.0, 0.9, 0.4, alpha * 0.55)
-                love.graphics.circle("fill", cx, cy, 900 * progress)
-                love.graphics.setColor(1.0, 1.0, 1.0, alpha * 0.9)
-                love.graphics.setLineWidth(5)
-                love.graphics.circle("line", cx, cy, 900 * progress)
-            end
-
-            -- B. Binary Suns & Lasers
-            if enemy.bossState == "binary_laser" and enemy.binaryAngle then
-                local orbitRadius = 185
-                local s1x = cx + math.cos(enemy.binaryAngle) * orbitRadius
-                local s1y = cy + math.sin(enemy.binaryAngle) * orbitRadius
-                local s2x = cx + math.cos(enemy.binaryAngle + math.pi) * orbitRadius
-                local s2y = cy + math.sin(enemy.binaryAngle + math.pi) * orbitRadius
-
-                local lx1 = cx - math.cos(enemy.binaryAngle) * 900
-                local ly1 = cy - math.sin(enemy.binaryAngle) * 900
-                local lx2 = cx + math.cos(enemy.binaryAngle) * 900
-                local ly2 = cy + math.sin(enemy.binaryAngle) * 900
-                
-                love.graphics.setColor(1.0, 0.5, 0.1, 0.3)
-                love.graphics.setLineWidth(14)
-                love.graphics.line(lx1, ly1, lx2, ly2)
-                
-                love.graphics.setColor(1.0, 0.85, 0.3, 0.75)
-                love.graphics.setLineWidth(6)
-                love.graphics.line(lx1, ly1, lx2, ly2)
-                
+                -- E. Golden Sun Halo nucleus core
+                local coreSize = halfW * 0.65
+                love.graphics.setColor(1.0, 0.9, 0.5, 0.35)
+                love.graphics.circle("fill", cx, cy, coreSize)
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                love.graphics.setLineWidth(1.8)
-                love.graphics.line(lx1, ly1, lx2, ly2)
+                love.graphics.circle("fill", cx, cy, coreSize * 0.6)
 
-                for _, sunPos in ipairs({{x = s1x, y = s1y}, {x = s2x, y = s2y}}) do
-                    local sunPulse = 1.0 + math.sin(game.time * 15) * 0.15
-                    love.graphics.setColor(1.0, 0.85, 0.2, 0.4)
-                    love.graphics.circle("fill", sunPos.x, sunPos.y, 22 * sunPulse)
-                    love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
-                    love.graphics.circle("fill", sunPos.x, sunPos.y, 12 * sunPulse)
-                end
-            elseif enemy.bossState == "binary_star" then
-                local progress = (1.2 - enemy.stateTimer) / 1.2
-                local orbitRadius = 185
-                local s1x = cx + math.cos(0) * orbitRadius
-                local s1y = cy + math.sin(0) * orbitRadius
-                local s2x = cx + math.cos(math.pi) * orbitRadius
-                local s2y = cy + math.sin(math.pi) * orbitRadius
-
-                for _, sunPos in ipairs({{x = s1x, y = s1y}, {x = s2x, y = s2y}}) do
-                    love.graphics.setColor(1.0, 0.8, 0.2, 0.5 * progress)
-                    love.graphics.setLineWidth(1.5)
-                    love.graphics.circle("line", sunPos.x, sunPos.y, 30 * (1.0 - progress))
-                    love.graphics.circle("fill", sunPos.x, sunPos.y, 10 * progress)
-                end
+                love.graphics.setColor(1.0, 0.85, 0.15, 0.8)
+                love.graphics.setLineWidth(2.5)
+                love.graphics.circle("line", cx, cy, coreSize)
             end
-
-            -- C. Draw Meteor falling indicators
-            if game.cosmicMeteors then
-                for _, met in ipairs(game.cosmicMeteors) do
-                    if not met.exploded then
-                        local progress = (1.2 - met.timer) / 1.2
-                        love.graphics.setColor(1.0, 0.35, 0.1, 0.65 * (0.3 + 0.7 * progress))
-                        love.graphics.setLineWidth(2)
-                        love.graphics.circle("line", met.x, met.y, met.radius)
-                        
-                        love.graphics.setColor(1.0, 0.5, 0.15, 0.15 * progress)
-                        love.graphics.circle("fill", met.x, met.y, met.radius * progress)
-                    end
-                end
-            end
-
-            -- D. Main Celestial Wing Body (Seraph wing shapes)
-            love.graphics.push()
-            love.graphics.translate(cx, cy)
-            
-            love.graphics.rotate(game.time * 0.8)
-            love.graphics.setColor(1.0, 0.85, 0.15, 0.12)
-            love.graphics.circle("fill", 0, 0, halfW * 1.25)
-            love.graphics.setColor(1.0, 0.85, 0.15, 0.75)
-            love.graphics.setLineWidth(2)
-            love.graphics.circle("line", 0, 0, halfW * 1.25)
-            love.graphics.pop()
-
-            -- Draw Angel Wings (6 radiating wings)
-            love.graphics.push()
-            love.graphics.translate(cx, cy)
-            local wingRot = game.time * 0.4
-            love.graphics.rotate(wingRot)
-            for wIdx = 1, 6 do
-                local angle = (wIdx - 1) * (2 * math.pi / 6)
-                love.graphics.push()
-                love.graphics.rotate(angle)
-                
-                love.graphics.setColor(1.0, 0.95, 0.7, 0.95)
-                love.graphics.polygon("fill",
-                    0, 0,
-                    -10, -halfW * 1.3,
-                    0, -halfW * 1.6,
-                    10, -halfW * 1.3
-                )
-                
-                love.graphics.setColor(1.0, 0.8, 0.1, 0.9)
-                love.graphics.setLineWidth(2)
-                love.graphics.polygon("line",
-                    0, 0,
-                    -10, -halfW * 1.3,
-                    0, -halfW * 1.6,
-                    10, -halfW * 1.3
-                )
-                love.graphics.pop()
-            end
-            love.graphics.pop()
-
-            -- E. Golden Sun Halo nucleus core
-            local coreSize = halfW * 0.65
-            love.graphics.setColor(1.0, 0.9, 0.5, 0.35)
-            love.graphics.circle("fill", cx, cy, coreSize)
-            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-            love.graphics.circle("fill", cx, cy, coreSize * 0.6)
-            
-            love.graphics.setColor(1.0, 0.85, 0.15, 0.8)
-            love.graphics.setLineWidth(2.5)
-            love.graphics.circle("line", cx, cy, coreSize)
-        end
-    else
-        -- Standard enemy drawing
+        else
+            -- Standard enemy drawing
             local cx = enemy.x + enemy.width / 2
             local cy = enemy.y + enemy.height / 2
             local halfW = enemy.width / 2
@@ -4436,10 +4546,10 @@ function Enemy.draw(game)
                 local pulse = 1.0 + math.sin(game.time * 20) * 0.15
                 love.graphics.setColor(0.5, 0.4, 1.0, 0.35)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 2.0 * pulse)
-                
+
                 love.graphics.setColor(0.7, 0.6, 1.0, 0.9)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
-                
+
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.25)
             elseif bullet.type == "blade_wave" then
@@ -4451,12 +4561,12 @@ function Enemy.draw(game)
 
                 -- Crescent arc
                 love.graphics.setColor(0.25, 0.95, 0.75, 0.35)
-                love.graphics.arc("fill", 0, 0, bullet.size * 2.2, -math.pi/3, math.pi/3)
-                
+                love.graphics.arc("fill", 0, 0, bullet.size * 2.2, -math.pi / 3, math.pi / 3)
+
                 love.graphics.setColor(0.25, 0.95, 0.75, 0.95)
                 love.graphics.setLineWidth(2.2)
-                love.graphics.arc("line", 0, 0, bullet.size * 2.2, -math.pi/3, math.pi/3)
-                
+                love.graphics.arc("line", 0, 0, bullet.size * 2.2, -math.pi / 3, math.pi / 3)
+
                 -- Bright core highlight
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
                 love.graphics.circle("fill", bullet.size * 0.5, 0, bullet.size * 0.4)
@@ -4468,15 +4578,15 @@ function Enemy.draw(game)
                 -- Outer glow
                 love.graphics.setColor(0.1, 0.9, 0.6, 0.35)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 2.0 * pulse)
-                
+
                 -- Main body
                 love.graphics.setColor(0.1, 0.9, 0.6, 0.9)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
-                
+
                 -- Bright core
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.25)
-                
+
                 -- Collapsing ring during rewind phase
                 if bullet.state == "rewind" then
                     love.graphics.setColor(0.1, 0.9, 0.6, 0.85)
@@ -4490,21 +4600,21 @@ function Enemy.draw(game)
                 local txt = bullet.text or "404"
                 love.graphics.push()
                 love.graphics.translate(bullet.x, bullet.y)
-                
+
                 -- Outer glitch aura
                 local r, g, b = 0.9, 0.1, 0.4 -- Magenta
                 if bullet.colorIndex == 1 then
-                    r, g, b = 0.1, 0.9, 0.9 -- Cyan
+                    r, g, b = 0.1, 0.9, 0.9   -- Cyan
                 elseif bullet.colorIndex == 2 then
-                    r, g, b = 0.9, 0.9, 0.1 -- Yellow/Green
+                    r, g, b = 0.9, 0.9, 0.1   -- Yellow/Green
                 end
-                
+
                 local jx = math.random(-2, 2)
                 local jy = math.random(-2, 2)
-                
+
                 love.graphics.setColor(r, g, b, 0.35)
                 love.graphics.print(txt, -15 + jx, -6 + jy)
-                
+
                 -- Main text
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
                 love.graphics.print(txt, -15, -6)
