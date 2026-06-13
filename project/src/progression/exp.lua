@@ -61,6 +61,10 @@ function Exp.checkLevelUp(game)
         player.level = player.level + 1
         player.maxExperience = math.floor(player.maxExperience * 1.15)
 
+        -- 레벨업 효과음
+        local Sound = require("game.sound")
+        Sound.play("levelup")
+
         -- 레벨업 보너스 (체력 회복)
         player.health = math.min(player.health + 20, player.maxHealth)
 

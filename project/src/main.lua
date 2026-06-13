@@ -14,9 +14,10 @@ local Enemy = require("enemy.spawner")
 local Skills = require("progression.skills")
 local Exp = require("progression.exp")
 local HUD = require("ui.hud")
+local Sound = require("game.sound")
 
 -- 게임 상태 관리 테이블
-local game = {
+local game_data = {
     running = false,
     state = "main_menu", -- main_menu, settings, meta_upgrade, menu, playing, upgrade, gameover, stage_clear
     stage = 1,
@@ -77,6 +78,24 @@ local game = {
     showStars = true,                              -- 설정: 성간 배경 먼지 그리기 여부
     muted = false                                  -- 설정: 음소거 여부 (필요 시 효과음 제어용)
 }
+
+local game = setmetatable({}, {
+    __index = game_data,
+    __newindex = function(t, k, v)
+        if (k == "state" and v == "gameover") or (k == "running" and v == false) then
+            if game_data.player and game_data.player.health <= 0 and not game_data.player.dyingComplete then
+                if not game_data.player.dying then
+                    game_data.player.dying = true
+                    game_data.player.deathTimer = 0
+                end
+                game_data.running = true
+                game_data.state = "playing"
+                return
+            end
+        end
+        game_data[k] = v
+    end
+})
 
 -- 세이브 파일 저장 기능
 game.saveGame = function()
@@ -178,6 +197,9 @@ function love.load()
 
     -- 게임 데이터 및 영구 강화 로드
     game.loadGame()
+
+    -- 사운드 모듈 초기화
+    Sound.init(game)
 
     -- 1회성 스코어 및 업그레이드 현황 초기화 처리
     if not love.filesystem.getInfo("reset_done.txt") then
@@ -443,9 +465,17 @@ local function initBackground(game)
 end
 
 -- 게임 시작 함수
-local function startGame(skillIndex)
+local function startGame(startOption)
     -- 플레이어 초기화 (영구 강화 능력치 적용)
-    game.player = Player.init(skillIndex, game.metaUpgrades)
+    game.player = Player.init(startOption, game.metaUpgrades)
+
+    if startOption and type(startOption) == "table" and startOption.type == "skill" then
+        game.selectedSkill = startOption.index
+    elseif type(startOption) == "number" then
+        game.selectedSkill = startOption
+    else
+        game.selectedSkill = nil
+    end
 
     -- 첫 카메라 위치 강제 동기화 (적의 화면 밖 스폰 판정을 위함)
     local screenWidth = love.graphics.getWidth()
@@ -668,17 +698,32 @@ function love.update(dt)
     -- 카메라 업데이트 (플레이어 추적)
     Camera.update(game, dt)
 
+    -- 시간 정지 효과 처리
+    if game.timeStopped then
+        game.timeStopTimer = (game.timeStopTimer or 0) - dt
+        if game.timeStopTimer <= 0 then
+            game.timeStopped = false
+        else
+            -- 시간 정지 중: 플레이어와 적 업데이트 스킵
+            return
+        end
+    end
+
     -- 플레이어 업데이트 (이동, 피격 쿨다운, 재생)
     Player.update(game, dt)
 
     -- 스킬 업데이트 (오브, 벼락, 칼날, 총알)
-    Skills.update(game, dt)
+    if game.player and not game.player.dying then
+        Skills.update(game, dt)
+    end
 
     -- 적 업데이트 (스폰, 플레이어 추적, 각종 피격 판정)
     Enemy.update(game, dt)
 
     -- 경험치 구슬 업데이트 (트래킹, 획득 및 레벨업 체크)
-    Exp.update(game, dt)
+    if game.player and not game.player.dying then
+        Exp.update(game, dt)
+    end
 end
 
 -- ============================================================================
@@ -723,6 +768,12 @@ function love.draw()
     }
     local col = clearColors[game.stage or 1] or clearColors[1]
     love.graphics.clear(col[1], col[2], col[3])
+
+    -- 시간 정지 시각 효과
+    if game.timeStopped then
+        love.graphics.setColor(0.1, 0.9, 0.6, 0.3)
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    end
 
     -- 카메라 적용 (쉐이크 효과 포함)
     local shakeX, shakeY = 0, 0
@@ -975,7 +1026,7 @@ function love.draw()
         love.graphics.setColor(1.0, 0.1, 0.4, 0.95 * pulse)
         local font = love.graphics.newFont(20)
         love.graphics.setFont(font)
-        love.graphics.printf("⚠️ WARNING: SYSTEM HACKED ⚠️", 0, 80, w, "center")
+        love.graphics.printf("WARNING: SYSTEM HACKED", 0, 80, w, "center")
 
         local subFont = love.graphics.newFont(12)
         love.graphics.setFont(subFont)
@@ -1003,6 +1054,10 @@ end
 -- ============================================================================
 
 function love.keypressed(key)
+    if game.player and game.player.dying and not game.player.dyingComplete then
+        return
+    end
+
     if key == "f1" then
         game.showHelp = not game.showHelp
         return
@@ -1077,15 +1132,13 @@ function love.keypressed(key)
         end
     end
 
-    -- Pressing R on gameover returns to main menu instead of skill selection
-    if game.state == "gameover" then
-        if key == "r" or key == "R" then
-            game.state = "main_menu"
-        end
-    end
 end
 
 function love.mousepressed(x, y, button)
+    if game.player and game.player.dying and not game.player.dyingComplete then
+        return
+    end
+
     if game.showHelp then
         if button == 1 and game.helpCloseBtn then
             local btn = game.helpCloseBtn
@@ -1097,6 +1150,7 @@ function love.mousepressed(x, y, button)
     end
 
     if button == 1 then
+        Sound.play("select")
         if game.state == "main_menu" then
             if game.mainMenuButtons then
                 for _, btn in ipairs(game.mainMenuButtons) do
@@ -1105,6 +1159,9 @@ function love.mousepressed(x, y, button)
                             love.event.quit()
                         else
                             game.state = btn.state
+                            if btn.state == "menu" then
+                                HUD.shuffleSkills(game)
+                            end
                         end
                         break
                     end
@@ -1196,8 +1253,10 @@ function love.mousepressed(x, y, button)
             for i, box in ipairs(game.skillBoxes) do
                 if x >= box.x and x <= box.x + box.width and
                     y >= box.y and y <= box.y + box.height then
-                    local skillIndex = game.skillOptions[i]
-                    startGame(skillIndex)
+                    local option = game.skillOptions[i]
+                    if option then
+                        startGame(option)
+                    end
                     break
                 end
             end
@@ -1207,6 +1266,26 @@ function love.mousepressed(x, y, button)
                     y >= box.y and y <= box.y + box.height then
                     Skills.applyUpgrade(game, i)
                     break
+                end
+            end
+        elseif game.state == "gameover" then
+            if game.gameOverButtons then
+                for _, btn in ipairs(game.gameOverButtons) do
+                    if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                        if btn.action == "menu" then
+                            if not game.scoreAccumulated then
+                                game.totalScore = (game.totalScore or 0) + (game.score or 0)
+                                game.scoreAccumulated = true
+                                game.saveGame()
+                            end
+                            game.score = 0
+                            game.state = "main_menu"
+                            game.running = false
+                        elseif btn.action == "exit" then
+                            love.event.quit()
+                        end
+                        break
+                    end
                 end
             end
         elseif game.state == "stage_clear" then

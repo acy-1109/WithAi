@@ -5,25 +5,43 @@
 local Player = {}
 
 -- 플레이어 데이터 초기화
-function Player.init(skillIndex, metaUpgrades)
+function Player.init(startOption, metaUpgrades)
     -- 메타 스킬/특성 강화 데이터 불러오기 (없으면 0레벨 디폴트)
     metaUpgrades = metaUpgrades or {
         skills = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0 }
+        upgrades = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }
     }
 
     local skillLevels = {}
     for i = 1, 10 do
         skillLevels[i] = metaUpgrades.skills[i] or 0
     end
-    -- 시작 스킬로 선택한 항목은 레벨 1 추가
-    if skillIndex and skillIndex >= 1 and skillIndex <= 10 then
-        skillLevels[skillIndex] = skillLevels[skillIndex] + 1
-    end
 
     local upgradeLevels = {}
     for i = 1, 9 do
         upgradeLevels[i] = metaUpgrades.upgrades[i] or 0
+    end
+
+    -- 시작 선택에 따른 추가 레벨 적용
+    local selectedSkill = nil
+    if type(startOption) == "number" then
+        if startOption >= 1 and startOption <= 10 then
+            skillLevels[startOption] = skillLevels[startOption] + 1
+            selectedSkill = startOption
+        end
+    elseif type(startOption) == "table" then
+        if startOption.type == "skill" then
+            local skillIndex = startOption.index
+            if skillIndex and skillIndex >= 1 and skillIndex <= 10 then
+                skillLevels[skillIndex] = skillLevels[skillIndex] + 1
+                selectedSkill = skillIndex
+            end
+        elseif startOption.type == "upgrade" then
+            local upgradeIndex = startOption.index
+            if upgradeIndex and upgradeIndex >= 1 and upgradeIndex <= 9 then
+                upgradeLevels[upgradeIndex] = upgradeLevels[upgradeIndex] + 1
+            end
+        end
     end
 
     -- 영구 강화 스탯 적용
@@ -40,7 +58,7 @@ function Player.init(skillIndex, metaUpgrades)
     -- 6번 EXP Boost
     local expModifier = 1.0 + upgradeLevels[6] * 0.25
     -- 9번 Defense Boost (받는 데미지 감소)
-    local defenseReduction = upgradeLevels[9] * 0.05
+    local defenseReduction = 1 - (0.95 ^ upgradeLevels[9])
 
     local stats = {
         x = 400,
@@ -63,7 +81,7 @@ function Player.init(skillIndex, metaUpgrades)
         damage = damage,
         regenRate = regenRate,               -- 영구 체력 재생률 반영
         alwaysRegenTimer = 0,                -- 1초 주기 항상 체력 재생 타이머
-        selectedSkill = skillIndex,          -- 선택한 스킬 인덱스
+        selectedSkill = selectedSkill,          -- 선택한 스킬 인덱스
         skillLevels = skillLevels,           -- 영구 스킬 레벨 반영
         defenseReduction = defenseReduction, -- 방어력 감소율 (레벨당 5%)
 
@@ -71,7 +89,14 @@ function Player.init(skillIndex, metaUpgrades)
         shieldActive = (upgradeLevels[8] > 0),
         shieldTimer = 0,
         shieldBreakVisualTimer = 0,
-        shieldRestoreVisualTimer = 0
+        shieldRestoreVisualTimer = 0,
+
+        -- 사망 연출 관련 데이터
+        dying = false,
+        dyingComplete = false,
+        deathTimer = 0,
+        deathDuration = 1.5,
+        deathParticles = {}
     }
 
     local proxy = {}
@@ -89,12 +114,20 @@ function Player.init(skillIndex, metaUpgrades)
                         stats.shieldTimer = 0                          -- 실드가 깨졌을 때를 기점으로 쿨타임 시작
                         stats.shieldBreakVisualTimer = 0.5             -- 0.5초 동안 파괴 팽창 이펙트
                         stats.invincibleTime = stats.maxInvincibleTime -- 피격 판정 후 짧은 무적 시간 부여
+                        
+                        -- 실드 파괴 시 피격음 재생
+                        local Sound = require("game.sound")
+                        Sound.play("hit")
                         return
                     end
                     -- 방어력 감소 적용 (받는 데미지 감소)
                     local damage = current - v
                     local reducedDamage = damage * (1 - stats.defenseReduction)
                     v = current - reducedDamage
+
+                    -- 피격 효과음 재생
+                    local Sound = require("game.sound")
+                    Sound.play("hit")
                 end
             end
             stats[k] = v
@@ -114,6 +147,63 @@ end
 function Player.update(game, dt)
     local player = game.player
     if not player then return end
+
+    -- 사망 애니메이션 및 연출 중일 때
+    if player.dying then
+        player.deathTimer = (player.deathTimer or 0) + dt
+        
+        -- 폭발적으로 흩어지는 사멸 파티클 스폰
+        player.deathParticles = player.deathParticles or {}
+        if math.random() < 0.25 then
+            local cx = player.x + player.width / 2
+            local cy = player.y + player.height / 2
+            local angle = math.random() * 2 * math.pi
+            local speed = 60 + math.random() * 120
+            table.insert(player.deathParticles, {
+                x = cx,
+                y = cy,
+                vx = math.cos(angle) * speed,
+                vy = math.sin(angle) * speed,
+                life = 0.6 + math.random() * 0.6,
+                maxLife = 1.2,
+                size = 3 + math.random() * 6,
+                color = { 1.0, 0.3 + math.random() * 0.4, 0.1 } -- 황금/오렌지 불꽃 파티클
+            })
+        end
+
+        -- 사망 파티클 업데이트
+        for i = #player.deathParticles, 1, -1 do
+            local p = player.deathParticles[i]
+            p.life = p.life - dt
+            if p.life <= 0 then
+                table.remove(player.deathParticles, i)
+            else
+                p.x = p.x + p.vx * dt
+                p.y = p.y + p.vy * dt
+            end
+        end
+
+        -- 기존 파티클 자연 소멸 처리
+        if player.particles then
+            for i = #player.particles, 1, -1 do
+                local p = player.particles[i]
+                p.life = p.life - dt
+                if p.life <= 0 then
+                    table.remove(player.particles, i)
+                else
+                    p.x = p.x + p.vx * dt
+                    p.y = p.y + p.vy * dt
+                end
+            end
+        end
+
+        if player.deathTimer >= player.deathDuration then
+            player.dyingComplete = true
+            game.running = false
+            game.state = "gameover"
+        end
+        return
+    end
 
     -- 무적 시간 감소
     if player.invincibleTime > 0 then
@@ -228,6 +318,22 @@ function Player.draw(game)
     local cx = player.x + player.width / 2
     local cy = player.y + player.height / 2
     local r = player.width / 2
+
+    local oldSetColor = love.graphics.setColor
+    local drawAlpha = 1.0
+    if player.dying then
+        drawAlpha = math.max(0, 1.0 - (player.deathTimer / player.deathDuration))
+    end
+
+    love.graphics.setColor = function(r, g, b, a)
+        if type(r) == "table" then
+            local tbl = { r[1], r[2], r[3], (r[4] or 1.0) * drawAlpha }
+            oldSetColor(tbl)
+        else
+            a = (a or 1.0) * drawAlpha
+            oldSetColor(r, g, b, a)
+        end
+    end
 
     -- 1. 엔진 추진 스파크 파티클 그리기
     player.particles = player.particles or {}
@@ -357,6 +463,17 @@ function Player.draw(game)
     love.graphics.circle("fill", cx, cy, r * 0.3)
 
     -- 복구
+    love.graphics.setColor = oldSetColor
+
+    -- 사망 연출 파티클 그리기
+    if player.deathParticles then
+        for _, p in ipairs(player.deathParticles) do
+            local alpha = math.max(0, p.life / p.maxLife)
+            love.graphics.setColor(p.color[1], p.color[2], p.color[3], alpha * 0.9)
+            love.graphics.circle("fill", p.x, p.y, p.size * (0.8 + (1.0 - alpha) * 0.5))
+        end
+    end
+
     love.graphics.setColor(1, 1, 1)
     love.graphics.setLineWidth(1)
 end
@@ -364,7 +481,7 @@ end
 -- 플레이어 머리 위의 체력/경험치바 렌더링
 function Player.drawUI(game)
     local player = game.player
-    if not player then return end
+    if not player or player.dying then return end
 
     local barWidth = 40
     local barHeight = 6

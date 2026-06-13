@@ -138,23 +138,95 @@ function HUD.calculateSkillBoxes(game)
     end
 end
 
--- 랜덤 3개 스킬 선택 및 셔플
+-- 랜덤 3개 스킬/특성 선택 및 셔플 (MAX 레벨 스킬은 시작 선택지에서 제외)
 function HUD.shuffleSkills(game)
-    local allIndices = {}
-    for i = 1, #game.skills do
-        table.insert(allIndices, i)
-    end
-
-    -- Fisher-Yates shuffle
-    for i = #allIndices, 2, -1 do
-        local j = math.random(i)
-        allIndices[i], allIndices[j] = allIndices[j], allIndices[i]
-    end
-
-    -- 상위 3개 선택
     game.skillOptions = {}
-    for i = 1, 3 do
-        table.insert(game.skillOptions, allIndices[i])
+
+    -- 1. 모든 액티브 스킬 만렙 여부 검사
+    local allSkillsMax = true
+    local skillPool = {}
+    for i = 1, #game.skills do
+        local lv = 0
+        if game.metaUpgrades and game.metaUpgrades.skills then
+            lv = game.metaUpgrades.skills[i] or 0
+        end
+        if lv < 5 then
+            allSkillsMax = false
+            table.insert(skillPool, i)
+        end
+    end
+
+    if not allSkillsMax then
+        -- 아직 만렙이 아닌 액티브 스킬이 있는 경우 -> 액티브 스킬들 중에서만 셔플하여 출력
+        -- Fisher-Yates shuffle
+        for i = #skillPool, 2, -1 do
+            local j = math.random(i)
+            skillPool[i], skillPool[j] = skillPool[j], skillPool[i]
+        end
+        for i = 1, math.min(3, #skillPool) do
+            table.insert(game.skillOptions, { type = "skill", index = skillPool[i] })
+        end
+        return
+    end
+
+    -- 2. 모든 액티브 스킬이 만렙인 경우 -> 패시브(업그레이드) 검사
+    -- 제한이 있는 패시브: 1(Magnet, max 3), 3(Speed Boost, max 3), 5(Health Regen, max 3), 6(EXP Boost, max 3), 7(Thorns, max 3), 8(Energy Shield, max 3)
+    -- 제한이 없는 패시브: 2(Health Boost), 4(Damage Boost), 9(Defense Boost)
+    local limitedIndices = { 1, 3, 5, 6, 7, 8 }
+
+    local allLimitedPassivesMax = true
+    local limitedPassivePool = {}
+    for _, idx in ipairs(limitedIndices) do
+        local lv = 0
+        if game.metaUpgrades and game.metaUpgrades.upgrades then
+            lv = game.metaUpgrades.upgrades[idx] or 0
+        end
+        if lv < 3 then
+            allLimitedPassivesMax = false
+            table.insert(limitedPassivePool, idx)
+        end
+    end
+
+    if not allLimitedPassivesMax then
+        -- 제한 있는 패시브 중 만렙이 아닌 것이 있을 때 -> 셔플하여 출력
+        for i = #limitedPassivePool, 2, -1 do
+            local j = math.random(i)
+            limitedPassivePool[i], limitedPassivePool[j] = limitedPassivePool[j], limitedPassivePool[i]
+        end
+
+        -- 최대 3개를 선택하되, 부족하면 제한 없는 패시브로 채움
+        local selected = {}
+        for i = 1, math.min(3, #limitedPassivePool) do
+            table.insert(selected, limitedPassivePool[i])
+        end
+
+        if #selected < 3 then
+            -- 무한 패시브 셔플 후 빈자리 채우기
+            local tempUnlimited = { 2, 4, 9 }
+            for i = #tempUnlimited, 2, -1 do
+                local j = math.random(i)
+                tempUnlimited[i], tempUnlimited[j] = tempUnlimited[j], tempUnlimited[i]
+            end
+            for _, idx in ipairs(tempUnlimited) do
+                if #selected >= 3 then break end
+                table.insert(selected, idx)
+            end
+        end
+
+        for _, idx in ipairs(selected) do
+            table.insert(game.skillOptions, { type = "upgrade", index = idx })
+        end
+    else
+        -- 모든 스킬과 제한 있는 패시브가 전부 만렙인 경우 -> 무한 특성(HP, Damage, Defense)만 등장
+        -- 무작위 순서로 3개 배치
+        local unlimitedPool = { 2, 4, 9 }
+        for i = #unlimitedPool, 2, -1 do
+            local j = math.random(i)
+            unlimitedPool[i], unlimitedPool[j] = unlimitedPool[j], unlimitedPool[i]
+        end
+        for i = 1, 3 do
+            table.insert(game.skillOptions, { type = "upgrade", index = unlimitedPool[i] })
+        end
     end
 end
 
@@ -183,35 +255,59 @@ function HUD.drawMenu(game)
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
 
-    -- Draw skill selection boxes
+    -- Draw skill/upgrade selection boxes
     for i, box in ipairs(game.skillBoxes) do
-        local skillIndex = game.skillOptions[i]
-        local skill = game.skills[skillIndex]
+        local option = game.skillOptions[i]
+        if option then
+            -- Box background and hover effect
+            local mouseX, mouseY = love.mouse.getPosition()
+            local isHovered = mouseX >= box.x and mouseX <= box.x + box.width and
+                mouseY >= box.y and mouseY <= box.y + box.height
 
-        -- Box background and hover effect
-        local mouseX, mouseY = love.mouse.getPosition()
-        local isHovered = mouseX >= box.x and mouseX <= box.x + box.width and
-            mouseY >= box.y and mouseY <= box.y + box.height
+            if option.type == "skill" then
+                if isHovered then
+                    love.graphics.setColor(0.4, 0.4, 0.6)
+                else
+                    love.graphics.setColor(0.3, 0.3, 0.5)
+                end
+            else
+                if isHovered then
+                    love.graphics.setColor(0.4, 0.6, 0.4)
+                else
+                    love.graphics.setColor(0.3, 0.5, 0.3)
+                end
+            end
+            love.graphics.rectangle("fill", box.x, box.y, box.width, box.height)
 
-        if isHovered then
-            love.graphics.setColor(0.4, 0.4, 0.6)
-        else
-            love.graphics.setColor(0.3, 0.3, 0.5)
+            -- Box borders
+            if option.type == "skill" then
+                love.graphics.setColor(0.6, 0.6, 0.8)
+            else
+                love.graphics.setColor(0.6, 0.8, 0.6)
+            end
+            love.graphics.rectangle("line", box.x, box.y, box.width, box.height)
+
+            -- Name & Description fetching
+            local nameText, descText
+            if option.type == "skill" then
+                local skill = game.skills[option.index]
+                nameText = skill.name
+                descText = skill.description
+            else
+                local upgrade = game.upgrades[option.index]
+                nameText = upgrade.name
+                descText = upgrade.description
+            end
+
+            -- Title Name
+            love.graphics.setColor(1, 1, 1)
+            love.graphics.setFont(getFont(32))
+            love.graphics.printf(nameText, box.x, box.y + box.height * 0.35, box.width, "center")
+
+            -- Description (wrapped with font size 13 to avoid overflow)
+            love.graphics.setFont(getFont(13))
+            love.graphics.printf(descText, box.x + 20, box.y + box.height * 0.44, box.width - 40, "center")
         end
-        love.graphics.rectangle("fill", box.x, box.y, box.width, box.height)
-
-        -- Box borders
-        love.graphics.setColor(0.6, 0.6, 0.8)
-        love.graphics.rectangle("line", box.x, box.y, box.width, box.height)
-
-        -- Skill name
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.setFont(getFont(32))
-        love.graphics.printf(skill.name, box.x, box.y + box.height * 0.35, box.width, "center")
-
-        -- Skill description (wrapped with font size 13 to avoid overflow)
-        love.graphics.setFont(getFont(13))
-        love.graphics.printf(skill.description, box.x + 20, box.y + box.height * 0.44, box.width - 40, "center")
     end
 
     -- Main title
@@ -220,8 +316,12 @@ function HUD.drawMenu(game)
     love.graphics.printf("Roguelike Survivor", 0, 50, screenWidth, "center")
 
     -- Footer guidance
+    local footerText = "Select a starting skill"
+    if game.skillOptions and game.skillOptions[1] and game.skillOptions[1].type == "upgrade" then
+        footerText = "Select a starting upgrade"
+    end
     love.graphics.setFont(getFont(24))
-    love.graphics.printf("Select a skill", 0, screenHeight - 50, screenWidth, "center")
+    love.graphics.printf(footerText, 0, screenHeight - 50, screenWidth, "center")
 end
 
 -- 특성 및 스킬 선택(업그레이드) 화면 렌더링
@@ -369,21 +469,80 @@ end
 
 -- 게임오버 화면 렌더링
 function HUD.drawGameOver(game)
-    love.graphics.clear(0.1, 0.1, 0.1)
+    love.graphics.clear(0.05, 0.05, 0.07) -- Deep space dark color
 
     local screenWidth = love.graphics.getWidth()
     local screenHeight = love.graphics.getHeight()
+    local mx, my = love.mouse.getPosition()
 
-    -- Game Over 제목
-    love.graphics.setColor(1, 0.3, 0.3)
-    love.graphics.setFont(getFont(48))
-    love.graphics.printf("Game Over", 0, screenHeight / 3, screenWidth, "center")
+    -- Game Over 제목 (부드러운 적색 네온 발광)
+    local titleGlow = 0.85 + math.sin(love.timer.getTime() * 4) * 0.1
+    love.graphics.setColor(1.0, 0.2, 0.2, titleGlow)
+    love.graphics.setFont(getFont(54))
+    love.graphics.printf("GAME OVER", 0, screenHeight / 3 - 40, screenWidth, "center")
 
-    -- 최종 점수 및 재시작 키 안내
+    -- 최종 점수
     love.graphics.setColor(1, 1, 1)
     love.graphics.setFont(getFont(24))
-    love.graphics.printf("Score: " .. game.score, 0, screenHeight / 2, screenWidth, "center")
-    love.graphics.printf("Press R to Restart", 0, screenHeight / 2 + 50, screenWidth, "center")
+    love.graphics.printf("Score: " .. game.score, 0, screenHeight / 2 - 30, screenWidth, "center")
+
+    -- 버튼 위치 설정
+    local btnY = screenHeight / 2 + 50
+    local btnHeight = 50
+    local btn1Width = 240
+    local btn1X = screenWidth / 2 - 250
+    local btn2Width = 240
+    local btn2X = screenWidth / 2 + 10
+
+    game.gameOverButtons = {
+        { x = btn1X, y = btnY, w = btn1Width, h = btnHeight, action = "menu" },
+        { x = btn2X, y = btnY, w = btn2Width, h = btnHeight, action = "exit" }
+    }
+
+    -- 1. 시작화면으로 (MAIN MENU) 버튼 그리기
+    local isHovered1 = mx >= btn1X and mx <= btn1X + btn1Width and my >= btnY and my <= btnY + btnHeight
+    if isHovered1 then
+        love.graphics.setColor(0.12, 0.25, 0.45, 0.95)
+    else
+        love.graphics.setColor(0.08, 0.15, 0.25, 0.85)
+    end
+    love.graphics.rectangle("fill", btn1X, btnY, btn1Width, btnHeight, 6, 6)
+
+    if isHovered1 then
+        love.graphics.setLineWidth(2)
+        love.graphics.setColor(0.3, 0.7, 1.0, 0.95)
+    else
+        love.graphics.setLineWidth(1)
+        love.graphics.setColor(0.2, 0.4, 0.6, 0.7)
+    end
+    love.graphics.rectangle("line", btn1X, btnY, btn1Width, btnHeight, 6, 6)
+
+    love.graphics.setFont(getFont(18))
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("MAIN MENU", btn1X, btnY + 14, btn1Width, "center")
+
+    -- 2. 게임종료 (EXIT GAME) 버튼 그리기
+    local isHovered2 = mx >= btn2X and mx <= btn2X + btn2Width and my >= btnY and my <= btnY + btnHeight
+    if isHovered2 then
+        love.graphics.setColor(0.35, 0.12, 0.12, 0.95)
+    else
+        love.graphics.setColor(0.2, 0.08, 0.08, 0.85)
+    end
+    love.graphics.rectangle("fill", btn2X, btnY, btn2Width, btnHeight, 6, 6)
+
+    if isHovered2 then
+        love.graphics.setLineWidth(2)
+        love.graphics.setColor(1.0, 0.3, 0.3, 0.95)
+    else
+        love.graphics.setLineWidth(1)
+        love.graphics.setColor(0.6, 0.2, 0.2, 0.7)
+    end
+    love.graphics.rectangle("line", btn2X, btnY, btn2Width, btnHeight, 6, 6)
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("EXIT GAME", btn2X, btnY + 14, btn2Width, "center")
+
+    love.graphics.setLineWidth(1)
 end
 
 -- 스테이지 클리어 또는 게임 승리 화면 렌더링
