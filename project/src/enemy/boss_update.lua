@@ -636,7 +636,16 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
                 end
 
                 -- Orbiting pylons around the boss (1.5 rad/s rotation speed, distance oscillating between 180 and 260px)
-                enemy.pylonAngle = (enemy.pylonAngle or 0) + 1.5 * dt
+                local rotationSpeed = 1.5
+                for _, other in ipairs(game.enemies) do
+                    if other.type == "tesla_pylon" and other.parentBoss == enemy then
+                        if other.slowTimer and other.slowTimer > 0 then
+                            rotationSpeed = 1.5 * (other.slowMultiplier or 0.5)
+                        end
+                        break
+                    end
+                end
+                enemy.pylonAngle = (enemy.pylonAngle or 0) + rotationSpeed * dt
                 local bCenterX = enemy.x + enemy.width / 2
                 local bCenterY = enemy.y + enemy.height / 2
                 for _, other in ipairs(game.enemies) do
@@ -783,7 +792,16 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
         local stageMultiplier = 1.0 + ((game.stage or 1) - 1) * 0.5
         enemy.patternTimer = enemy.patternTimer or 5.0
         enemy.nextPattern = enemy.nextPattern or "laser_grid"
-        enemy.shieldAngle = (enemy.shieldAngle or 0) + 0.9 * dt
+        local shieldRotationSpeed = 0.9
+        for _, other in ipairs(game.enemies) do
+            if other.type == "aegis_shield" and other.parentBoss == enemy then
+                if other.slowTimer and other.slowTimer > 0 then
+                    shieldRotationSpeed = 0.9 * (other.slowMultiplier or 0.5)
+                end
+                break
+            end
+        end
+        enemy.shieldAngle = (enemy.shieldAngle or 0) + shieldRotationSpeed * dt
         enemy.laserAngle = enemy.laserAngle or 0
 
         -- Calculate center of the boss
@@ -953,8 +971,8 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
                 enemy.shieldStrikePhase = "charge"
                 enemy.strikeTargetX = player.x + player.width / 2
                 enemy.strikeTargetY = player.y + player.height / 2
-            
-            -- 2. Strike Phase (1.0s to 2.0s)
+
+                -- 2. Strike Phase (1.0s to 2.0s)
             elseif enemy.shieldStrikeTimer < 2.0 then
                 enemy.shieldStrikePhase = "strike"
                 if not enemy.shieldStartPos then
@@ -967,11 +985,11 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
                     end
                 end
 
-            -- 3. Return Phase (2.0s to 3.2s)
+                -- 3. Return Phase (2.0s to 3.2s)
             elseif enemy.shieldStrikeTimer < 3.2 then
                 enemy.shieldStrikePhase = "return"
 
-            -- 4. End State
+                -- 4. End State
             else
                 enemy.shieldStartPos = nil
                 enemy.shieldStrikePhase = nil
@@ -1215,7 +1233,7 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
             local my2 = bCenterY + math.sin(minuteAngle) * 900
 
             if Collision.checkLineCircle(bCenterX, bCenterY, mx2, my2, pCenterX, pCenterY, player.width / 2 + 8) then
-                player.timeSlowTimer = 2.0 -- 2 seconds time slow debuff
+                player.timeSlowTimer = 2.0   -- 2 seconds time slow debuff
                 player.speedMultiplier = 0.4 -- instant slow
             end
 

@@ -62,49 +62,49 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
         bossColor = { 0.25, 0.95, 0.75 }
         bossSize = 60
         bossSpeed = 110
-        baseHealth = 160000
+        baseHealth = 120000
         pointsVal = 2000
     elseif bossStageNum == 4 then
         bossName = "Tesla Archon"
         bossColor = { 0.5, 0.4, 1.0 }
         bossSize = 70
         bossSpeed = 55
-        baseHealth = 240000
+        baseHealth = 160000
         pointsVal = 3000
     elseif bossStageNum == 5 then
         bossName = "Orbital Aegis"
         bossColor = { 1.0, 0.8, 0.1 }
         bossSize = 80
         bossSpeed = 40
-        baseHealth = 360000
+        baseHealth = 220000
         pointsVal = 4000
     elseif bossStageNum == 6 then
         bossName = "Chronos Weaver"
         bossColor = { 0.1, 0.9, 0.6 }
         bossSize = 75
         bossSpeed = 50
-        baseHealth = 500000
+        baseHealth = 300000
         pointsVal = 5000
     elseif bossStageNum == 7 then
         bossName = "Glitch Overlord"
         bossColor = { 1.0, 0.0, 0.4 }
         bossSize = 70
         bossSpeed = 65
-        baseHealth = 700000
+        baseHealth = 400000
         pointsVal = 8000
     elseif bossStageNum == 8 then
         bossName = "Singularity Nexus"
         bossColor = { 0.5, 0.1, 0.95 }
         bossSize = 72
         bossSpeed = 60
-        baseHealth = 900000
+        baseHealth = 520000
         pointsVal = 10000
     elseif bossStageNum >= 9 then
         bossName = "Nebula Seraph"
         bossColor = { 1.0, 0.85, 0.15 }
         bossSize = 75
         bossSpeed = 70
-        baseHealth = 1200000
+        baseHealth = 650000
         pointsVal = 15000
     end
 

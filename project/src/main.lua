@@ -1349,6 +1349,46 @@ function love.mousepressed(x, y, button)
                 end
             end
 
+            -- 해상도 버튼 클릭 처리
+            if game.settingsResolutionButtons then
+                local resolutionList = {
+                    { width = 216,  height = 480 },
+                    { width = 270,  height = 600 },
+                    { width = 324,  height = 720 },
+                    { width = 378,  height = 840 },
+                    { width = 432,  height = 960 },
+                    { width = 540,  height = 1200 },
+                    { width = 800,  height = 360 },
+                    { width = 1000, height = 450 },
+                    { width = 1280, height = 576 },
+                    { width = 1600, height = 720 },
+                    { width = 1920, height = 864 },
+                    { width = 2560, height = 1152 },
+                    { width = 1220, height = 540 },
+                    { width = 2440, height = 1080 },
+                }
+                for _, btn in ipairs(game.settingsResolutionButtons) do
+                    if x >= btn.x and x <= btn.x + btn.w and y >= btn.y and y <= btn.y + btn.h then
+                        local newRes = resolutionList[btn.index]
+                        if newRes then
+                            game.resolutionIndex = btn.index
+                            game.saveGame()
+                            love.window.setMode(newRes.width, newRes.height, {
+                                resizable = true,
+                                centered = true,
+                                vsync = 1,
+                                msaa = 8,
+                                fullscreen = false,
+                                fullscreentype = "desktop"
+                            })
+                            HUD.calculateSkillBoxes(game)
+                            HUD.calculateUpgradeBoxes(game)
+                        end
+                        break
+                    end
+                end
+            end
+
             -- 뒤로 가기 버튼 클릭 처리
             local back = game.settingsBackBtn
             if back and x >= back.x and x <= back.x + back.w and y >= back.y and y <= back.y + back.h then

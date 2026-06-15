@@ -156,7 +156,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
 
             love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
             love.graphics.circle("fill", cx, cy, r * 0.22)
-
         elseif option.index == 2 then
             -- Thunder
             love.graphics.setColor(0.3, 0.4, 1.0, 0.3)
@@ -180,7 +179,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setColor(0.6, 0.9, 1.0, 0.8)
             love.graphics.circle("fill", cx - r * 0.5, cy - r * 0.3, 2.5)
             love.graphics.circle("fill", cx + r * 0.6, cy + r * 0.3, 2.5)
-
         elseif option.index == 3 then
             -- Blade (Glaive)
             local spinAngle = time * 4
@@ -212,7 +210,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             end
             love.graphics.setColor(1.0, 1.0, 1.0)
             love.graphics.circle("fill", cx, cy, r * 0.15)
-
         elseif option.index == 4 then
             -- Bullet
             love.graphics.push()
@@ -262,7 +259,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.polygon("fill", coreNose)
 
             love.graphics.pop()
-
         elseif option.index == 5 then
             -- Laser
             love.graphics.setColor(1.0, 0.1, 0.4, 0.25)
@@ -280,7 +276,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setColor(1.0, 0.8, 0.9, 0.8)
             love.graphics.circle("fill", cx - r, cy + r * 0.4, r * 0.2)
             love.graphics.circle("fill", cx + r, cy - r * 0.4, r * 0.2)
-
         elseif option.index == 6 then
             -- Magnetic Field
             love.graphics.setColor(0.8, 0.8, 0.8, 0.8)
@@ -306,7 +301,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
                 love.graphics.circle("fill", sx, sy, 2)
             end
-
         elseif option.index == 7 then
             -- Meteor
             love.graphics.setColor(1.0, 0.15, 0.15, 0.4)
@@ -324,7 +318,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.circle("fill", mx, my, r * 0.4)
             love.graphics.setColor(1.0, 0.95, 0.2, 0.95)
             love.graphics.circle("fill", mx, my, r * 0.2)
-
         elseif option.index == 8 then
             -- Cutter (Center-anchored curved blade that rotates)
             local angle = time * 3
@@ -383,7 +376,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             -- Center spark core
             love.graphics.setColor(0.7, 0.7, 0.75, 0.4)
             love.graphics.circle("fill", cx, cy, r * 0.3 + math.sin(time * 15) * (r * 0.05))
-
         elseif option.index == 9 then
             -- Chain
             love.graphics.setColor(0.1, 0.8, 1.0, 0.25)
@@ -392,8 +384,8 @@ function HUD.drawCardIcon(option, cx, cy, size)
 
             local dx = r * 1.6
             local dy = -r * 1.6
-            local dist = math.sqrt(dx*dx + dy*dy)
-            local ux, uy = dx/dist, dy/dist
+            local dist = math.sqrt(dx * dx + dy * dy)
+            local ux, uy = dx / dist, dy / dist
             local linkSpacing = r * 0.48
             local numLinks = 4
             love.graphics.setLineWidth(1.5)
@@ -415,7 +407,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
 
                 love.graphics.pop()
             end
-
         elseif option.index == 10 then
             -- Seeker Orb
             local pulse = 1.0 + math.sin(time * 10) * 0.1
@@ -431,7 +422,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
             love.graphics.circle("fill", cx, cy, r * 0.32)
         end
-
     elseif option.type == "upgrade" then
         if option.index == 1 then
             -- Magnet (U-shaped horseshoe magnet with field lines and N/S labels)
@@ -483,7 +473,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
                 sx + sw, sy + sh,
                 sx - sw, sy + sh
             )
-
         elseif option.index == 2 then
             -- Health Boost (Heart)
             love.graphics.setColor(0.95, 0.15, 0.15, 0.9)
@@ -492,7 +481,7 @@ function HUD.drawCardIcon(option, cx, cy, size)
             local hScale = r * 0.05
             for step = 0, numPoints - 1 do
                 local theta = step * (2 * math.pi / numPoints)
-                local x = 16 * math.sin(theta)^3
+                local x = 16 * math.sin(theta) ^ 3
                 local y = -(13 * math.cos(theta) - 5 * math.cos(2 * theta) - 2 * math.cos(3 * theta) - math.cos(4 * theta))
                 table.insert(points, cx + x * hScale)
                 table.insert(points, cy + y * hScale)
@@ -501,7 +490,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
 
             love.graphics.setColor(1.0, 1.0, 1.0, 0.35)
             love.graphics.circle("fill", cx - r * 0.2, cy - r * 0.2, r * 0.12)
-
         elseif option.index == 3 then
             -- Speed Boost (Arrows / Wings)
             love.graphics.setLineWidth(4)
@@ -513,7 +501,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setColor(1.0, 1.0, 1.0, 0.65)
             love.graphics.line(cx - r * 0.5, cy - r * 0.1, cx + r * 0.5, cy - r * 0.1)
             love.graphics.line(cx - r * 0.3, cy + r * 0.2, cx + r * 0.3, cy + r * 0.2)
-
         elseif option.index == 4 then
             -- Damage Boost (Sword)
             love.graphics.push()
@@ -535,7 +522,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.circle("fill", 0, r * 0.2 + 4 + r * 0.35, 3)
 
             love.graphics.pop()
-
         elseif option.index == 5 then
             -- Health Regen (Green Heart with +)
             love.graphics.setColor(0.15, 0.85, 0.15, 0.9)
@@ -544,7 +530,7 @@ function HUD.drawCardIcon(option, cx, cy, size)
             local hScale = r * 0.05
             for step = 0, numPoints - 1 do
                 local theta = step * (2 * math.pi / numPoints)
-                local x = 16 * math.sin(theta)^3
+                local x = 16 * math.sin(theta) ^ 3
                 local y = -(13 * math.cos(theta) - 5 * math.cos(2 * theta) - 2 * math.cos(3 * theta) - math.cos(4 * theta))
                 table.insert(points, cx + x * hScale)
                 table.insert(points, cy + y * hScale)
@@ -555,7 +541,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setLineWidth(3)
             love.graphics.line(cx - r * 0.18, cy, cx + r * 0.18, cy)
             love.graphics.line(cx, cy - r * 0.18, cx, cy + r * 0.18)
-
         elseif option.index == 6 then
             -- EXP Boost (Star)
             love.graphics.setColor(1.0, 0.85, 0.15, 0.9)
@@ -573,7 +558,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setColor(1.0, 1.0, 1.0, 0.6)
             love.graphics.circle("fill", cx - r * 0.85, cy - r * 0.85, 2)
             love.graphics.circle("fill", cx + r * 0.85, cy + r * 0.75, 2.5)
-
         elseif option.index == 7 then
             -- Thorns (Spike ball)
             love.graphics.setColor(0.0, 1.0, 0.6, 0.25)
@@ -601,7 +585,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
                 love.graphics.setColor(0.3, 1.0, 0.8)
                 love.graphics.polygon("line", lx, ly, rx, ry, ex, ey)
             end
-
         elseif option.index == 8 then
             -- Energy Shield
             love.graphics.setColor(0.3, 0.6, 1.0, 0.22)
@@ -624,7 +607,6 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
             love.graphics.setLineWidth(1.5)
             love.graphics.polygon("line", shPoints)
-
         elseif option.index == 9 then
             -- Defense Boost (Heavy Shield)
             local shW = r * 0.5
@@ -1463,6 +1445,72 @@ function HUD.drawSettings(game)
         love.graphics.setFont(getFont(16))
         love.graphics.setColor(0.85, 0.9, 0.95)
         love.graphics.print(opt.label, bx + 40, by + 2)
+    end
+
+    -- Resolution selector
+    local resolutionList = {
+        { width = 216,  height = 480 },    -- Very small portrait
+        { width = 270,  height = 600 },    -- Small portrait
+        { width = 324,  height = 720 },    -- Medium portrait
+        { width = 378,  height = 840 },    -- Large portrait
+        { width = 432,  height = 960 },    -- Very large portrait
+        { width = 540,  height = 1200 },   -- Extra large portrait
+        { width = 800,  height = 360 },    -- Small landscape
+        { width = 1000, height = 450 },    -- Medium landscape
+        { width = 1280, height = 576 },    -- Large landscape
+        { width = 1600, height = 720 },    -- Very large landscape
+        { width = 1920, height = 864 },    -- Extra large landscape
+        { width = 2560, height = 1152 },   -- Ultra wide landscape
+        { width = 1220, height = 540 },    -- note20 for pc
+        { width = 2440, height = 1080 },   -- note20 for mobile
+    }
+
+    local resStartY = startY + #options * gap + 30
+    love.graphics.setFont(getFont(16))
+    love.graphics.setColor(0.85, 0.9, 0.95)
+    love.graphics.printf("Resolution:", screenWidth / 2 - 220, resStartY, 440, "left")
+
+    game.settingsResolutionButtons = {}
+    local resBtnW = 100
+    local resBtnH = 30
+    local resGap = 10
+    local resPerRow = 4
+    local resStartX = screenWidth / 2 - 220
+
+    for i, res in ipairs(resolutionList) do
+        local row = math.floor((i - 1) / resPerRow)
+        local col = (i - 1) % resPerRow
+        local btnX = resStartX + col * (resBtnW + resGap)
+        local btnY = resStartY + 30 + row * (resBtnH + resGap)
+
+        local isSelected = (game.resolutionIndex or 13) == i
+        local isHovered = mx >= btnX and mx <= btnX + resBtnW and my >= btnY and my <= btnY + resBtnH
+
+        table.insert(game.settingsResolutionButtons, {
+            x = btnX, y = btnY, w = resBtnW, h = resBtnH, index = i
+        })
+
+        if isSelected then
+            love.graphics.setColor(0.3, 0.6, 0.3, 0.9)
+        elseif isHovered then
+            love.graphics.setColor(0.15, 0.25, 0.4, 0.9)
+        else
+            love.graphics.setColor(0.08, 0.1, 0.15, 0.85)
+        end
+        love.graphics.rectangle("fill", btnX, btnY, resBtnW, resBtnH, 4, 4)
+
+        if isSelected then
+            love.graphics.setColor(0.3, 1.0, 0.5, 0.9)
+        elseif isHovered then
+            love.graphics.setColor(0.3, 0.8, 1.0, 0.9)
+        else
+            love.graphics.setColor(0.2, 0.4, 0.6, 0.7)
+        end
+        love.graphics.rectangle("line", btnX, btnY, resBtnW, resBtnH, 4, 4)
+
+        love.graphics.setFont(getFont(12))
+        love.graphics.setColor(1.0, 1.0, 1.0)
+        love.graphics.printf(string.format("%dx%d", res.width, res.height), btnX, btnY + 8, resBtnW, "center")
     end
 
     -- BACK button
