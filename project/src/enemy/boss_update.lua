@@ -297,8 +297,8 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
                                 width = 40,
                                 height = 40,
                                 speed = 150,
-                                health = 250 * stageMultiplier,
-                                maxHealth = 250 * stageMultiplier,
+                                health = 3000 * stageMultiplier,
+                                maxHealth = 3000 * stageMultiplier,
                                 type = "boss_clone",
                                 color = { 0.25, 0.95, 0.75 },
                                 points = 50,
@@ -1041,8 +1041,8 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
                         width = 24,
                         height = 24,
                         speed = 0,
-                        health = 1500 * stageMultiplier,
-                        maxHealth = 1500 * stageMultiplier,
+                        health = 800 * stageMultiplier,
+                        maxHealth = 800 * stageMultiplier,
                         type = "aegis_shield",
                         color = { 1.0, 0.8, 0.1 },
                         points = 150,
@@ -1124,6 +1124,7 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
         enemy.patternTimer = enemy.patternTimer or 6.0
         enemy.nextPattern = enemy.nextPattern or "time_burst"
         enemy.timeTrail = enemy.timeTrail or {}
+        enemy.timeStopBullets = enemy.timeStopBullets or {}
 
         local bCenterX = enemy.x + enemy.width / 2
         local bCenterY = enemy.y + enemy.height / 2
@@ -1148,6 +1149,11 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
                 elseif enemy.nextPattern == "time_sweep" then
                     enemy.bossState = "time_sweep"
                     enemy.stateTimer = 5.0
+                elseif enemy.nextPattern == "time_stop" then
+                    enemy.bossState = "time_stop"
+                    enemy.stateTimer = 3.5
+                    enemy.timeStopPhase = "charging"
+                    enemy.timeStopTimer = 0
                 end
             end
 
@@ -1258,7 +1264,106 @@ function BossUpdate.update(game, enemy, dt, dx, dy, dist, player)
             if enemy.stateTimer <= 0 then
                 enemy.bossState = "normal"
                 enemy.patternTimer = 6.0
+                enemy.nextPattern = "time_stop"
+            end
+        elseif enemy.bossState == "time_stop" then
+            enemy.stateTimer = enemy.stateTimer - dt
+            enemy.timeStopTimer = (enemy.timeStopTimer or 0) + dt
+            targetVelX, targetVelY = 0, 0
+            enemy.velX, enemy.velY = 0, 0
+
+            local pCenterX = player.x + player.width / 2
+            local pCenterY = player.y + player.height / 2
+
+            -- Phase 1: Charging (0.0s to 1.0s) - 시간 정지 시전
+            if enemy.timeStopTimer < 1.0 then
+                enemy.timeStopPhase = "charging"
+                -- 시간 정지 경고 효과
+
+                -- Phase 2: Time Stop Active (1.0s to 2.5s) - 플레이어 정지 및 탄환 생성
+            elseif enemy.timeStopTimer < 2.5 then
+                enemy.timeStopPhase = "active"
+
+                -- 플레이어 완전 정지
+                player.speedMultiplier = 0
+                player.timeStopActive = true
+
+                -- 플레이어 근처에 탄환 위치만 저장 (0.5초 후부터)
+                if enemy.timeStopTimer > 1.5 and not enemy.timeStopBulletsSpawned then
+                    enemy.timeStopBulletsSpawned = true
+                    enemy.timeStopBullets = {}
+
+                    local bulletCount = 12
+                    local skipIndex = math.random(1, bulletCount)             -- 랜덤하게 하나 건너뜀
+                    local oppositeIndex = ((skipIndex + 5) % bulletCount) + 1 -- 마주보는 탄환 인덱스
+                    local spawnRadius = 150
+                    for i = 1, bulletCount do
+                        if i ~= skipIndex and i ~= oppositeIndex then -- 하나와 마주보는 탄환은 생성하지 않음
+                            local angle = (i - 1) * (2 * math.pi / bulletCount)
+                            local bx = pCenterX + math.cos(angle) * spawnRadius
+                            local by = pCenterY + math.sin(angle) * spawnRadius
+
+                            -- 위치만 저장, 실제 탄환은 release 단계에서 생성
+                            table.insert(enemy.timeStopBullets, {
+                                x = bx,
+                                y = by,
+                                targetX = pCenterX,
+                                targetY = pCenterY,
+                                speed = 350,
+                                damage = 18,
+                                size = 10,
+                                maxDist = 600
+                            })
+                        end
+                    end
+                end
+
+                -- Phase 3: Release (2.5s to 3.5s) - 시간 정지 해제 및 탄환 발사
+            else
+                enemy.timeStopPhase = "release"
+
+                -- 시간 정지 해제
+                player.speedMultiplier = 1.0
+                player.timeStopActive = false
+
+                -- 저장된 위치 정보를 사용하여 실제 탄환 생성
+                if enemy.timeStopBulletsSpawned and enemy.timeStopBullets then
+                    for _, bulletData in ipairs(enemy.timeStopBullets) do
+                        local dx = bulletData.targetX - bulletData.x
+                        local dy = bulletData.targetY - bulletData.y
+                        local dist = math.sqrt(dx * dx + dy * dy)
+                        local dirX = dx / dist
+                        local dirY = dy / dist
+
+                        table.insert(game.enemyBullets, {
+                            x = bulletData.x,
+                            y = bulletData.y,
+                            dirX = dirX,
+                            dirY = dirY,
+                            speed = bulletData.speed,
+                            damage = bulletData.damage,
+                            size = bulletData.size,
+                            maxDist = bulletData.maxDist,
+                            distTraveled = 0,
+                            type = "time_stop_bullet"
+                        })
+                    end
+                    enemy.timeStopBullets = {}
+                    enemy.timeStopBulletsSpawned = false
+                end
+            end
+
+            if enemy.stateTimer <= 0 then
+                enemy.bossState = "normal"
+                enemy.patternTimer = 6.0
                 enemy.nextPattern = "time_burst"
+                enemy.timeStopPhase = nil
+                enemy.timeStopTimer = nil
+                enemy.timeStopBullets = nil
+                enemy.timeStopBulletsSpawned = nil
+                -- 플레이어 상태 복구
+                player.speedMultiplier = 1.0
+                player.timeStopActive = false
             end
         end
     elseif currentStage == 7 then

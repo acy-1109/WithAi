@@ -2,7 +2,7 @@
 
 ## 1. 프로젝트 개요
 - **프로젝트 명**: Roguelike Survivor (SF 테마 로그라이크 액션 게임)
-- **제출자**: [학번 및 이름 기재]
+- **제출자**: 2025391016 안찬영
 - **개발 환경**: LÖVE2D 11.5 / LuaJIT (Lua 5.1 호환)
 - **실행 방법**: 프로젝트 루트의 `run.bat` (Windows) 또는 `run.sh` (macOS/Linux) 실행
 
@@ -134,7 +134,7 @@ love project/tests/main.lua
 ## 7. 데모 영상
 
 ### 데모 영상 링크
-- [데모 영상 링크 추가 예정] (3~7분 권장)
+- [게임 데모 영상 링크](https://drive.google.com/file/d/1ugk_ZysTkqFoYEywDdV7VKFyZjoqDedN/view?usp=drive_link)
 
 ### 데모 영상 포함 내용
 1. 핵심 기능 시연 (플레이어 이동, 적 추적, 충돌 감지)

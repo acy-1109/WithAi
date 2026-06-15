@@ -62,49 +62,49 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
         bossColor = { 0.25, 0.95, 0.75 }
         bossSize = 60
         bossSpeed = 110
-        baseHealth = 120000
+        baseHealth = 110000
         pointsVal = 2000
     elseif bossStageNum == 4 then
         bossName = "Tesla Archon"
         bossColor = { 0.5, 0.4, 1.0 }
         bossSize = 70
         bossSpeed = 55
-        baseHealth = 160000
+        baseHealth = 125000
         pointsVal = 3000
     elseif bossStageNum == 5 then
         bossName = "Orbital Aegis"
         bossColor = { 1.0, 0.8, 0.1 }
         bossSize = 80
         bossSpeed = 40
-        baseHealth = 220000
+        baseHealth = 145000
         pointsVal = 4000
     elseif bossStageNum == 6 then
         bossName = "Chronos Weaver"
         bossColor = { 0.1, 0.9, 0.6 }
         bossSize = 75
         bossSpeed = 50
-        baseHealth = 300000
+        baseHealth = 170000
         pointsVal = 5000
     elseif bossStageNum == 7 then
         bossName = "Glitch Overlord"
         bossColor = { 1.0, 0.0, 0.4 }
         bossSize = 70
         bossSpeed = 65
-        baseHealth = 400000
+        baseHealth = 200000
         pointsVal = 8000
     elseif bossStageNum == 8 then
         bossName = "Singularity Nexus"
         bossColor = { 0.5, 0.1, 0.95 }
         bossSize = 72
         bossSpeed = 60
-        baseHealth = 520000
+        baseHealth = 235000
         pointsVal = 10000
     elseif bossStageNum >= 9 then
         bossName = "Nebula Seraph"
         bossColor = { 1.0, 0.85, 0.15 }
         bossSize = 75
         bossSpeed = 70
-        baseHealth = 650000
+        baseHealth = 275000
         pointsVal = 15000
     end
 
@@ -163,6 +163,9 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
 
     local stageMultiplier = 1.0 + ((game.stage or 1) - 1) * 0.5
     local finalMultiplier = stageMultiplier * waveMultiplier
+    if game.endlessMode then
+        finalMultiplier = finalMultiplier * 0.25
+    end
 
     local boss = {
         x = ex,
@@ -209,8 +212,8 @@ function Enemy.createSingleBoss(game, bossStageNum, angle, waveMultiplier)
                 width = 24,
                 height = 24,
                 speed = 0,
-                health = 11250 * finalMultiplier,
-                maxHealth = 11250 * finalMultiplier,
+                health = 3500 * finalMultiplier,
+                maxHealth = 3500 * finalMultiplier,
                 type = "aegis_shield",
                 color = { 1.0, 0.8, 0.1 },
                 points = 150,
@@ -244,7 +247,7 @@ function Enemy.spawnWave(game, wave)
     if isBossWave then
         local waveMultiplier = 1.0
         if game.endlessMode then
-            waveMultiplier = 1.12 ^ (math.floor(wave / 5) - 1)
+            waveMultiplier = 1.05 ^ (math.floor(wave / 5) - 1)
         end
 
         local spawnedBosses = {}
@@ -1180,94 +1183,116 @@ function Enemy.update(game, dt)
             bullet.y = bullet.y + bullet.dirY * moveDist
             bullet.distTraveled = bullet.distTraveled + moveDist
         elseif bullet.type == "temporal" then
-            bullet.timer = (bullet.timer or 0) + dt
-            if bullet.state == "forward" then
-                if bullet.timer >= 1.5 then
-                    bullet.state = "drift"
-                    bullet.timer = 0
-                    bullet.speed = 360
-                    bullet.distTraveled = 0
-                    -- Aim at player's current position for the drift phase
-                    local px = player.x + player.width / 2
-                    local py = player.y + player.height / 2
-                    local tdx = px - bullet.x
-                    local tdy = py - bullet.y
-                    local tdist = math.sqrt(tdx * tdx + tdy * tdy)
-                    if tdist > 0 then
-                        bullet.dirX = tdx / tdist
-                        bullet.dirY = tdy / tdist
-                    end
-                else
-                    local factor = 1.0 - bullet.timer / 1.5
-                    local currentSpeed = bullet.speed * factor
-                    local moveDist = currentSpeed * dt
-                    bullet.x = bullet.x + bullet.dirX * moveDist
-                    bullet.y = bullet.y + bullet.dirY * moveDist
-                    bullet.distTraveled = bullet.distTraveled + moveDist
-                end
-            elseif bullet.state == "drift" then
-                if bullet.timer >= 1.5 then
-                    bullet.state = "rewind"
-                    bullet.timer = 0
-                    bullet.speed = 0
-                    bullet.distTraveled = 0
-                else
-                    local factor = 1.0 - bullet.timer / 1.5
-                    local currentSpeed = bullet.speed * factor
-                    local moveDist = currentSpeed * dt
-                    bullet.x = bullet.x + bullet.dirX * moveDist
-                    bullet.y = bullet.y + bullet.dirY * moveDist
-                    bullet.distTraveled = bullet.distTraveled + moveDist
-                end
-            elseif bullet.state == "rewind" then
-                local ownerAlive = false
-                for _, e in ipairs(game.enemies) do
-                    if e == bullet.owner then
-                        ownerAlive = true
-                        break
-                    end
-                end
-
-                if ownerAlive then
-                    local ox = bullet.owner.x + bullet.owner.width / 2
-                    local oy = bullet.owner.y + bullet.owner.height / 2
-                    local dx = ox - bullet.x
-                    local dy = oy - bullet.y
-                    local dist = math.sqrt(dx * dx + dy * dy)
-
-                    if dist < 20 then
-                        table.remove(game.enemyBullets, i)
-                        bulletRemoved = true
-                    else
-                        bullet.speed = math.min(450, bullet.speed + 400 * dt)
-                        local tx = dx / dist
-                        local ty = dy / dist
-                        local steerStrength = 8.0 * dt
-                        bullet.dirX = bullet.dirX + (tx - bullet.dirX) * steerStrength
-                        bullet.dirY = bullet.dirY + (ty - bullet.dirY) * steerStrength
-                        local len = math.sqrt(bullet.dirX * bullet.dirX + bullet.dirY * bullet.dirY)
-                        if len > 0 then
-                            bullet.dirX = bullet.dirX / len
-                            bullet.dirY = bullet.dirY / len
+            -- 시간 정지 중인 temporal 탄환은 업데이트하지 않음
+            if not bullet.frozen then
+                bullet.timer = (bullet.timer or 0) + dt
+                if bullet.state == "forward" then
+                    if bullet.timer >= 1.5 then
+                        bullet.state = "drift"
+                        bullet.timer = 0
+                        bullet.speed = 360
+                        bullet.distTraveled = 0
+                        -- Aim at player's current position for the drift phase
+                        local px = player.x + player.width / 2
+                        local py = player.y + player.height / 2
+                        local tdx = px - bullet.x
+                        local tdy = py - bullet.y
+                        local tdist = math.sqrt(tdx * tdx + tdy * tdy)
+                        if tdist > 0 then
+                            bullet.dirX = tdx / tdist
+                            bullet.dirY = tdy / tdist
                         end
-                        local moveDist = bullet.speed * dt
+                    else
+                        local factor = 1.0 - bullet.timer / 1.5
+                        local currentSpeed = bullet.speed * factor
+                        local moveDist = currentSpeed * dt
                         bullet.x = bullet.x + bullet.dirX * moveDist
                         bullet.y = bullet.y + bullet.dirY * moveDist
                         bullet.distTraveled = bullet.distTraveled + moveDist
                     end
-                else
-                    bullet.speed = math.max(0, bullet.speed - 300 * dt)
-                    if bullet.speed <= 0 then
-                        table.remove(game.enemyBullets, i)
-                        bulletRemoved = true
+                elseif bullet.state == "drift" then
+                    if bullet.timer >= 1.5 then
+                        bullet.state = "rewind"
+                        bullet.timer = 0
+                        bullet.speed = 0
+                        bullet.distTraveled = 0
                     else
-                        local moveDist = bullet.speed * dt
+                        local factor = 1.0 - bullet.timer / 1.5
+                        local currentSpeed = bullet.speed * factor
+                        local moveDist = currentSpeed * dt
                         bullet.x = bullet.x + bullet.dirX * moveDist
                         bullet.y = bullet.y + bullet.dirY * moveDist
+                        bullet.distTraveled = bullet.distTraveled + moveDist
                     end
+                elseif bullet.state == "rewind" then
+                    local ownerAlive = false
+                    for _, e in ipairs(game.enemies) do
+                        if e == bullet.owner then
+                            ownerAlive = true
+                            break
+                        end
+                    end
+
+                    if ownerAlive then
+                        local ox = bullet.owner.x + bullet.owner.width / 2
+                        local oy = bullet.owner.y + bullet.owner.height / 2
+                        local dx = ox - bullet.x
+                        local dy = oy - bullet.y
+                        local dist = math.sqrt(dx * dx + dy * dy)
+
+                        if dist < 20 then
+                            table.remove(game.enemyBullets, i)
+                            bulletRemoved = true
+                        else
+                            bullet.speed = math.min(450, bullet.speed + 400 * dt)
+                            local tx = dx / dist
+                            local ty = dy / dist
+                            local steerStrength = 8.0 * dt
+                            bullet.dirX = bullet.dirX + (tx - bullet.dirX) * steerStrength
+                            bullet.dirY = bullet.dirY + (ty - bullet.dirY) * steerStrength
+                            local len = math.sqrt(bullet.dirX * bullet.dirX + bullet.dirY * bullet.dirY)
+                            if len > 0 then
+                                bullet.dirX = bullet.dirX / len
+                                bullet.dirY = bullet.dirY / len
+                            end
+                            local moveDist = bullet.speed * dt
+                            bullet.x = bullet.x + bullet.dirX * moveDist
+                            bullet.y = bullet.y + bullet.dirY * moveDist
+                            bullet.distTraveled = bullet.distTraveled + moveDist
+                        end
+                    else
+                        bullet.speed = math.max(0, bullet.speed - 300 * dt)
+                        if bullet.speed <= 0 then
+                            table.remove(game.enemyBullets, i)
+                            bulletRemoved = true
+                        else
+                            local moveDist = bullet.speed * dt
+                            bullet.x = bullet.x + bullet.dirX * moveDist
+                            bullet.y = bullet.y + bullet.dirY * moveDist
+                        end
+                    end
+                else
+                    -- temporal 타입이지만 state가 없는 경우 (일반 직선 운동)
+                    local moveDist = bullet.speed * dt
+                    bullet.x = bullet.x + bullet.dirX * moveDist
+                    bullet.y = bullet.y + bullet.dirY * moveDist
+                    bullet.distTraveled = bullet.distTraveled + moveDist
                 end
+            end -- frozen 체크 끝
+        elseif bullet.type == "time_stop_bullet" then
+            -- 시간 정지 탄환 업데이트
+            local moveDist = bullet.speed * dt
+            bullet.x = bullet.x + bullet.dirX * moveDist
+            bullet.y = bullet.y + bullet.dirY * moveDist
+            bullet.distTraveled = bullet.distTraveled + moveDist
+
+            -- 최대 거리 도달 시 제거
+            if bullet.distTraveled >= bullet.maxDist then
+                table.remove(game.enemyBullets, i)
+                bulletRemoved = true
             end
         else
+            -- 기본 직선 탄환 (type이 없는 경우)
             local moveDist = bullet.speed * dt
             bullet.x = bullet.x + bullet.dirX * moveDist
             bullet.y = bullet.y + bullet.dirY * moveDist
@@ -1687,6 +1712,20 @@ function Enemy.draw(game)
                 -- Main body
                 love.graphics.setColor(0.1, 0.9, 0.6, 0.9)
                 love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
+            elseif bullet.type == "time_stop_bullet" then
+                -- Purple glowing time stop bullet
+                local pulse = 1.0 + math.sin(game.time * 15) * 0.12
+                -- Outer glow
+                love.graphics.setColor(0.8, 0.2, 1.0, 0.35)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 2.0 * pulse)
+
+                -- Main body
+                love.graphics.setColor(0.8, 0.2, 1.0, 0.9)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size / 2)
+
+                -- Core highlight
+                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+                love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.3)
 
                 -- Bright core
                 love.graphics.setColor(1.0, 1.0, 1.0, 0.95)

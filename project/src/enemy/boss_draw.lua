@@ -814,10 +814,13 @@ function BossDraw.draw(game, enemy, currentStage, cx, cy, halfW, pulse)
         -- ==========================================
         -- BOSS 6 (Chronos Weaver) drawing
         -- ==========================================
-        -- 1. Draw "TIME REWIND" or "TEMPORAL LASERS" warning / info text
+        -- 1. Draw "TIME REWIND", "TIME STOP", or "TEMPORAL LASERS" warning / info text
         if enemy.bossState == "time_rewind" then
             love.graphics.setColor(0.1, 0.9, 0.6, 0.85 + math.sin(game.time * 20) * 0.15)
             love.graphics.printf("TIME REWIND", cx - 100, enemy.y - 25, 200, "center")
+        elseif enemy.bossState == "time_stop" then
+            love.graphics.setColor(0.8, 0.2, 1.0, 0.85 + math.sin(game.time * 20) * 0.15)
+            love.graphics.printf("TIME STOP", cx - 100, enemy.y - 25, 200, "center")
         elseif enemy.bossState == "time_sweep" then
             love.graphics.setColor(1.0, 0.9, 0.4, 0.85 + math.sin(game.time * 20) * 0.15)
             love.graphics.printf("TEMPORAL LASERS", cx - 100, enemy.y - 25, 200, "center")
@@ -831,6 +834,42 @@ function BossDraw.draw(game, enemy, currentStage, cx, cy, halfW, pulse)
             love.graphics.circle("line", cx, cy, enemy.width * 2.0 * progress)
             love.graphics.setColor(0.1, 0.9, 0.6, 0.15)
             love.graphics.circle("fill", cx, cy, enemy.width * 2.0)
+        end
+
+        -- 2b. Draw time stop visual effects
+        if enemy.bossState == "time_stop" then
+            local phase = enemy.timeStopPhase or "charging"
+            local timer = enemy.timeStopTimer or 0
+
+            if phase == "charging" then
+                -- Expanding purple warning ring
+                local progress = timer / 1.0
+                love.graphics.setColor(0.8, 0.2, 1.0, 0.6)
+                love.graphics.setLineWidth(3)
+                love.graphics.circle("line", cx, cy, enemy.width * 2.5 * (1 - progress))
+                love.graphics.setColor(0.8, 0.2, 1.0, 0.2)
+                love.graphics.circle("fill", cx, cy, enemy.width * 2.5)
+            elseif phase == "active" then
+                -- Frozen time effect - purple overlay
+                love.graphics.setColor(0.6, 0.1, 0.9, 0.15)
+                love.graphics.rectangle("fill", 0, 0, game.world.width, game.world.height)
+
+                -- Draw frozen bullets around player
+                if enemy.timeStopBullets then
+                    for _, bullet in ipairs(enemy.timeStopBullets) do
+                        love.graphics.setColor(0.8, 0.2, 1.0, 0.8)
+                        love.graphics.circle("fill", bullet.x, bullet.y, bullet.size)
+                        love.graphics.setColor(1.0, 1.0, 1.0, 0.9)
+                        love.graphics.circle("fill", bullet.x, bullet.y, bullet.size * 0.4)
+                    end
+                end
+            elseif phase == "release" then
+                -- Release shockwave effect
+                local progress = (timer - 2.5) / 1.0
+                love.graphics.setColor(0.8, 0.2, 1.0, 0.6 * (1 - progress))
+                love.graphics.setLineWidth(4)
+                love.graphics.circle("line", cx, cy, enemy.width * 3.0 * progress)
+            end
         end
 
         -- 3. Draw neon green/emerald time trails (Time Ghosts) when rewinding
