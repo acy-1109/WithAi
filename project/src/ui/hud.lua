@@ -215,21 +215,53 @@ function HUD.drawCardIcon(option, cx, cy, size)
 
         elseif option.index == 4 then
             -- Bullet
-            for k = 1, 3 do
-                local ox = (k - 2) * (r * 0.45)
-                local oy = (k - 2) * (r * 0.15)
-                local bx = cx + ox
-                local by = cy - oy
+            love.graphics.push()
+            love.graphics.translate(cx, cy)
+            love.graphics.rotate(-math.pi / 4)
 
-                love.graphics.setColor(0.5, 0.5, 1.0, 0.35)
-                love.graphics.setLineWidth(5)
-                love.graphics.line(bx - r * 0.5, by + r * 0.15, bx, by)
+            -- 1. Speed tail/lines (drawn behind, extending to the left: negative x)
+            -- Main center tail
+            love.graphics.setLineWidth(r * 0.15)
+            love.graphics.setColor(0.3, 0.5, 1.0, 0.3)
+            love.graphics.line(-r * 0.2, 0, -r * 0.9, 0)
+            love.graphics.setColor(0.5, 0.7, 1.0, 0.6)
+            love.graphics.setLineWidth(r * 0.06)
+            love.graphics.line(-r * 0.2, 0, -r * 0.85, 0)
 
-                love.graphics.setColor(0.6, 0.6, 1.0, 0.9)
-                love.graphics.circle("fill", bx, by, r * 0.25)
-                love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-                love.graphics.circle("fill", bx, by, r * 0.1)
-            end
+            -- Upper & lower speed trails
+            love.graphics.setLineWidth(r * 0.04)
+            love.graphics.setColor(0.4, 0.6, 1.0, 0.4)
+            love.graphics.line(-r * 0.1, -r * 0.15, -r * 0.7, -r * 0.15)
+            love.graphics.line(-r * 0.1, r * 0.15, -r * 0.7, r * 0.15)
+
+            -- 2. Bullet body (sleek capsule/pointed energy projectile)
+            -- Outer glow
+            love.graphics.setColor(0.3, 0.6, 1.0, 0.25)
+            love.graphics.circle("fill", r * 0.15, 0, r * 0.25)
+            love.graphics.rectangle("fill", -r * 0.35, -r * 0.25, r * 0.5, r * 0.5, r * 0.1, r * 0.1)
+
+            -- Bullet metal casing / energy body
+            love.graphics.setColor(0.5, 0.75, 1.0, 0.9)
+            love.graphics.rectangle("fill", -r * 0.35, -r * 0.15, r * 0.5, r * 0.3, r * 0.08, r * 0.08)
+            -- Bullet nose cone
+            local nose = {
+                r * 0.15, -r * 0.15,
+                r * 0.45, 0,
+                r * 0.15, r * 0.15
+            }
+            love.graphics.polygon("fill", nose)
+
+            -- Inner hot core (bright white/cyan)
+            love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
+            love.graphics.rectangle("fill", -r * 0.2, -r * 0.06, r * 0.3, r * 0.12, r * 0.04, r * 0.04)
+            local coreNose = {
+                r * 0.1, -r * 0.06,
+                r * 0.28, 0,
+                r * 0.1, r * 0.06
+            }
+            love.graphics.polygon("fill", coreNose)
+
+            love.graphics.pop()
 
         elseif option.index == 5 then
             -- Laser
@@ -294,32 +326,63 @@ function HUD.drawCardIcon(option, cx, cy, size)
             love.graphics.circle("fill", mx, my, r * 0.2)
 
         elseif option.index == 8 then
-            -- Cutter
-            love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
-            love.graphics.circle("fill", cx, cy, 3.5)
+            -- Cutter (Center-anchored curved blade that rotates)
+            local angle = time * 3
+            local drawPoints = {}
+            local segments = 16
+            local length = r * 0.95
+            local cutterCurvature = 0.7
+            for s = 0, segments do
+                local t = s / segments
+                local currAngle = angle - cutterCurvature * t
+                local cx_point = cx + math.cos(currAngle) * (length * t)
+                local cy_point = cy + math.sin(currAngle) * (length * t)
+                table.insert(drawPoints, cx_point)
+                table.insert(drawPoints, cy_point)
+            end
 
-            local startAngle = time * 2
-            local endAngle = startAngle + 1.8
-            love.graphics.setLineWidth(8)
-            love.graphics.setColor(0.12, 0.12, 0.15, 0.6)
-            love.graphics.arc("line", "open", cx, cy, r * 0.9, startAngle, endAngle, 20)
+            -- Layer 1: Ambient steel slash reflection
+            love.graphics.setColor(0.85, 0.85, 0.9, 0.1)
+            love.graphics.setLineWidth(r * 0.5)
+            love.graphics.line(drawPoints)
 
-            love.graphics.setLineWidth(5)
-            love.graphics.setColor(0.65, 0.65, 0.7, 0.85)
-            love.graphics.arc("line", "open", cx, cy, r * 0.9, startAngle, endAngle, 20)
+            -- Layer 2: Dark steel blade backbone
+            love.graphics.setColor(0.12, 0.12, 0.15, 0.65)
+            love.graphics.setLineWidth(r * 0.25)
+            love.graphics.line(drawPoints)
 
-            love.graphics.setLineWidth(2)
+            -- Layer 3: Silver blade body
+            love.graphics.setColor(0.65, 0.65, 0.7, 0.8)
+            love.graphics.setLineWidth(r * 0.16)
+            love.graphics.line(drawPoints)
+
+            -- Layer 4: White razor edge
             love.graphics.setColor(1.0, 1.0, 1.0, 0.95)
-            love.graphics.arc("line", "open", cx, cy, r * 0.9, startAngle, endAngle, 20)
+            love.graphics.setLineWidth(r * 0.06)
+            love.graphics.line(drawPoints)
 
-            local tipX = cx + math.cos(endAngle) * r * 0.9
-            local tipY = cy + math.sin(endAngle) * r * 0.9
+            -- Tip coordinates and angle calculation
+            local tx = drawPoints[#drawPoints - 1]
+            local ty = drawPoints[#drawPoints]
+            local ptx = drawPoints[#drawPoints - 3]
+            local pty = drawPoints[#drawPoints - 2]
+            local tangentAngle = math.atan2(ty - pty, tx - ptx)
+
             love.graphics.push()
-            love.graphics.translate(tipX, tipY)
-            love.graphics.rotate(endAngle + math.pi / 2)
+            love.graphics.translate(tx, ty)
+            love.graphics.rotate(tangentAngle)
+
+            -- Scaled diamond tip
+            local ts = r * 0.4
+            love.graphics.setColor(0.2, 0.2, 0.22, 0.9)
+            love.graphics.polygon("fill", 0, 0, -ts * 0.6, -ts * 0.35, -ts, 0, -ts * 0.6, ts * 0.35)
             love.graphics.setColor(0.9, 0.9, 0.95, 0.95)
-            love.graphics.polygon("fill", 0, -5, 3.5, 0, 0, 5, -3.5, 0)
+            love.graphics.polygon("line", 0, 0, -ts * 0.6, -ts * 0.35, -ts, 0, -ts * 0.6, ts * 0.35)
             love.graphics.pop()
+
+            -- Center spark core
+            love.graphics.setColor(0.7, 0.7, 0.75, 0.4)
+            love.graphics.circle("fill", cx, cy, r * 0.3 + math.sin(time * 15) * (r * 0.05))
 
         elseif option.index == 9 then
             -- Chain
@@ -371,20 +434,55 @@ function HUD.drawCardIcon(option, cx, cy, size)
 
     elseif option.type == "upgrade" then
         if option.index == 1 then
-            -- Magnet
-            love.graphics.setLineWidth(8)
+            -- Magnet (U-shaped horseshoe magnet with field lines and N/S labels)
+            local lw = r * 0.22
+
+            -- Faint magnetic field lines arching between the poles
+            love.graphics.setLineWidth(1.5)
+            for i = 1, 3 do
+                local f_rad = r * (0.2 + i * 0.15)
+                love.graphics.setColor(0.3, 0.8, 1.0, 0.3 * (1 - i * 0.25) * (0.7 + 0.3 * math.sin(time * 8)))
+                love.graphics.arc("line", "open", cx, cy - r * 0.3, f_rad, -math.pi, 0, 20)
+            end
+
+            -- Left leg: Red (North)
+            love.graphics.setLineWidth(lw)
             love.graphics.setColor(0.8, 0.2, 0.2)
-            love.graphics.arc("line", "open", cx, cy, r * 0.5, -math.pi, 0, 20)
+            love.graphics.line(cx - r * 0.38, cy + r * 0.1, cx - r * 0.38, cy - r * 0.3)
+            love.graphics.arc("line", "open", cx, cy + r * 0.1, r * 0.38, math.pi / 2, math.pi, 20)
+
+            -- Right leg: Blue (South)
             love.graphics.setColor(0.2, 0.4, 0.8)
-            love.graphics.arc("line", "open", cx, cy, r * 0.5, 0, math.pi, 20)
+            love.graphics.line(cx + r * 0.38, cy + r * 0.1, cx + r * 0.38, cy - r * 0.3)
+            love.graphics.arc("line", "open", cx, cy + r * 0.1, r * 0.38, 0, math.pi / 2, 20)
 
+            -- Silver tips at the poles
             love.graphics.setColor(0.9, 0.9, 0.9)
-            love.graphics.rectangle("fill", cx - r * 0.5 - 4, cy - 2, 8, 4)
-            love.graphics.rectangle("fill", cx + r * 0.5 - 4, cy - 2, 8, 4)
+            love.graphics.rectangle("fill", cx - r * 0.38 - lw / 2, cy - r * 0.32, lw, lw * 0.5)
+            love.graphics.rectangle("fill", cx + r * 0.38 - lw / 2, cy - r * 0.32, lw, lw * 0.5)
 
-            love.graphics.setColor(1.0, 0.8, 0.1, 0.8)
-            love.graphics.circle("fill", cx - r * 0.35, cy - r * 0.55, 3)
-            love.graphics.circle("fill", cx + r * 0.35, cy - r * 0.55, 3)
+            -- N and S letter drawings on the legs
+            love.graphics.setLineWidth(1.5)
+            love.graphics.setColor(1, 1, 1, 0.9)
+
+            -- Left leg: N
+            local nx, ny = cx - r * 0.38, cy - r * 0.05
+            local nw, nh = r * 0.08, r * 0.14
+            love.graphics.line(nx - nw, ny + nh, nx - nw, ny - nh)
+            love.graphics.line(nx - nw, ny - nh, nx + nw, ny + nh)
+            love.graphics.line(nx + nw, ny + nh, nx + nw, ny - nh)
+
+            -- Right leg: S
+            local sx, sy = cx + r * 0.38, cy - r * 0.05
+            local sw, sh = r * 0.08, r * 0.14
+            love.graphics.line(
+                sx + sw, sy - sh,
+                sx - sw, sy - sh,
+                sx - sw, sy,
+                sx + sw, sy,
+                sx + sw, sy + sh,
+                sx - sw, sy + sh
+            )
 
         elseif option.index == 2 then
             -- Health Boost (Heart)
@@ -1130,7 +1228,11 @@ function HUD.drawUI(game)
 
     love.graphics.print("Time: " .. string.format("%.1f", game.time), 10, 50)
     love.graphics.print("Wave: " .. (game.wave or 1), 10, 70)
-    love.graphics.print("Stage: " .. (game.stage or 1), 10, 90)
+    if game.endlessMode then
+        love.graphics.print("Stage: Endless", 10, 90)
+    else
+        love.graphics.print("Stage: " .. (game.stage or 1), 10, 90)
+    end
     if game.enemies then
         love.graphics.print("Enemies: " .. #game.enemies, 10, 110)
     end

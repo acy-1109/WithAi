@@ -45,7 +45,7 @@ run.bat
 ## 게임 규칙
 
 1. 적들이 플레이어를 추적합니다
-2. 적과 충돌하면 체력이 1씩 감소합니다
+2. 적과 충돌하거나 적의 투사체에 피격되면 적의 종류, 웨이브, 스테이지 배율에 따른 피해를 입고 체력이 감소합니다
 3. 피격 후 1초 동안 무적 시간이 적용됩니다
 4. 체력이 0이 되면 게임이 종료됩니다
 
@@ -54,17 +54,21 @@ run.bat
 ```
 .
 ├── project/
-│   ├── src/           # 실행 코드
-│   │   ├── main.lua   # 메인 게임 루프
-│   │   └── config.lua # 설정
-│   ├── tests/         # 테스트 코드
-│   └── doc/           # 설계 문서
-├── docs/              # 설계/요약 문서
-├── worklogs/          # 작업 로그
-│   └── conversations/ # 대화 로그
-├── run.bat            # Windows 실행 스크립트
-├── run.sh             # macOS/Linux 실행 스크립트
-└── README.md          # 이 파일
+│   ├── src/               # 실행 코드
+│   │   ├── main.lua       # 메인 엔트리 및 게임 루프
+│   │   ├── conf.lua       # LÖVE 엔진 환경 설정
+│   │   ├── game/          # 플레이어, 카메라, 사운드 모듈
+│   │   ├── enemy/         # 스포너 및 보스 AI/렌더링 모듈
+│   │   ├── combat/        # 충돌 감지 유틸리티
+│   │   ├── progression/   # 경험치 및 스킬(액티브/패시브) 모듈
+│   │   └── ui/            # HUD, 메뉴 및 설정 인터페이스
+│   └── tests/             # 단위 테스트 및 테스트 러너
+├── docs/                  # 설계/요약 보고서
+├── worklogs/              # 작업 로그
+│   └── conversations/     # AI 에이전트 대화 로그
+├── run.bat                # Windows 실행 스크립트
+├── run.sh                 # macOS/Linux 실행 스크립트
+└── README.md              # 이 파일
 ```
 
 ## 검증 방법
@@ -89,8 +93,8 @@ run.bat
 
 ### 테스트 실행
 ```bash
-# 테스트 파일 실행 (추후 예정)
-love project/tests/test_file.lua
+# LÖVE2D 엔진을 사용한 단위 테스트 러너 실행
+love project/tests/main.lua
 ```
 
 ## 개발 로그
@@ -100,6 +104,19 @@ love project/tests/test_file.lua
 - `worklogs/conversations/2026-06-06.md`: 대화 로그
 
 ## 버전 이력
+
+### 2026-06-15
+- 실시간 프로시저럴 사운드 신디사이저 엔진 구현 (`sound.lua`)
+  - 외부 오디오 에셋 로드 없이 Sine, Triangle, Noise 파형 실시간 RAM 합성
+  - BGM 1곡 및 효과음 6종(레벨업, 버튼 클릭, 피격, 발사, 폭발 등) 구현
+- 옵션 메뉴 실시간 볼륨 싱크 연동
+  - 설정 메뉴의 볼륨 변경 사항이 실시간으로 신디사이저 볼륨에 동기화 반영
+- 레벨업 카드 아이콘 비주얼 개선 (`skills_draw.lua`)
+  - Bullet(속도 꼬리 캡슐), Magnetic(말굽 자석 및 극성 자기장 선), Cutter(정밀 중앙 회전 및 앵커 정렬) 벡터 드로잉 구현
+- 엔드리스 모드 HUD 및 전용 시공간 균열(Cosmic Rift) 배경 연출 적용
+  - 엔드리스 모드 진입 시 Stage UI 라벨을 "Endless"로 표시
+  - 사인파 기반 공간 왜곡 노이즈 및 스크롤링 격자 파티클 배경 적용
+- 엔드리스 모드 내 치트키(K키: 스테이지 즉시 클리어) 차단 적용
 
 ### 2026-06-13
 - F1 도움말 및 치트코드 설명 창 구현
@@ -143,23 +160,27 @@ love project/tests/test_file.lua
 
 ## 기술 스택
 
-- LÖVE2D 11.5
-- Lua 5.1+
-- update/draw 책임 분리 원칙
-- 모듈형 아키텍처
+- LÖVE2D 11.5 (의존성: 별도 설치 필요 없이 love-11.5-win64 또는 love-11.5-mac 사용 가능)
+- Lua 5.1+ / LuaJIT
+- update/draw 책임 분리 원칙 준수
+- 느슨한 결합의 모듈형 아키텍처
+- 프로시저럴 오디오 합성 엔진 (RAM 신디사이저)
 
 ## 알고리즘
 
-- AABB 충돌 감지
-- 플레이어 추적 AI (부드러운 방향 변경)
-- 대각선 이동 속도 정규화
-- 카메라 추적 (lerp)
+- AABB 충돌 감지 및 선분-원형 충돌 알고리즘 (`collision.lua`)
+- 플레이어 추적 AI (부드러운 방향 변경 및 상태 전이 FSM)
+- 대각선 이동 속도 정규화 (`player.lua`)
+- 카메라 추적 (lerp) 및 카메라 쉐이크 물리식 (`camera.lua`)
+- 오디오 신디사이징 (Sine/Triangle/Noise 수식 파형 합성) (`sound.lua`)
+- 카드 아이콘 기하학적 벡터 드로잉 (Bezier/Circles/Arcs/Line segments) (`skills_draw.lua`)
 
 ## 최적화
 
-- Object Pooling (추후 예정)
+- Object Pooling (배경 먼지/격자 파티클 재활용 풀링)
 - Spatial Hashing (추후 예정)
-- 메모리 관리 (추후 예정)
+- 로컬 캐싱을 통한 전역 테이블 조회 최소화
+- 오디오 합성 링 버퍼 샘플링 재활용 및 GC 오버헤드 방지
 
 ## 라이선스
 

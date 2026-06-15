@@ -12,16 +12,20 @@
 
 | 요구 기능 | 구현 여부 | 소스코드 파일 및 라인 위치 | 핵심 알고리즘 및 작동 방식 |
 | :--- | :---: | :--- | :--- |
-| **플레이어 이동** | Y | [player.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/game/player.lua) (L10-L45) | WASD / 방향키 키보드 입력 매핑 처리 및 매 프레임 이동량 합산 |
-| **대각선 속도 정규화** | Y | [player.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/game/player.lua) (L31-L36) | X, Y축 동시 입력 시 벡터 크기(L2-norm)로 나누어 속도가 $\sqrt{2}$배 가속되는 현상 방지 |
-| **월드 경계 제한** | Y | [player.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/game/player.lua) (L38-L41), <br>[spawner.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/enemy/spawner.lua) | 플레이어 및 모든 적 캐릭터가 2000x2000 월드 경계를 이탈하지 못하도록 Clamp($0, width$) 처리 |
-| **카메라 추적 및 LERP** | Y | [camera.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/game/camera.lua) | 플레이어 중심 좌표를 추적하여 부드러운 카메라 선형 보간 이동(Lerp) 구현 |
-| **AABB 충돌 감지** | Y | [collision.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/combat/collision.lua) | 두 직사각형 오브젝트의 겹침 여부를 판단하는 경계 상자 충돌 알고리즘 수립 |
-| **경험치 및 레벨업** | Y | [exp.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/progression/exp.lua) | 적 처치 시 구슬 스폰, 자석 기능, 경험치 충족 시 레벨 상승 및 3개 옵션 카드 활성화 |
-| **액티브 스킬 (10종)** | Y | [skills.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/progression/skills.lua) | Orbiting Orb, Thunder, Blade, Bullet, Laser, Magnetic Field, Meteor, Cutter, Chain, Seeker Orb 각기 다른 쿨다운/타이머와 고유한 연출 물리식 구현 |
-| **패시브 업그레이드 (7종)** | Y | [skills.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/progression/skills.lua) | Magnet, Health/Speed/Damage/EXP Boost, Health Regen, Thorns(반사 피해) 속성 튜닝 |
-| **보스 상태 머신 (6종)** | Y | [spawner.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/enemy/spawner.lua) | Stage 1~6 각각 고유 테마 보스 구현 (Void Overlord, Infernus Leviathan, Phantom Stalker, Tesla Archon, Aegis, Chronos Weaver) |
-| **데이터 영구 세이브** | Y | [main.lua](file:///c:/Users/talon/OneDrive/Desktop/lua/WithAi/project/src/main.lua) (L79-L127) | `save.txt` 파일 생성 및 파싱 작업을 통한 총 스코어, 영구 강화 레벨, 설정 데이터 저장 및 로드 |
+| **플레이어 이동** | Y | [player.lua] (L10-L45) | WASD / 방향키 키보드 입력 매핑 처리 및 매 프레임 이동량 합산 |
+| **대각선 속도 정규화** | Y | [player.lua] (L31-L36) | X, Y축 동시 입력 시 벡터 크기(L2-norm)로 나누어 속도가 $\sqrt{2}$배 가속되는 현상 방지 |
+| **월드 경계 제한** | Y | [player.lua] (L38-L41), <br>[spawner.lua] | 플레이어 및 모든 적 캐릭터가 2000x2000 월드 경계를 이탈하지 못하도록 Clamp($0, width$) 처리 |
+| **카메라 추적 및 LERP** | Y | [camera.lua] | 플레이어 중심 좌표를 추적하여 부드러운 카메라 선형 보간 이동(Lerp) 구현 |
+| **AABB 충돌 감지** | Y | [collision.lua] | 두 직사각형 오브젝트의 겹침 여부를 판단하는 경계 상자 충돌 알고리즘 수립 |
+| **경험치 및 레벨업** | Y | [exp.lua] | 적 처치 시 구슬 스폰, 자석 기능, 경험치 충족 시 레벨 상승 및 3개 옵션 카드 활성화 |
+| **액티브 스킬 (10종)** | Y | [skills.lua] | Orbiting Orb, Thunder, Blade, Bullet, Laser, Magnetic Field, Meteor, Cutter, Chain, Seeker Orb 각기 다른 쿨다운/타이머와 고유한 연출 물리식 구현 |
+| **패시브 업그레이드 (7종)** | Y | [skills.lua] | Magnet, Health/Speed/Damage/EXP Boost, Health Regen, Thorns(반사 피해) 속성 튜닝 |
+| **보스 상태 머신 (6종)** | Y | [spawner.lua], <br>[boss_update.lua], <br>[boss_draw.lua] | Stage 1~6 각각 고유 테마 보스 구현 (Void Overlord, Infernus Leviathan, Phantom Stalker, Tesla Archon, Aegis, Chronos Weaver) 및 정밀한 FSM 제어 |
+| **데이터 영구 세이브** | Y | [main.lua] (L79-L127) | `save.txt` 파일 생성 및 파싱 작업을 통한 총 스코어, 영구 강화 레벨, 설정 데이터 저장 및 로드 |
+| **실시간 프로시저럴 사운드 합성** | Y | [sound.lua] | 외부 오디오 에셋 없이 런타임에 Sine/Triangle/Noise 수식을 동적 연산하여 BGM 및 6종 효과음을 RAM에서 생성 및 실시간 믹싱 재생 |
+| **레벨업 카드 아이콘 비주얼 개선** | Y | [skills_draw.lua] | Bullet(속도 꼬리 캡슐), Magnetic(말굽 자석 및 극성 자기장선), Cutter(정밀 중앙 회전 및 앵커 정렬) 등의 아이콘을 기하학적 벡터 드로잉 수식으로 고화질 렌더링 |
+| **엔드리스 모드 HUD 및 전용 배경** | Y | [main.lua], <br>[hud.lua] | 엔드리스 스테이지 도달 시 HUD 라벨을 "Endless"로 동적 표시하고, 격자 왜곡 연산 기반 시공간 균열(Cosmic Rift) 전용 배경 렌더링 |
+| **엔드리스 모드 치트키 제어** | Y | [main.lua] | 엔드리스 모드 진입 시 즉시 K키(보스 처치 및 스테이지 강제 클리어 치트키) 작동을 무효화하여 모드 기록의 공정성 및 무결성 유지 |
 
 ---
 
@@ -35,14 +39,19 @@ project/src/
 ├── conf.lua           # LÖVE 엔진 설정 (창 크기 1220x540, VSync 활성화 등)
 ├── game/
 │   ├── player.lua     # 플레이어 상태 제어 및 이동, UI 렌더링
-│   └── camera.lua     # 카메라 LERP 트래킹 및 카메라 쉐이크
+│   ├── camera.lua     # 카메라 LERP 트래킹 및 카메라 쉐이크
+│   └── sound.lua      # 프로시저럴 사운드 합성 및 오디오 믹싱
 ├── enemy/
-│   └── spawner.lua    # 일반 몬스터 및 스테이지별 보스 스포너, 상태 머신 AI
+│   ├── spawner.lua    # 일반 몬스터 및 스테이지별 보스 스포너
+│   ├── boss_update.lua # 보스 상태 업데이트 및 AI 전이
+│   └── boss_draw.lua   # 보스별 고유 비주얼 렌더링
 ├── combat/
 │   └── collision.lua  # AABB 및 선분-원형 충돌 감지 유틸리티
 ├── progression/
 │   ├── exp.lua        # 경험치 구슬 관리 및 레벨업 로직
-│   └── skills.lua     # 10종 액티브 스킬 및 7종 패시브 업그레이드 연산
+│   ├── skills.lua     # 스킬 기초 속성 관리 및 스키마 정의
+│   ├── skills_update.lua # 10종 액티브 스킬의 상태/위치 업데이트
+│   └── skills_draw.lua   # 스킬 이펙트 및 선택 카드 아이콘 벡터 렌더링
 └── ui/
     └── hud.lua        # 메인 메뉴, 설정, 영구 강화 상점 및 게임 오버 HUD 렌더러
 ```
@@ -65,10 +74,13 @@ project/src/
 2. **상점 격자(Grid) 구조 최적화**: 스킬이 추가됨에 따라 하단 복귀/초기화 버튼과 카드가 겹치던 문제를 가로 3열 격자 배치로 리팩터링하여 해상도 1220x540 내에서 완벽한 레이아웃 공간을 확보했습니다.
 3. **단위 테스트 러너 통합**: LuaJIT 인터프리터가 없는 환경에서도 LÖVE2D 엔진 자체를 사용해 GUI 터미널 화면으로 단위 테스트 결과를 한눈에 확인할 수 있는 독창적인 `tests/main.lua` 테스트 러너를 제작하고 VS Code 작업(`tasks.json`)으로 등록했습니다.
 4. **스테이지별 동적 테마 배경 구현**: 각 스테이지의 고유 정체성을 강화하기 위해, 배경을 공통 단일 테마에서 탈피하여 6개 스테이지별 독자적 테마(공허 Sector, 마그마 재 표류 및 용암 지열구, 사이버 보드 회로망, 일렉트릭 뇌우 번개 섬광, 황금빛 성역 회전 오라 헤일로, 시간 지동 톱니바퀴)로 세분화하고, 매 프레임 파티클 이동 및 크기 맥동 등의 물리 보간을 연동하여 시각 품질을 고도로 업그레이드했습니다.
+5. **실시간 프로시저럴 사운드 신디사이징 엔진 탑재**: 외부 음원 파생 파일(MP3/OGG 등)을 디렉토리에 지참하지 않고, 런타임에 삼각 함수 수식(Sine, Triangle) 및 수학적 노이즈 알고리즘을 사용해 RAM 상에서 오디오 샘플 버퍼를 동적 생성하는 신디사이저(`sound.lua`)를 자체 탑재했습니다. 이를 통해 빌드 용량을 극최소화(단 8.3KB)하면서 풍부한 8비트 레트로 감성의 BGM과 효과음을 실시간 믹싱으로 출력하는 쾌거를 이루었습니다.
+6. **레벨업 카드 벡터 그래픽 아이콘 개선**: 카드 상에서 표현되는 Bullet, Magnetic, Cutter 등의 아이콘을 스프라이트 이미지 에셋 없이 순수 수학 기하 수식(원, 호, 다각형, 회전 앵커 보정) 기반으로 벡터 드로잉하여, 기하학적 정렬 및 그래픽적 시인성을 고도로 향상시켰습니다.
+7. **엔드리스 모드 HUD 및 시공간 균열 배경 차별화**: 스테이지 9 도달 시 진입하는 엔드리스 모드에서 HUD 스테이지 텍스트를 "Endless"로 전용 출력하도록 처리하고, 공간 굴절 왜곡 물리 수식을 활용한 격자 스크롤 및 파티클 노이즈가 연동되는 시공간 균열(Cosmic Rift) 전용 우주 배경을 렌더링하여 모드만의 고유 아이덴티티를 확립했습니다.
 
 ### 프로젝트의 한계 및 향후 개선 계획
 - **공간 분할 알고리즘 미도입**: 현재 적의 개체수가 300개를 초과할 시 매 프레임 AABB 전수 조사로 인해 CPU 병목 현상이 발생할 우려가 있습니다. 향후 Spatial Hashing이나 Quadtree와 같은 공간 분할 충돌 감지 방식을 도입할 예정입니다.
-- **오디오 피드백 부재**: 타격감 증대를 위한 사운드 효과음 및 배경음악 탑재가 설계 단계에서 지연되었습니다. 차기 버전에서 Love.audio 모듈 기반 폴더 연동을 추가할 계획입니다.
+- **오디오 동시 발음 수(Polyphony) 채널 제약**: LÖVE2D의 `love.audio` Queue 소스를 통해 단일 스트림으로 합성음을 믹싱하고 있어, 수많은 효과음과 BGM이 동시에 겹치고 긴박한 런타임 상황이 될 시 가끔 레이턴시나 오디오 클리핑(치직거림) 현상이 아주 소폭 관측됩니다. 향후 내부 오디오 믹싱 링버퍼 크기 가변화 및 동적 채널 분할 알고리즘을 추가할 예정입니다.
 
 ---
 
@@ -87,6 +99,11 @@ project/src/
 | **패시브 업그레이드** | 7종 패시브 스탯 증가 확인 | ✓ 통과 | Magnet, Health Boost 등 |
 | **보스 상태 머신** | 6종 보스 각 상태 전이 확인 | ✓ 통과 | normal → charging → dashing 등 |
 | **데이터 세이브** | 게임 종료 후 save.txt 생성 및 로드 확인 | ✓ 통과 | 총 스코어, 영구 강화 레벨 저장 |
+| **사운드 신디사이징** | 실시간 Sine/Triangle/Noise 수식 파형 합성음 출력 확인 | ✓ 통과 | BGM 및 6종 효과음 정상 재생 |
+| **사운드 옵션 동기화** | 설정창에서 사운드 볼륨 조작 시 실시간 볼륨 변경 확인 | ✓ 통과 | 옵션 수치 실시간 볼륨 진폭 변환 |
+| **벡터 그래픽 개선** | 레벨업 카드 화면에서 개선된 아이콘들의 정상 렌더링 확인 | ✓ 통과 | Bullet, Magnetic, Cutter 앵커 정렬 검증 |
+| **엔드리스 HUD 및 배경** | 9스테이지 진입 후 Endless 라벨 출력 및 Cosmic Rift 배경 확인 | ✓ 통과 | 공간 왜곡 격자 노이즈 배경 렌더링 검증 |
+| **치트키 비활성화** | 엔드리스 모드 진입 시 K키 입력 시 스테이지 변경 차단 확인 | ✓ 통과 | K키 치트코드 작동 무효화 보증 |
 
 ### 테스트 실행 방법
 ```bash
@@ -106,12 +123,11 @@ love project/tests/main.lua
 
 ### 현재 알려진 이슈
 1. **고밀도 적 스폰 시 프레임 드롭**: 적 개체수가 300개를 초과할 경우 AABB 전수 조사로 인해 성능 저하 발생 (공간 분할 알고리즘 도입으로 해결 예정)
-2. **사운드 미구현**: 효과음 및 배경음악이 탑재되지 않아 타격감이 다소 부족함 (Love.audio 모듈 추가 예정)
+2. **실시간 사운드 채널 포화 및 클리핑**: 격렬한 전투 시 효과음 동시 합성 요구가 누적되면서 소리가 끊기거나 오디오 버퍼 레이턴시 지연이 일시적으로 발생할 수 있음 (오디오 믹서 최적화 예정)
 
 ### 제한사항
 1. **해상도 고정**: 현재 1220x540 해상도로 고정되어 있어 다른 해상도에서는 UI 레이아웃이 깨질 수 있음
 2. **입력 장치 제한**: 키보드 입력만 지원하며, 게임패드/컨트롤러는 미지원
-3. **언어**: 한국어 UI만 지원
 
 ---
 

@@ -100,6 +100,76 @@ function Sound.init(game_ref)
         local envelope = (1 - tRatio) ^ 3
         return math.sin(phase) * envelope * 0.2
     end)
+
+    -- 6. 배경 음악 (BGM) - 16초 루프용 절차적 합성
+    local sampleRate = 44100
+    local bits = 16
+    local channels = 1
+    local bgmDuration = 16.0
+    local bgmSampleCount = math.floor(bgmDuration * sampleRate)
+
+    local bgmSoundData = love.sound.newSoundData(bgmSampleCount, sampleRate, bits, channels)
+
+    for i = 0, bgmSampleCount - 1 do
+        local t = i / sampleRate
+
+        -- 코드 진행 (Am - F - C - G, 각 4초씩)
+        local chordIndex = math.floor(t / 4.0) % 4
+        local rootFreq = 55.00 -- A1
+        local note1, note2, note3, note4 = 220.00, 261.63, 329.63, 440.00 -- A3, C4, E4, A4
+
+        if chordIndex == 1 then -- F
+            rootFreq = 43.65 -- F1
+            note1, note2, note3, note4 = 174.61, 220.00, 261.63, 349.23 -- F3, A3, C4, F4
+        elseif chordIndex == 2 then -- C
+            rootFreq = 65.41 -- C2
+            note1, note2, note3, note4 = 130.81, 164.81, 196.00, 261.63 -- C3, E3, G3, C4
+        elseif chordIndex == 3 then -- G
+            rootFreq = 49.00 -- G1
+            note1, note2, note3, note4 = 196.00, 246.94, 293.66, 392.00 -- G3, B3, D4, G4
+        end
+
+        -- 1) 베이스 (Triangle Wave) - 8분 음표 (0.25초 간격으로 감쇠)
+        local bassT = t % 0.25
+        local bassEnv = math.exp(-6.0 * bassT)
+        local bassPhase = 2 * math.pi * rootFreq * t
+        local triVal = (bassPhase % (2 * math.pi)) / math.pi - 1
+        if triVal < 0 then triVal = -triVal end
+        triVal = triVal * 2 - 1
+        local bassVal = triVal * bassEnv * 0.12
+
+        -- 2) 아르페지오 (Sine Wave) - 16분 음표 (0.125초 간격으로 급격 감쇠)
+        local arpStep = math.floor(t / 0.125) % 8
+        local currentNoteFreq = note1
+        if arpStep == 1 or arpStep == 6 then
+            currentNoteFreq = note2
+        elseif arpStep == 2 or arpStep == 5 then
+            currentNoteFreq = note3
+        elseif arpStep == 3 or arpStep == 4 then
+            currentNoteFreq = note4
+        end
+
+        local arpT = t % 0.125
+        local arpEnv = math.exp(-12.0 * arpT)
+        local arpPhase = 2 * math.pi * currentNoteFreq * t
+        local arpVal = math.sin(arpPhase) * arpEnv * 0.06
+
+        -- 3) 하이햇 (White Noise) - 4분 음표 정박 (0.5초 간격으로 0.03초 동안 노이즈 방출)
+        local drumT = t % 0.5
+        local noiseVal = 0
+        if drumT < 0.03 then
+            local noiseEnv = 1.0 - (drumT / 0.03)
+            local noise = math.random() * 2 - 1
+            noiseVal = noise * noiseEnv * 0.012
+        end
+
+        local val = bassVal + arpVal + noiseVal
+        val = math.max(-1, math.min(1, val))
+        bgmSoundData:setSample(i, val)
+    end
+
+    sources["bgm"] = love.audio.newSource(bgmSoundData, "static")
+    sources["bgm"]:setLooping(true)
 end
 
 -- 효과음 재생
@@ -108,7 +178,7 @@ function Sound.play(name)
     if Sound.game and Sound.game.muted then
         return
     end
-    
+
     local src = sources[name]
     if src then
         -- 동일 소리가 연속해서 중복 재생될 때 끊김 방지를 위해 소스 복제(Clone) 후 재생
@@ -117,4 +187,39 @@ function Sound.play(name)
     end
 end
 
+-- BGM 재생
+function Sound.playBGM()
+    local src = sources["bgm"]
+    if src then
+        if Sound.game and Sound.game.muted then
+            src:pause()
+        else
+            if not src:isPlaying() then
+                src:play()
+            end
+        end
+    end
+end
+
+-- BGM 정지
+function Sound.stopBGM()
+    local src = sources["bgm"]
+    if src then
+        src:stop()
+    end
+end
+
+-- 음소거 상태 업데이트 (설정 화면 등에서 사용)
+function Sound.updateMuteState()
+    local src = sources["bgm"]
+    if not src then return end
+
+    if Sound.game and Sound.game.muted then
+        src:pause()
+    else
+        src:play()
+    end
+end
+
 return Sound
+

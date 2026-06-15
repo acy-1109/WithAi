@@ -798,7 +798,7 @@ function SkillsUpdate.update(game, dt, Skills)
                             end
                         end
                         if targetIdx then
-                            if chain.target.type == "boss" then
+                            if chain.target.type == "boss" or chain.target.type == "tesla_pylon" or chain.target.type == "aegis_shield" then
                                 chain.target.slowTimer = chain.rootDuration
                                 chain.target.slowMultiplier = 0.5
                             else

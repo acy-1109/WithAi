@@ -76,7 +76,8 @@ local game_data = {
         upgrades = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }   -- 9 passive traits starting level offsets
     },
     showStars = true,                              -- 설정: 성간 배경 먼지 그리기 여부
-    muted = false                                  -- 설정: 음소거 여부 (필요 시 효과음 제어용)
+    muted = false,                                 -- 설정: 음소거 여부 (필요 시 효과음 제어용)
+    resolutionIndex = 13,                          -- 설정: 해상도 인덱스 (conf.lua의 resolutionList 참조)
 }
 
 local game = setmetatable({}, {
@@ -100,8 +101,8 @@ local game = setmetatable({}, {
 -- 세이브 파일 저장 기능
 game.saveGame = function()
     local totalScoreVal = game.totalScore or 0
-    local dataStr = string.format("totalScore:%d\nshowStars:%s\nmuted:%s\n",
-        totalScoreVal, tostring(game.showStars), tostring(game.muted))
+    local dataStr = string.format("totalScore:%d\nshowStars:%s\nmuted:%s\nresolutionIndex:%d\n",
+        totalScoreVal, tostring(game.showStars), tostring(game.muted), game.resolutionIndex or 13)
 
     for i = 1, 10 do
         dataStr = dataStr .. string.format("skill_%d:%d\n", i, game.metaUpgrades.skills[i] or 0)
@@ -122,6 +123,7 @@ game.loadGame = function()
     }
     game.showStars = true
     game.muted = false
+    game.resolutionIndex = 13
 
     if love.filesystem.getInfo("save.txt") then
         for line in love.filesystem.lines("save.txt") do
@@ -134,6 +136,8 @@ game.loadGame = function()
                     game.showStars = (v == "true")
                 elseif k == "muted" then
                     game.muted = (v == "true")
+                elseif k == "resolutionIndex" then
+                    game.resolutionIndex = val or 13
                 elseif k:match("^skill_%d+$") then
                     local idx = tonumber(k:match("skill_(%d+)"))
                     if idx and idx >= 1 and idx <= 10 then
@@ -218,6 +222,7 @@ function love.load()
 
     HUD.calculateSkillBoxes(game)
     HUD.shuffleSkills(game)
+    Sound.playBGM()
     print("Game loaded successfully")
 end
 
@@ -226,6 +231,72 @@ local function initBackground(game)
     game.backgroundElements = {}
     game.nebulas = {}
     game.lightningFlash = 0
+
+    if game.endlessMode then
+        -- 1. Endless Mode Nebula Palette (Cosmic rift: Violet, Cyan, Magenta, Gold)
+        local palette = {
+            { 0.12, 0.02, 0.16 },
+            { 0.02, 0.14, 0.16 },
+            { 0.16, 0.02, 0.10 },
+            { 0.15, 0.12, 0.02 }
+        }
+        for i = 1, 10 do
+            local col = palette[math.random(1, #palette)]
+            table.insert(game.nebulas, {
+                x = math.random(100, game.world.width - 100),
+                y = math.random(100, game.world.height - 100),
+                radius = math.random(200, 420),
+                r = col[1],
+                g = col[2],
+                b = col[3],
+                alpha = 0.08
+            })
+        end
+
+        -- 2. Endless Mode Dynamic Elements
+        -- Rift Sparkles
+        for i = 1, 220 do
+            table.insert(game.backgroundElements, {
+                x = math.random(0, game.world.width),
+                y = math.random(0, game.world.height),
+                size = math.random(1.2, 3.2),
+                alpha = math.random(30, 80) / 100,
+                type = "rift_spark",
+                speedX = math.random(-25, 25),
+                speedY = math.random(-25, -5),
+                colorPhase = math.random() * 2 * math.pi
+            })
+        end
+
+        -- Space-Time Rifts
+        for i = 1, 8 do
+            table.insert(game.backgroundElements, {
+                x = math.random(150, game.world.width - 150),
+                y = math.random(150, game.world.height - 150),
+                size = math.random(80, 150),
+                alpha = math.random(12, 26) / 100,
+                type = "time_rift",
+                angle = math.random() * 2 * math.pi,
+                rotSpeed = (math.random() > 0.5 and 1 or -1) * math.random(3, 7) / 10,
+                pulseSpeed = math.random(2, 5),
+                color = (math.random() > 0.5 and { 0.2, 0.8, 1.0 } or { 1.0, 0.2, 0.8 })
+            })
+        end
+
+        -- Cyber Grid Waves
+        for i = 1, 12 do
+            table.insert(game.backgroundElements, {
+                x = math.random(0, game.world.width),
+                y = math.random(0, game.world.height),
+                len = math.random(120, 300),
+                alpha = math.random(8, 22) / 100,
+                type = "matrix_wave",
+                speed = math.random(30, 80),
+                color = { 0.5, 0.3, 0.9 }
+            })
+        end
+        return
+    end
 
     local stage = game.stage or 1
 
@@ -608,88 +679,114 @@ function love.update(dt)
 
     -- 배경 데코레이션 실시간 애니메이션 업데이트
     if game.backgroundElements then
-        local stage = game.stage or 1
-        if stage == 2 then
-            -- 마그마 재 입자 상승 처리
+        if game.endlessMode then
+            -- Endless Mode Background Elements Update
             for _, elem in ipairs(game.backgroundElements) do
-                if elem.type == "ash" then
-                    elem.y = elem.y - elem.speed * dt
+                if elem.type == "rift_spark" then
+                    elem.x = elem.x + elem.speedX * dt
+                    elem.y = elem.y + elem.speedY * dt
+                    elem.colorPhase = elem.colorPhase + 2.0 * dt
                     if elem.y < 0 then
                         elem.y = game.world.height
                         elem.x = math.random(0, game.world.width)
                     end
-                end
-            end
-        elseif stage == 4 then
-            -- 뇌우/번개 임의 발생 업데이트
-            if not game.lightningFlash then game.lightningFlash = 0 end
-            if game.lightningFlash > 0 then
-                game.lightningFlash = game.lightningFlash - dt
-            else
-                if math.random() < 0.0025 then -- 약 7초 주기 평균
-                    game.lightningFlash = math.random(10, 25) / 100
-                    game.triggerShake(0.25, 4.5)
-                end
-            end
-        elseif stage == 5 then
-            -- 황금빛 별빛 하강 처리
-            for _, elem in ipairs(game.backgroundElements) do
-                if elem.type == "golden_dust" then
-                    elem.y = elem.y + elem.speedY * dt
-                    if elem.y > game.world.height then
-                        elem.y = 0
+                    if elem.x < 0 or elem.x > game.world.width then
                         elem.x = math.random(0, game.world.width)
                     end
-                end
-            end
-        elseif stage == 6 then
-            -- 크로노 기어 회전각 업데이트
-            for _, elem in ipairs(game.backgroundElements) do
-                if elem.type == "chrono_gear" then
+                elseif elem.type == "time_rift" then
                     elem.angle = elem.angle + elem.rotSpeed * dt
-                end
-            end
-        elseif stage == 7 then
-            -- 글리치 노드 및 스캔라인 업데이트
-            for _, elem in ipairs(game.backgroundElements) do
-                if elem.type == "glitch_node" then
-                    elem.x = elem.x + (math.random() - 0.5) * elem.speed * dt
-                    if elem.x < 0 then
-                        elem.x = game.world.width
-                    elseif elem.x > game.world.width then
-                        elem.x = 0
-                    end
-                elseif elem.type == "glitch_line" then
-                    elem.x = elem.x + elem.speed * dt
-                    if elem.x > game.world.width then
-                        elem.x = -elem.len
-                        elem.y = math.random(0, game.world.height)
-                    end
-                end
-            end
-        elseif stage == 8 then
-            -- 8스테이지 중력 특이점 입자 업데이트 (반경이 줄어들며 공전 속도 상승)
-            for _, elem in ipairs(game.backgroundElements) do
-                if elem.type == "void_node" then
-                    elem.dist = elem.dist - elem.speed * dt
-                    elem.angle = elem.angle + elem.rotSpeed * dt
-                    if elem.dist <= 10 then
-                        elem.dist = math.random(800, 1200)
-                        elem.angle = math.random() * 2 * math.pi
-                    end
-                end
-            end
-        elseif stage == 9 then
-            -- 9스테이지 빛 입자 및 아우라 펄스 업데이트
-            for _, elem in ipairs(game.backgroundElements) do
-                if elem.type == "shimmer_star" then
+                elseif elem.type == "matrix_wave" then
                     elem.y = elem.y + elem.speed * dt
                     if elem.y > game.world.height then
                         elem.y = 0
                         elem.x = math.random(0, game.world.width)
                     end
-                elseif elem.type == "solar_halo" then
-                    elem.pulse = elem.pulse + 1.5 * dt
+                end
+            end
+        else
+            local stage = game.stage or 1
+            if stage == 2 then
+                -- 마그마 재 입자 상승 처리
+                for _, elem in ipairs(game.backgroundElements) do
+                    if elem.type == "ash" then
+                        elem.y = elem.y - elem.speed * dt
+                        if elem.y < 0 then
+                            elem.y = game.world.height
+                            elem.x = math.random(0, game.world.width)
+                        end
+                    end
+                end
+            elseif stage == 4 then
+                -- 뇌우/번개 임의 발생 업데이트
+                if not game.lightningFlash then game.lightningFlash = 0 end
+                if game.lightningFlash > 0 then
+                    game.lightningFlash = game.lightningFlash - dt
+                else
+                    if math.random() < 0.0025 then -- 약 7초 주기 평균
+                        game.lightningFlash = math.random(10, 25) / 100
+                        game.triggerShake(0.25, 4.5)
+                    end
+                end
+            elseif stage == 5 then
+                -- 황금빛 별빛 하강 처리
+                for _, elem in ipairs(game.backgroundElements) do
+                    if elem.type == "golden_dust" then
+                        elem.y = elem.y + elem.speedY * dt
+                        if elem.y > game.world.height then
+                            elem.y = 0
+                            elem.x = math.random(0, game.world.width)
+                        end
+                    end
+                end
+            elseif stage == 6 then
+                -- 크로노 기어 회전각 업데이트
+                for _, elem in ipairs(game.backgroundElements) do
+                    if elem.type == "chrono_gear" then
+                        elem.angle = elem.angle + elem.rotSpeed * dt
+                    end
+                end
+            elseif stage == 7 then
+                -- 글리치 노드 및 스캔라인 업데이트
+                for _, elem in ipairs(game.backgroundElements) do
+                    if elem.type == "glitch_node" then
+                        elem.x = elem.x + (math.random() - 0.5) * elem.speed * dt
+                        if elem.x < 0 then
+                            elem.x = game.world.width
+                        elseif elem.x > game.world.width then
+                            elem.x = 0
+                        end
+                    elseif elem.type == "glitch_line" then
+                        elem.x = elem.x + elem.speed * dt
+                        if elem.x > game.world.width then
+                            elem.x = -elem.len
+                            elem.y = math.random(0, game.world.height)
+                        end
+                    end
+                end
+            elseif stage == 8 then
+                -- 8스테이지 중력 특이점 입자 업데이트 (반경이 줄어들며 공전 속도 상승)
+                for _, elem in ipairs(game.backgroundElements) do
+                    if elem.type == "void_node" then
+                        elem.dist = elem.dist - elem.speed * dt
+                        elem.angle = elem.angle + elem.rotSpeed * dt
+                        if elem.dist <= 10 then
+                            elem.dist = math.random(800, 1200)
+                            elem.angle = math.random() * 2 * math.pi
+                        end
+                    end
+                end
+            elseif stage == 9 then
+                -- 9스테이지 빛 입자 및 아우라 펄스 업데이트
+                for _, elem in ipairs(game.backgroundElements) do
+                    if elem.type == "shimmer_star" then
+                        elem.y = elem.y + elem.speed * dt
+                        if elem.y > game.world.height then
+                            elem.y = 0
+                            elem.x = math.random(0, game.world.width)
+                        end
+                    elseif elem.type == "solar_halo" then
+                        elem.pulse = elem.pulse + 1.5 * dt
+                    end
                 end
             end
         end
@@ -962,6 +1059,53 @@ function love.draw()
                         elem.x + math.cos(angle) * r, elem.y + math.sin(angle) * r
                     )
                 end
+            elseif elem.type == "rift_spark" then
+                -- Endless Mode: Shift colors dynamically based on colorPhase
+                if game.showStars then
+                    local r_val = 0.5 + 0.5 * math.sin(elem.colorPhase)
+                    local g_val = 0.5 + 0.5 * math.sin(elem.colorPhase + 2.09)
+                    local b_val = 0.5 + 0.5 * math.sin(elem.colorPhase + 4.18)
+                    local pulse = 0.75 + 0.25 * math.sin(elem.colorPhase * 3)
+                    love.graphics.setColor(r_val, g_val, b_val, elem.alpha * pulse)
+                    love.graphics.circle("fill", elem.x, elem.y, elem.size * pulse)
+                end
+            elseif elem.type == "time_rift" then
+                -- Endless Mode: Warping dimensional ellipses
+                love.graphics.push()
+                love.graphics.translate(elem.x, elem.y)
+                love.graphics.rotate(elem.angle)
+
+                local pulse = 1.0 + 0.12 * math.sin(game.time * elem.pulseSpeed)
+                local rw = elem.size * pulse
+                local rh = elem.size * 0.45 * pulse
+
+                -- Outer glowing boundary
+                love.graphics.setLineWidth(2)
+                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
+                love.graphics.ellipse("line", 0, 0, rw, rh)
+
+                -- Inner core
+                love.graphics.setColor(1.0, 1.0, 1.0, elem.alpha * 1.5)
+                love.graphics.ellipse("line", 0, 0, rw * 0.5, rh * 0.5)
+
+                -- Portal particle lines crossing inside
+                love.graphics.setLineWidth(1)
+                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha * 0.6)
+                for k = 1, 4 do
+                    local offset = (k - 1) * (rw * 0.2) - rw * 0.4
+                    love.graphics.line(offset, -rh * 0.3, offset, rh * 0.3)
+                end
+
+                love.graphics.pop()
+            elseif elem.type == "matrix_wave" then
+                -- Endless Mode: Horizontal scanner lines
+                love.graphics.setColor(elem.color[1], elem.color[2], elem.color[3], elem.alpha)
+                love.graphics.setLineWidth(1.5)
+                love.graphics.line(elem.x, elem.y, elem.x + elem.len, elem.y)
+
+                -- End dot
+                love.graphics.setColor(0.8, 0.4, 1.0, elem.alpha * 1.8)
+                love.graphics.rectangle("fill", elem.x + elem.len - 3, elem.y - 1.5, 6, 3)
             end
         end
     end
@@ -1098,8 +1242,8 @@ function love.keypressed(key)
         end
     end
 
-    -- Cheat key K: Force skip to next stage and start wave 1
-    if game.state == "playing" and (key == "k" or key == "K") then
+    -- Cheat key K: Force skip to next stage and start wave 1 (Disabled in Endless Mode)
+    if game.state == "playing" and not game.endlessMode and (key == "k" or key == "K") then
         game.enemies = {}
         game.enemyBullets = {}
         if game.stage == 9 then
@@ -1131,7 +1275,6 @@ function love.keypressed(key)
             Enemy.spawnWave(game, 7)
         end
     end
-
 end
 
 function love.mousepressed(x, y, button)
@@ -1198,6 +1341,9 @@ function love.mousepressed(x, y, button)
                     if x >= box.x and x <= box.x + 400 and y >= box.y and y <= box.y + box.h then
                         game[box.key] = not game[box.key]
                         game.saveGame()
+                        if box.key == "muted" then
+                            Sound.updateMuteState()
+                        end
                         break
                     end
                 end
