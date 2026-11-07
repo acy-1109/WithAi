@@ -3,10 +3,13 @@
 -- [1단계: 플레이어 좌우 이동]
 -- [2단계: Space 발사(쿨다운) + 총알 위로 이동]
 -- [3단계: 적 편대(그리드) 생성 + 좌우 이동 + 끝에서 한 칸 하강]
+-- [4단계: 적 랜덤 발사 + 적 총알 아래로 이동]
+-- (⚠️ 1-4 프로토콜 T1 측정 시점)
 
 local player
 local bullets = {}
-local enemies = {} -- ⚠️ 적 편대 목록을 담는 전역 상태 배열
+local enemies = {}
+local enemyBullets = {} -- ⚠️ 적 총알 목록 전역 상태
 
 local PLAYER_SPEED = 320
 local BULLET_SPEED = 520
@@ -15,6 +18,10 @@ local BULLET_COOLDOWN = 0.25
 local formationDir = 1
 local FORMATION_SPEED = 40
 local DROP_STEP = 16
+
+local enemyShootTimer = 0
+local ENEMY_SHOOT_INTERVAL = 0.6
+local ENEMY_BULLET_SPEED = 240
 
 -- 적 편대 생성 (4행 8열)
 local function spawnFormation()
@@ -34,6 +41,7 @@ end
 
 function love.load()
   love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
+  math.randomseed(os.time()) -- ⚠️ 비결정적 난수 시드
 
   local winWidth = love.graphics.getWidth()
   local winHeight = love.graphics.getHeight()
@@ -46,12 +54,15 @@ function love.load()
     cooldown = 0,
   }
   bullets = {}
+  enemyBullets = {}
   formationDir = 1
+  enemyShootTimer = ENEMY_SHOOT_INTERVAL
   spawnFormation()
 end
 
 function love.update(dt)
   local winWidth = love.graphics.getWidth()
+  local winHeight = love.graphics.getHeight()
 
   -- 1. 플레이어 이동
   if love.keyboard.isDown("left") or love.keyboard.isDown("a") then
@@ -88,7 +99,7 @@ function love.update(dt)
     end
   end
 
-  -- 3. 적 편대 이동 (좌우 이동 + 화면 끝 도달 시 반전 및 한 칸 하강)
+  -- 3. 적 편대 이동
   local minx, maxx = math.huge, -math.huge
   for _, e in ipairs(enemies) do
     if e.alive then
@@ -110,10 +121,40 @@ function love.update(dt)
       end
     end
   end
+
+  -- 4. 적 랜덤 발사 (0.6초 주기)
+  enemyShootTimer = enemyShootTimer - dt
+  if enemyShootTimer <= 0 then
+    enemyShootTimer = ENEMY_SHOOT_INTERVAL
+    local alive = {}
+    for _, e in ipairs(enemies) do
+      if e.alive then
+        alive[#alive + 1] = e
+      end
+    end
+    if #alive > 0 then
+      local shooter = alive[math.random(#alive)]
+      enemyBullets[#enemyBullets + 1] = {
+        x = shooter.x + shooter.w * 0.5 - 2,
+        y = shooter.y + shooter.h,
+        w = 4,
+        h = 12,
+      }
+    end
+  end
+
+  -- 적 총알 이동 및 화면 아래 밖 제거
+  for i = #enemyBullets, 1, -1 do
+    local b = enemyBullets[i]
+    b.y = b.y + ENEMY_BULLET_SPEED * dt
+    if b.y > winHeight then
+      table.remove(enemyBullets, i)
+    end
+  end
 end
 
 function love.draw()
-  -- 플레이어 그리기 (하늘색)
+  -- 플레이어 (하늘색)
   love.graphics.setColor(0.4, 0.9, 1)
   love.graphics.rectangle("fill", player.x, player.y, player.w, player.h)
 
@@ -123,12 +164,18 @@ function love.draw()
     love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
   end
 
-  -- 적 편대 그리기 (빨간색)
+  -- 적 편대 (빨간색)
   love.graphics.setColor(1, 0.4, 0.4)
   for _, e in ipairs(enemies) do
     if e.alive then
       love.graphics.rectangle("fill", e.x, e.y, e.w, e.h)
     end
+  end
+
+  -- 적 총알 (주황색)
+  love.graphics.setColor(1, 0.6, 0.2)
+  for _, b in ipairs(enemyBullets) do
+    love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
   end
 end
 
