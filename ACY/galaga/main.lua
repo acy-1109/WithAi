@@ -1,56 +1,34 @@
 -- main.lua
--- 2주차 겔러그 모놀리식
+-- 2주차 겔러그 모놀리식 (구현 순서 1~7단계 완성본)
 -- [1단계: 플레이어 좌우 이동]
 -- [2단계: Space 발사(쿨다운) + 총알 위로 이동]
 -- [3단계: 적 편대(그리드) 생성 + 좌우 이동 + 끝에서 한 칸 하강]
 -- [4단계: 적 랜덤 발사 + 적 총알 아래로 이동]
 -- [5단계: 충돌 판정 (내 총알 x 적: 점수+파괴, 적 총알 x 플레이어: 라이프 감소)]
--- [6단계: 연출 - 파괴 파티클, 화면 번쩍임(flash), 피격 시 화면 흔들림(shake)]
+-- [6단계: 연출 (파괴 파티클, flash 번쩍임, 피격 shake 흔들림)]
+-- [7단계: HUD(점수/라이프 아이콘) + 게임오버/재시작(resetGame)]
 
+-- 파일 전역 상태 덩어리(모놀리식 전형)
 local player
 local bullets = {}
 local enemies = {}
 local enemyBullets = {}
 local particles = {}
-
 local score = 0
 local lives = 3
 local gameover = false
 
+local formationDir = 1
+local enemyShootTimer = 0
 local screenShake = 0
 local flash = 0
 
 local PLAYER_SPEED = 320
 local BULLET_SPEED = 520
 local BULLET_COOLDOWN = 0.25
-
-local formationDir = 1
+local ENEMY_BULLET_SPEED = 240
 local FORMATION_SPEED = 40
 local DROP_STEP = 16
-
-local enemyShootTimer = 0
-local ENEMY_SHOOT_INTERVAL = 0.6
-local ENEMY_BULLET_SPEED = 240
-
--- 충돌 판정 함수 (AABB)
-local function hit(a, b)
-  return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
-end
-
-local function explode(x, y)
-  for i = 1, 12 do
-    local angle = math.random() * math.pi * 2
-    local speed = 40 + math.random() * 120
-    particles[#particles + 1] = {
-      x = x,
-      y = y,
-      vx = math.cos(angle) * speed,
-      vy = math.sin(angle) * speed,
-      life = 0.5,
-    }
-  end
-  flash = 0.06
-end
 
 -- 적 편대 생성 (4행 8열)
 local function spawnFormation()
@@ -68,15 +46,13 @@ local function spawnFormation()
   end
 end
 
-function love.load()
-  love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
-  math.randomseed(os.time())
-
+-- 7단계: 전역 상태 초기화 함수 (재시작 시 깨끗하게 리셋)
+local function resetGame()
   player = {
-    w = 40,
-    h = 24,
     x = 300 - 20,
     y = 740,
+    w = 40,
+    h = 24,
     cooldown = 0,
   }
   bullets = {}
@@ -85,14 +61,42 @@ function love.load()
   score = 0
   lives = 3
   gameover = false
+  formationDir = 1
+  enemyShootTimer = 0.6
   screenShake = 0
   flash = 0
-  formationDir = 1
-  enemyShootTimer = ENEMY_SHOOT_INTERVAL
   spawnFormation()
 end
 
+-- 충돌 판정 (AABB)
+local function hit(a, b)
+  return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
+end
+
+-- ⚠️ Model-View 결합: 로직 한복판에서 연출 직접 생성
+local function explode(x, y)
+  for i = 1, 12 do
+    local angle = math.random() * math.pi * 2
+    local speed = 40 + math.random() * 120
+    particles[#particles + 1] = {
+      x = x,
+      y = y,
+      vx = math.cos(angle) * speed,
+      vy = math.sin(angle) * speed,
+      life = 0.5,
+    }
+  end
+  flash = 0.06
+end
+
+function love.load()
+  love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
+  math.randomseed(os.time()) -- ⚠️ 비결정적 시드
+  resetGame()
+end
+
 function love.update(dt)
+  -- 7단계: 게임오버 시 모든 물리 및 적/총알 이동 정지
   if gameover then
     return
   end
@@ -130,7 +134,7 @@ function love.update(dt)
     player.cooldown = BULLET_COOLDOWN
   end
 
-  -- 플레이어 총알 이동 및 화면 밖 제거
+  -- 플레이어 총알 이동
   for i = #bullets, 1, -1 do
     local b = bullets[i]
     b.y = b.y - BULLET_SPEED * dt
@@ -165,7 +169,7 @@ function love.update(dt)
   -- 4. 적 랜덤 발사
   enemyShootTimer = enemyShootTimer - dt
   if enemyShootTimer <= 0 then
-    enemyShootTimer = ENEMY_SHOOT_INTERVAL
+    enemyShootTimer = 0.6
     local alive = {}
     for _, e in ipairs(enemies) do
       if e.alive then
@@ -183,7 +187,7 @@ function love.update(dt)
     end
   end
 
-  -- 적 총알 이동 및 화면 아래 밖 제거
+  -- 적 총알 이동
   for i = #enemyBullets, 1, -1 do
     local b = enemyBullets[i]
     b.y = b.y + ENEMY_BULLET_SPEED * dt
@@ -199,7 +203,7 @@ function love.update(dt)
       if e.alive and hit(b, e) then
         e.alive = false
         score = score + 100
-        explode(e.x + e.w * 0.5, e.y + e.h * 0.5)
+        explode(e.x + e.w * 0.5, e.y + e.h * 0.5) -- ⚠️ 로직이 연출 직접 호출
         table.remove(bullets, bi)
         break
       end
@@ -210,14 +214,14 @@ function love.update(dt)
     if hit(enemyBullets[i], player) then
       table.remove(enemyBullets, i)
       lives = lives - 1
-      screenShake = 0.3
+      screenShake = 0.3 -- ⚠️ 로직이 shake 상태 직접 조작
       if lives <= 0 then
         gameover = true
       end
     end
   end
 
-  -- 파티클 업데이트
+  -- 6. 파티클 이동 및 수명 소멸
   for i = #particles, 1, -1 do
     local p = particles[i]
     p.x = p.x + p.vx * dt
@@ -228,7 +232,7 @@ function love.update(dt)
     end
   end
 
-  -- 리스폰
+  -- 다음 편대 리스폰
   local anyAlive = false
   for _, e in ipairs(enemies) do
     if e.alive then
@@ -242,6 +246,7 @@ function love.update(dt)
 end
 
 function love.draw()
+  -- 화면 흔들림 연출
   local ox, oy = 0, 0
   if screenShake > 0 then
     ox = (math.random() - 0.5) * 10
@@ -251,6 +256,7 @@ function love.draw()
   love.graphics.push()
   love.graphics.translate(ox, oy)
 
+  -- 피격/파괴 플래시
   if flash > 0 then
     love.graphics.setColor(0.3, 0.3, 0.4)
     love.graphics.rectangle("fill", 0, 0, 600, 800)
@@ -288,13 +294,31 @@ function love.draw()
 
   love.graphics.pop()
 
-  -- HUD 표시 (600 x 800 규격에 맞춰 정렬)
+  -- ========================================================
+  -- 7단계: HUD (점수, 라이프 비행기 아이콘 + 텍스트)
+  -- ========================================================
   love.graphics.setColor(1, 1, 1)
-  love.graphics.print("SCORE " .. score, 10, 10)
-  love.graphics.printf("LIVES " .. lives, 0, 10, 590, "right")
+  love.graphics.print("SCORE  " .. score, 15, 12)
+  love.graphics.printf("LIVES " .. lives, 0, 12, 585, "right")
 
+  -- 라이프를 작은 비행기 사각형 아이콘으로도 우측 상단에 표시
+  love.graphics.setColor(0.4, 0.9, 1)
+  for i = 1, lives do
+    love.graphics.rectangle("fill", 585 - (i * 18), 32, 14, 8)
+  end
+
+  -- 7단계: 게임오버 안내 및 재시작 UI
   if gameover then
-    love.graphics.printf("GAME OVER\nPress R to Restart", 0, 380, 600, "center")
+    -- 어두운 반투명 오버레이
+    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.rectangle("fill", 0, 0, 600, 800)
+
+    love.graphics.setColor(1, 0.3, 0.3)
+    love.graphics.printf("GAME OVER", 0, 350, 600, "center")
+
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.printf("Press R to Restart", 0, 390, 600, "center")
+    love.graphics.printf("Final Score: " .. score, 0, 420, 600, "center")
   end
 end
 
@@ -302,6 +326,6 @@ function love.keypressed(key)
   if key == "escape" then
     love.event.quit()
   elseif key == "r" and gameover then
-    love.load()
+    resetGame() -- 7단계: 안전한 전역 상태 리셋
   end
 end
