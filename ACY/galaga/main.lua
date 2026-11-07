@@ -16,13 +16,9 @@ local gameover = false
 local won = false
 
 -- 유도 미사일 탄수 및 점수 보상 관리
-local MAX_MISSILES = 3 -- 최대 개수 제한
-local missiles = 3 -- 기본 3개 지급
-local nextMissileScore = 500 -- 500점 달성 시 1개씩 추가
-
--- 유도 미사일 탄수 및 점수 보상 관리
-local missiles = 3 -- 기본 3개 지급
-local nextMissileScore = 500 -- 500점 달성 시 1개씩 추가
+local MAX_MISSILES = 3
+local missiles = 3
+local nextMissileScore = 500
 
 local formationDir = 1
 local enemyShootTimer = 0
@@ -42,12 +38,27 @@ local DROP_STEP = 16
 
 -- 드라마틱한 유도 미사일 상수
 local HOMING_SPEED = 480
-local HOMING_TURN = 0.16 -- 선회 추종율을 2배로 올려 날카롭게 꺾이도록 강화
-local MISSILE_COOLDOWN = 0.45 -- 쿨다운 단축
+local HOMING_TURN = 0.16
+local MISSILE_COOLDOWN = 0.45
 
 -- 보스 상수
 local BOSS_BULLET_SPEED = 180
 local BOSS_SCORE_TRIGGER = 1000
+
+-- ========================================================
+-- 헬퍼 함수
+-- ========================================================
+
+-- 점수 획득 및 500점 단위 유도탄 충전 로직 단일화
+local function addScore(points)
+  score = score + points
+  while score >= nextMissileScore do
+    if missiles < MAX_MISSILES then
+      missiles = missiles + 1
+    end
+    nextMissileScore = nextMissileScore + 500
+  end
+end
 
 -- 적 편대 생성 (4행 8열)
 local function spawnFormation()
@@ -65,7 +76,7 @@ local function spawnFormation()
   end
 end
 
--- 보스 생성 함수
+-- 보스 생성
 local function spawnBoss()
   boss = {
     x = 240,
@@ -81,7 +92,7 @@ local function spawnBoss()
   bossSpawned = true
 end
 
--- 가장 가까운 적(또는 보스)의 중심 좌표 탐색 함수
+-- 가장 가까운 타겟(적 또는 보스) 탐색
 local function nearestTarget(x, y)
   local tx, ty, bestDist = nil, nil, math.huge
 
@@ -155,6 +166,9 @@ local function explode(x, y)
   flash = 0.06
 end
 
+-- ========================================================
+-- Love2D 메인 루프
+-- ========================================================
 function love.load()
   love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
   math.randomseed(os.time())
@@ -202,24 +216,24 @@ function love.update(dt)
     player.cooldown = BULLET_COOLDOWN
   end
 
-  -- 2-2. F키 유도 미사일 발사 (보유 탄수 확인 및 차감)
+  -- 2-2. F키 유도 미사일 발사
   player.missileCd = player.missileCd - dt
   if love.keyboard.isDown("f") and player.missileCd <= 0 and missiles > 0 then
     missiles = missiles - 1
-    local spread = (math.random() - 0.5) * 360 -- 발사 시 좌우로 확 튕겨져 나가는 초기 수평 속도
+    local spread = (math.random() - 0.5) * 360
     bullets[#bullets + 1] = {
       x = player.x + player.w * 0.5 - 4,
       y = player.y,
       w = 8,
       h = 14,
       vx = spread,
-      vy = -260, -- 위로 부드럽게 솟구침
+      vy = -260,
       homing = true,
     }
     player.missileCd = MISSILE_COOLDOWN
   end
 
-  -- 플레이어 총알 이동 (드라마틱 유도 선회 알고리즘)
+  -- 플레이어 총알 이동
   for i = #bullets, 1, -1 do
     local b = bullets[i]
     if b.homing then
@@ -232,7 +246,6 @@ function love.update(dt)
           local desiredVx = (dx / dist) * HOMING_SPEED
           local desiredVy = (dy / dist) * HOMING_SPEED
 
-          -- 선회력 강화 (타겟을 향해 다이내믹하게 휨)
           b.vx = b.vx + (desiredVx - b.vx) * HOMING_TURN
           b.vy = b.vy + (desiredVy - b.vy) * HOMING_TURN
 
@@ -248,7 +261,6 @@ function love.update(dt)
     b.x = b.x + (b.vx or 0) * dt
     b.y = b.y + (b.vy or -BULLET_SPEED) * dt
 
-    -- 상하좌우 화면 밖 제거
     if b.y + b.h < -30 or b.y > 830 or b.x < -30 or b.x > 630 then
       table.remove(bullets, i)
     end
@@ -349,15 +361,8 @@ function love.update(dt)
     for _, e in ipairs(enemies) do
       if e.alive and hit(b, e) then
         e.alive = false
-        score = score + 100
-        -- 500점 달성할 때마다 유도탄 1개 충전 (최대 3개 제한)
-        while score >= nextMissileScore do
-          if missiles < MAX_MISSILES then
-            missiles = missiles + 1
-          end
-          nextMissileScore = nextMissileScore + 500
-        end
-        explode(e.x + e.w * 0.5, e.y + e.h * 0.5) -- 적 처치 시 폭발 이펙트
+        addScore(100)
+        explode(e.x + e.w * 0.5, e.y + e.h * 0.5)
         table.remove(bullets, bi)
         break
       end
@@ -371,14 +376,7 @@ function love.update(dt)
         table.remove(bullets, bi)
         if boss.hp <= 0 then
           boss.alive = false
-          score = score + 2000
-          while score >= nextMissileScore do
-            if missiles < MAX_MISSILES then
-              missiles = missiles + 1
-            end
-            nextMissileScore = nextMissileScore + 500
-          end
-          -- 보스가 처치되었을 때만 폭발 이펙트 발생
+          addScore(2000)
           explode(boss.x + boss.w * 0.5, boss.y + boss.h * 0.5)
           won = true
           gameover = true
@@ -442,7 +440,7 @@ function love.draw()
   love.graphics.setColor(0.4, 0.9, 1)
   love.graphics.rectangle("fill", player.x, player.y, player.w, player.h)
 
-  -- 파티클 / 미사일 궤적 먼저 그리기
+  -- 파티클
   love.graphics.setColor(1, 0.8, 0.2)
   for _, p in ipairs(particles) do
     love.graphics.rectangle("fill", p.x, p.y, 3, 3)
@@ -451,7 +449,7 @@ function love.draw()
   -- 총알 렌더링
   for _, b in ipairs(bullets) do
     if b.homing then
-      love.graphics.setColor(0.2, 1.0, 0.5) -- 밝은 형광 민트색 대형 미사일
+      love.graphics.setColor(0.2, 1.0, 0.5)
     else
       love.graphics.setColor(1, 1, 0.3)
     end
@@ -490,7 +488,6 @@ function love.draw()
   love.graphics.print("SCORE  " .. score, 15, 12)
   love.graphics.printf("LIVES " .. lives, 0, 12, 585, "right")
 
-  -- LIVES 아래에 유도탄(MISSILE) 보유량을 유도탄 색상(민트/초록) 칸으로 표시
   love.graphics.setColor(0.3, 1.0, 0.6)
   for i = 1, missiles do
     love.graphics.rectangle("fill", 585 - (i * 18), 32, 14, 8)
