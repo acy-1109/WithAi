@@ -1,14 +1,19 @@
 -- main.lua
--- 2주차 겔러그 모놀리식 (구현 순서 1~7단계 완성본)
--- [1단계: 플레이어 좌우 이동]
--- [2단계: Space 발사(쿨다운) + 총알 위로 이동]
--- [3단계: 적 편대(그리드) 생성 + 좌우 이동 + 끝에서 한 칸 하강]
--- [4단계: 적 랜덤 발사 + 적 총알 아래로 이동]
--- [5단계: 충돌 판정 (내 총알 x 적: 점수+파괴, 적 총알 x 플레이어: 라이프 감소)]
--- [6단계: 연출 (파괴 파티클, flash 번쩍임, 피격 shake 흔들림)]
--- [7단계: HUD(점수/라이프 아이콘) + 게임오버/재시작(resetGame)]
+-- 2주차 겔러그 모놀리식: [과제 B - 보스 탄막(Bullet Pattern) 추가]
+-- ⚠️ 모놀리식의 스파게티/수정 전파 체험: 보스 하나를 추가하기 위해 파일 전역 9곳 이상이 수정됨
+-- [B1] 보스 상태 변수 & 상수
+-- [B2] resetGame 보스 초기화
+-- [B3] spawnBoss 생성 및 등장 조건
+-- [B4] 보스 좌우 이동 로직
+-- [B5] 보스 원형 방사 탄막 (18갈래 탄막 생성) + 적 총알 vx/vy 확장
+-- [B6] 적 총알 2D 이동 및 경계 판정
+-- [B7] 플레이어 총알 x 보스 HP 충돌 판정 및 승리 조건
+-- [B8] 보스 렌더링 및 보스 HP 게이지 바
+-- [B9] 승리(YOU WIN) 및 게임오버 화면 분기
 
--- 파일 전역 상태 덩어리(모놀리식 전형)
+-- ========================================================
+-- 파일 전역 상태 덩어리
+-- ========================================================
 local player
 local bullets = {}
 local enemies = {}
@@ -17,11 +22,16 @@ local particles = {}
 local score = 0
 local lives = 3
 local gameover = false
+local won = false -- [B1] 보스 격파 승리 플래그
 
 local formationDir = 1
 local enemyShootTimer = 0
 local screenShake = 0
 local flash = 0
+
+-- [B1] 보스 엔티티 및 스폰 플래그
+local boss = nil
+local bossSpawned = false
 
 local PLAYER_SPEED = 320
 local BULLET_SPEED = 520
@@ -29,6 +39,10 @@ local BULLET_COOLDOWN = 0.25
 local ENEMY_BULLET_SPEED = 240
 local FORMATION_SPEED = 40
 local DROP_STEP = 16
+
+-- [B1] 보스 관련 상수
+local BOSS_BULLET_SPEED = 180
+local BOSS_SCORE_TRIGGER = 1000 -- 보스 등장 기준 점수
 
 -- 적 편대 생성 (4행 8열)
 local function spawnFormation()
@@ -46,7 +60,23 @@ local function spawnFormation()
   end
 end
 
--- 7단계: 전역 상태 초기화 함수 (재시작 시 깨끗하게 리셋)
+-- [B3] 보스 생성 함수
+local function spawnBoss()
+  boss = {
+    x = 240,
+    y = 70,
+    w = 120,
+    h = 60,
+    hp = 40,
+    maxhp = 40,
+    alive = true,
+    dir = 1,
+    shootTimer = 1.0,
+  }
+  bossSpawned = true
+end
+
+-- [B2] resetGame에 보스 관련 상태 리셋 전파
 local function resetGame()
   player = {
     x = 300 - 20,
@@ -61,6 +91,9 @@ local function resetGame()
   score = 0
   lives = 3
   gameover = false
+  won = false -- [B2]
+  boss = nil -- [B2]
+  bossSpawned = false -- [B2]
   formationDir = 1
   enemyShootTimer = 0.6
   screenShake = 0
@@ -73,7 +106,6 @@ local function hit(a, b)
   return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
 end
 
--- ⚠️ Model-View 결합: 로직 한복판에서 연출 직접 생성
 local function explode(x, y)
   for i = 1, 12 do
     local angle = math.random() * math.pi * 2
@@ -91,12 +123,11 @@ end
 
 function love.load()
   love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
-  math.randomseed(os.time()) -- ⚠️ 비결정적 시드
+  math.randomseed(os.time())
   resetGame()
 end
 
 function love.update(dt)
-  -- 7단계: 게임오버 시 모든 물리 및 적/총알 이동 정지
   if gameover then
     return
   end
@@ -108,7 +139,7 @@ function love.update(dt)
     flash = flash - dt
   end
 
-  -- 1. 플레이어 이동
+  -- 1. 플레이어 이동 (A/D 및 화살표 키)
   if love.keyboard.isDown("left") or love.keyboard.isDown("a") then
     player.x = player.x - PLAYER_SPEED * dt
   end
@@ -166,7 +197,7 @@ function love.update(dt)
     end
   end
 
-  -- 4. 적 랜덤 발사
+  -- 4. 적 랜덤 발사 ( [B5] 적 총알도 이제 vx, vy를 가지도록 자료구조 전파 )
   enemyShootTimer = enemyShootTimer - dt
   if enemyShootTimer <= 0 then
     enemyShootTimer = 0.6
@@ -183,45 +214,101 @@ function love.update(dt)
         y = shooter.y + shooter.h,
         w = 4,
         h = 12,
+        vx = 0,
+        vy = ENEMY_BULLET_SPEED,
       }
     end
   end
 
-  -- 적 총알 이동
+  -- [B3] 일정 점수 이상이면 보스 등장
+  if not bossSpawned and score >= BOSS_SCORE_TRIGGER then
+    spawnBoss()
+  end
+
+  -- [B4][B5] 보스 이동 및 원형 방사 탄막 발사
+  if boss and boss.alive then
+    boss.x = boss.x + boss.dir * 70 * dt
+    if boss.x < 10 then
+      boss.x, boss.dir = 10, 1
+    elseif boss.x > 590 - boss.w then
+      boss.x, boss.dir = 590 - boss.w, -1
+    end
+
+    boss.shootTimer = boss.shootTimer - dt
+    if boss.shootTimer <= 0 then
+      boss.shootTimer = 1.2
+      local cx, cy = boss.x + boss.w * 0.5, boss.y + boss.h * 0.5
+      local n = 18 -- 18방향 원형 탄막
+      for k = 0, n - 1 do
+        local a = (k / n) * math.pi * 2
+        enemyBullets[#enemyBullets + 1] = {
+          x = cx,
+          y = cy,
+          w = 6,
+          h = 6,
+          vx = math.cos(a) * BOSS_BULLET_SPEED,
+          vy = math.sin(a) * BOSS_BULLET_SPEED,
+        }
+      end
+    end
+  end
+
+  -- [B6] 적/보스 총알 이동 (vx, vy 적용 및 4방향 경계 제거)
   for i = #enemyBullets, 1, -1 do
     local b = enemyBullets[i]
-    b.y = b.y + ENEMY_BULLET_SPEED * dt
-    if b.y > 800 then
+    b.x = b.x + (b.vx or 0) * dt
+    b.y = b.y + (b.vy or ENEMY_BULLET_SPEED) * dt
+    if b.y > 800 or b.y < -20 or b.x < -20 or b.x > 620 then
       table.remove(enemyBullets, i)
     end
   end
 
   -- 5. 충돌 처리
+  -- 일반 적 격추
   for bi = #bullets, 1, -1 do
     local b = bullets[bi]
     for _, e in ipairs(enemies) do
       if e.alive and hit(b, e) then
         e.alive = false
         score = score + 100
-        explode(e.x + e.w * 0.5, e.y + e.h * 0.5) -- ⚠️ 로직이 연출 직접 호출
+        explode(e.x + e.w * 0.5, e.y + e.h * 0.5)
         table.remove(bullets, bi)
         break
       end
     end
   end
 
+  -- [B7] 플레이어 총알 x 보스 피격 판정 (HP 차감 및 승리 처리)
+  if boss and boss.alive then
+    for bi = #bullets, 1, -1 do
+      if hit(bullets[bi], boss) then
+        boss.hp = boss.hp - 1
+        explode(bullets[bi].x, bullets[bi].y)
+        table.remove(bullets, bi)
+        if boss.hp <= 0 then
+          boss.alive = false
+          score = score + 2000
+          won = true
+          gameover = true
+        end
+        break
+      end
+    end
+  end
+
+  -- 적/보스 총알 x 플레이어 피격 판정
   for i = #enemyBullets, 1, -1 do
     if hit(enemyBullets[i], player) then
       table.remove(enemyBullets, i)
       lives = lives - 1
-      screenShake = 0.3 -- ⚠️ 로직이 shake 상태 직접 조작
+      screenShake = 0.3
       if lives <= 0 then
         gameover = true
       end
     end
   end
 
-  -- 6. 파티클 이동 및 수명 소멸
+  -- 파티클 업데이트
   for i = #particles, 1, -1 do
     local p = particles[i]
     p.x = p.x + p.vx * dt
@@ -232,7 +319,7 @@ function love.update(dt)
     end
   end
 
-  -- 다음 편대 리스폰
+  -- 편대 리스폰 (단, 보스가 등장한 이후에는 적 편대 리스폰 중단)
   local anyAlive = false
   for _, e in ipairs(enemies) do
     if e.alive then
@@ -240,13 +327,12 @@ function love.update(dt)
       break
     end
   end
-  if not anyAlive then
+  if not anyAlive and not bossSpawned then
     spawnFormation()
   end
 end
 
 function love.draw()
-  -- 화면 흔들림 연출
   local ox, oy = 0, 0
   if screenShake > 0 then
     ox = (math.random() - 0.5) * 10
@@ -256,7 +342,6 @@ function love.draw()
   love.graphics.push()
   love.graphics.translate(ox, oy)
 
-  -- 피격/파괴 플래시
   if flash > 0 then
     love.graphics.setColor(0.3, 0.3, 0.4)
     love.graphics.rectangle("fill", 0, 0, 600, 800)
@@ -272,7 +357,7 @@ function love.draw()
     love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
   end
 
-  -- 적 편대 (빨간색)
+  -- 일반 적 편대 (빨간색)
   love.graphics.setColor(1, 0.4, 0.4)
   for _, e in ipairs(enemies) do
     if e.alive then
@@ -280,7 +365,20 @@ function love.draw()
     end
   end
 
-  -- 적 총알 (주황색)
+  -- [B8] 보스 렌더링 (자주색 대형 기체) + HP 게이지 바
+  if boss and boss.alive then
+    love.graphics.setColor(0.9, 0.3, 0.9)
+    love.graphics.rectangle("fill", boss.x, boss.y, boss.w, boss.h)
+
+    -- 보스 HP 게이지 배경 (어두운 회색)
+    love.graphics.setColor(0.2, 0.2, 0.2)
+    love.graphics.rectangle("fill", 100, 48, 400, 10)
+    -- 보스 HP 게이지 (빨간색)
+    love.graphics.setColor(1, 0.2, 0.2)
+    love.graphics.rectangle("fill", 100, 48, 400 * (boss.hp / boss.maxhp), 10)
+  end
+
+  -- 적/보스 총알 (주황색)
   love.graphics.setColor(1, 0.6, 0.2)
   for _, b in ipairs(enemyBullets) do
     love.graphics.rectangle("fill", b.x, b.y, b.w, b.h)
@@ -294,31 +392,32 @@ function love.draw()
 
   love.graphics.pop()
 
-  -- ========================================================
-  -- 7단계: HUD (점수, 라이프 비행기 아이콘 + 텍스트)
-  -- ========================================================
+  -- HUD (점수, 라이프)
   love.graphics.setColor(1, 1, 1)
   love.graphics.print("SCORE  " .. score, 15, 12)
   love.graphics.printf("LIVES " .. lives, 0, 12, 585, "right")
 
-  -- 라이프를 작은 비행기 사각형 아이콘으로도 우측 상단에 표시
   love.graphics.setColor(0.4, 0.9, 1)
   for i = 1, lives do
     love.graphics.rectangle("fill", 585 - (i * 18), 32, 14, 8)
   end
 
-  -- 7단계: 게임오버 안내 및 재시작 UI
+  -- [B9] 게임오버 / 승리(YOU WIN) 오버레이 화면 분기
   if gameover then
-    -- 어두운 반투명 오버레이
-    love.graphics.setColor(0, 0, 0, 0.7)
+    love.graphics.setColor(0, 0, 0, 0.75)
     love.graphics.rectangle("fill", 0, 0, 600, 800)
 
-    love.graphics.setColor(1, 0.3, 0.3)
-    love.graphics.printf("GAME OVER", 0, 350, 600, "center")
+    if won then
+      love.graphics.setColor(0.3, 1, 0.4)
+      love.graphics.printf("YOU WIN!", 0, 340, 600, "center")
+    else
+      love.graphics.setColor(1, 0.3, 0.3)
+      love.graphics.printf("GAME OVER", 0, 340, 600, "center")
+    end
 
     love.graphics.setColor(1, 1, 1)
-    love.graphics.printf("Press R to Restart", 0, 390, 600, "center")
-    love.graphics.printf("Final Score: " .. score, 0, 420, 600, "center")
+    love.graphics.printf("Final Score: " .. score, 0, 385, 600, "center")
+    love.graphics.printf("Press R to Restart", 0, 420, 600, "center")
   end
 end
 
@@ -326,6 +425,6 @@ function love.keypressed(key)
   if key == "escape" then
     love.event.quit()
   elseif key == "r" and gameover then
-    resetGame() -- 7단계: 안전한 전역 상태 리셋
+    resetGame()
   end
 end
