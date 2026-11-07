@@ -1,6 +1,6 @@
 -- main.lua
 -- 2주차 겔러그 모놀리식: [과제 A - 유도 미사일(F키)] + [과제 B - 보스 탄막]
--- ⚠️ 모놀리식 안티패턴의 정점: 기능 2개가 결합되면서 수정이 파일 전체에 무차별 번짐
+-- 안찬영2025391016
 
 -- ========================================================
 -- 파일 전역 상태 덩어리
@@ -357,14 +357,7 @@ function love.update(dt)
           end
           nextMissileScore = nextMissileScore + 500
         end
-        -- 500점 달성할 때마다 유도탄 1개 충전 (최대 3개 제한)
-        while score >= nextMissileScore do
-          if missiles < MAX_MISSILES then
-            missiles = missiles + 1
-          end
-          nextMissileScore = nextMissileScore + 500
-        end
-        explode(e.x + e.w * 0.5, e.y + e.h * 0.5)
+        explode(e.x + e.w * 0.5, e.y + e.h * 0.5) -- 적 처치 시 폭발 이펙트
         table.remove(bullets, bi)
         break
       end
@@ -375,7 +368,6 @@ function love.update(dt)
     for bi = #bullets, 1, -1 do
       if hit(bullets[bi], boss) then
         boss.hp = boss.hp - 1
-        explode(bullets[bi].x, bullets[bi].y)
         table.remove(bullets, bi)
         if boss.hp <= 0 then
           boss.alive = false
@@ -386,12 +378,8 @@ function love.update(dt)
             end
             nextMissileScore = nextMissileScore + 500
           end
-          while score >= nextMissileScore do
-            if missiles < MAX_MISSILES then
-              missiles = missiles + 1
-            end
-            nextMissileScore = nextMissileScore + 500
-          end
+          -- 보스가 처치되었을 때만 폭발 이펙트 발생
+          explode(boss.x + boss.w * 0.5, boss.y + boss.h * 0.5)
           won = true
           gameover = true
         end
