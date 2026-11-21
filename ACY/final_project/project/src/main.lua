@@ -27,8 +27,10 @@ function love.load()
     isDown = love.keyboard.isDown,
     seed = newSeed,
     quit = love.event.quit,
+    difficulty = "normal",
     scenes = {
       Title = require("TitleScene"),
+      Difficulty = require("DifficultyScene"),
       Play = require("PlayScene"),
       Pause = require("PauseScene"),
       Result = require("ResultScene"),

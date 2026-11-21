@@ -15,6 +15,8 @@ end
 function TitleScene:keypressed(key)
   if key == "return" or key == "space" then
     self.stack:switch(self.ctx.scenes.Play(self.ctx))
+  elseif key == "d" then
+    self.stack:switch(self.ctx.scenes.Difficulty(self.ctx))
   elseif key == "escape" then
     self.ctx.quit()
   end
