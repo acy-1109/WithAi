@@ -1,9 +1,15 @@
 -- dungeon_test.lua
 -- 예제 6(던전 RPG) 헤드리스 테스트: Model 단위 → Model 간 이벤트 연동 → View 문자열 → Controller 라우팅.
--- 실행: lua lua_tuto/mvc/basics/tests/dungeon_test.lua   (luajit 도 가능)
+-- 실행: lua test/dungeon_test.lua   (luajit 도 가능)
 
 local here = (arg and arg[0] or ""):match("(.*[/\\])") or "./"
-local root = here .. "../06_dungeon/"
+local root = here .. "../"
+local probe = io.open(root .. "models/game_model.lua", "r")
+if probe then
+  probe:close()
+else
+  root = here .. "../06_dungeon/"
+end
 package.path = root .. "?.lua;" .. package.path
 
 local EventBus = require("models.event_bus")
@@ -12,16 +18,21 @@ local LogModel = require("models.log_model")
 local InventoryModel = require("models.inventory_model")
 local PlayerModel = require("models.player_model")
 local GameModel = require("models.game_model")
+local KillListModel = require("models.kill_list_model")
+local AchievementModel = require("models.achievement_model")
+local dungeonData = require("data.dungeon_data")
 
 local ScreenView = require("views.screen_view")
 local StatusView = require("views.status_view")
 local EnemyView = require("views.enemy_view")
 local LogView = require("views.log_view")
+local KillListView = require("views.kill_list_view")
 
 local InputRouter = require("controllers.input_router")
 local ExploreController = require("controllers.explore_controller")
 local BattleController = require("controllers.battle_controller")
 local InventoryController = require("controllers.inventory_controller")
+local ShopController = require("controllers.shop_controller")
 local EndController = require("controllers.end_controller")
 
 local passed, failed = 0, 0
@@ -67,9 +78,10 @@ local CHECKED_FILES = {
   "models/event_bus.lua", "models/player_model.lua", "models/enemy_model.lua",
   "models/inventory_model.lua", "models/dungeon_model.lua", "models/quest_model.lua",
   "models/log_model.lua", "models/game_model.lua",
+  "models/kill_list_model.lua", "models/achievement_model.lua",
   "controllers/explore_controller.lua", "controllers/battle_controller.lua",
   "controllers/inventory_controller.lua", "controllers/end_controller.lua",
-  "controllers/input_router.lua",
+  "controllers/shop_controller.lua", "controllers/input_router.lua",
 }
 for _, path in ipairs(CHECKED_FILES) do
   local file = assert(io.open(root .. path, "r"), "파일 없음: " .. path)
@@ -247,6 +259,113 @@ do
   check("승리 후 아무 입력 → 종료", router:handle("x") == false)
   check("입력마다 render 호출", renders == 7)
   check("q 는 어느 모드에서나 종료", InputRouter.new(newGame({ EXIT }), fakeView, {}):handle("q") == false)
+end
+
+-- ── 5. 퀴즈 과제 1~4 검증 ──────────────────────────────────────────────────
+print("[5] 퀴즈 과제 1~4 테스트")
+do
+  -- 과제 1: 데이터만 고쳐 아이템 2번 사용 퀘스트 추가
+  local hasItemQuest = false
+  for _, q in ipairs(dungeonData.quests) do
+    if q.event == "item_used" and q.needed == 2 then
+      hasItemQuest = true
+    end
+  end
+  check("과제1: dungeon_data 에 아이템 2번 사용 퀘스트 존재", hasItemQuest)
+
+  local g1 = GameModel.new({
+    player = { name = "테스터", maxHp = 20, attack = 5 },
+    inventoryCapacity = 3,
+    logLimit = 5,
+    rooms = { POTION, SWORD, EXIT },
+    quests = dungeonData.quests,
+  })
+  g1:explore()
+  g1:openInventory()
+  g1:useItem(1)
+  g1:explore()
+  g1:openInventory()
+  g1:useItem(1)
+  local itemQuestDone = false
+  for _, q in ipairs(g1.quests.quests) do
+    if q.event == "item_used" and q.needed == 2 then
+      itemQuestDone = q.done
+    end
+  end
+  check("과제1: 아이템 2번 사용 시 퀘스트 완료", itemQuestDone)
+
+  -- 과제 2: 처치한 적 목록 패널 (KillListModel + KillListView)
+  local bus2 = EventBus.new()
+  local kl = KillListModel.new(bus2)
+  local kv = KillListView.new(kl)
+  check("과제2: 처치 전 빈 상태 문구", contains(kv:lines({}), "없"))
+  bus2:emit("enemy_killed", { name = "슬라임", gold = 3 })
+  bus2:emit("enemy_killed", { name = "고블린", gold = 5 })
+  check("과제2: KillListModel 적 이름 누적", #kl.kills == 2 and kl.kills[1] == "슬라임" and kl.kills[2] == "고블린")
+  check("과제2: KillListView 처치 목록 렌더링", contains(kv:lines({}), "슬라임, 고블린"))
+
+  -- 과제 3: 처치 골드 누적 15 이상 시 업적 1회 표시 (Game·PlayerModel 의존 금지)
+  local bus3 = EventBus.new()
+  local ach = AchievementModel.new(bus3)
+  local achCount = 0
+  bus3:on("achievement_unlocked", function()
+    achCount = achCount + 1
+  end)
+  bus3:emit("enemy_killed", { name = "슬라임", gold = 5 })
+  bus3:emit("enemy_killed", { name = "고블린", gold = 9 })
+  check("과제3: 누적 14골드에서는 미달성", ach.unlocked == false and achCount == 0)
+  bus3:emit("enemy_killed", { name = "오크", gold = 5 })
+  check("과제3: 누적 19골드(>=15) 달성 시 이벤트 1회 발생", ach.unlocked == true and achCount == 1)
+  bus3:emit("enemy_killed", { name = "드래곤", gold = 100 })
+  check("과제3: 이후 추가 처치에도 중복 발생 없음(1회만)", achCount == 1)
+
+  local RICH_ENEMY = { kind = "enemy", enemy = { name = "부자고블린", hp = 3, attack = 1, gold = 15 } }
+  local g3 = newGame({ RICH_ENEMY, EXIT })
+  g3:explore()
+  g3:attack()
+  check("과제3: 통합 시 LogView 에 업적 달성 표시", contains(LogView.new():lines(g3), "업적 달성"))
+
+  -- 과제 4: 출구 앞 상점 방 + ShopController (b: 구매 5골드, l: 나가기, 골드 부족/가방 가득 실패 이유)
+  local rooms = dungeonData.rooms
+  check("과제4: dungeon_data 출구 직전 방이 shop", #rooms >= 2 and rooms[#rooms - 1].kind == "shop" and rooms[#rooms].kind == "exit")
+
+  local SHOP = { kind = "shop" }
+  local g4 = GameModel.new({
+    player = { name = "상점테스터", maxHp = 10, attack = 5 },
+    inventoryCapacity = 1,
+    logLimit = 5,
+    rooms = { SHOP, EXIT },
+    quests = {},
+  })
+  local notices4 = {}
+  local fakeView4 = {
+    showNotice = function(_, msg)
+      notices4[#notices4 + 1] = msg
+    end,
+    render = function() end,
+  }
+  local router4 = InputRouter.new(g4, fakeView4, {
+    explore = ExploreController.new(),
+    shop = ShopController.new(),
+    victory = EndController.new(),
+  })
+  router4:handle("n")
+  check("과제4: 상점 방 진입 시 shop 모드 전환", g4.mode == "shop")
+
+  router4:handle("b")
+  check("과제4: 골드 부족 시 구매 실패 및 이유 표시", #g4.inventory.items == 0 and notices4[#notices4] and notices4[#notices4]:find("골드", 1, true) ~= nil)
+
+  g4.player:addGold(12)
+  router4:handle("b")
+  check("과제4: b 입력으로 물약 구매 성공 (5골드 차감, 가방 +1)", g4.player.gold == 7 and #g4.inventory.items == 1 and g4.inventory.items[1].kind == "potion")
+
+  router4:handle("b")
+  check("과제4: 가방 가득 시 구매 실패 및 이유 표시", g4.player.gold == 7 and #g4.inventory.items == 1 and notices4[#notices4] and notices4[#notices4]:find("가방", 1, true) ~= nil)
+
+  router4:handle("l")
+  check("과제4: l 입력으로 상점 나가기 → explore 복귀", g4.mode == "explore")
+  router4:handle("n")
+  check("과제4: 상점 나온 뒤 다음 방(출구) 이동 → 승리", g4.mode == "victory")
 end
 
 print(string.format("\n결과: %d 통과, %d 실패", passed, failed))

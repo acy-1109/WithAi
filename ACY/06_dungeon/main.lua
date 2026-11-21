@@ -8,8 +8,6 @@ local here = (arg and arg[0] or ""):match("(.*[/\\])") or "./"
 package.path = here .. "?.lua;" .. package.path
 
 local GameModel = require("models.game_model")
-local KillListModel = require("models.kill_list_model")
-local AchievementModel = require("models.achievement_model")
 local data = require("data.dungeon_data")
 
 local ScreenView = require("views.screen_view")
@@ -28,11 +26,8 @@ local InventoryController = require("controllers.inventory_controller")
 local ShopController = require("controllers.shop_controller")
 local EndController = require("controllers.end_controller")
 
--- ── Model 조립 ──
+-- ── Model ──
 local game = GameModel.new(data)
-local killList = KillListModel.new(game.bus)
-local achievement = AchievementModel.new(game.bus, game.player)
-game.killList = killList -- 뷰가 쉽게 접근할 수 있도록 연결
 
 -- ── View: 위젯 등록 + 모드별 레이아웃 ──
 local widgets = {
@@ -40,7 +35,7 @@ local widgets = {
   enemy = EnemyView.new(),
   inventory = InventoryView.new(),
   quest = QuestView.new(),
-  killList = KillListView.new(killList),
+  killList = KillListView.new(),
   log = LogView.new(),
   command = CommandView.new(),
 }
@@ -69,11 +64,11 @@ local interactive = arg and arg[1] == "-i"
 local script = {
   "n", "a", "a", -- 슬라임 처치 (처치 목록 & 퀘스트에 반영)
   "n", -- 회복 물약 획득
-  "n", "i", "1", "a", "a", "a", "a", -- 고블린 (전투 중 물약 사용 -> "아이템 2번 사용" 진행)
-  "n", "i", "1", -- 철검 장착 ("아이템 2번 사용" 퀘스트 완료!)
-  "n", "x", "a", "a", "a", "a", -- 오크 처치 (골드 15 이상 달성 -> "★ 업적 달성" 로그 출력!)
+  "n", "i", "1", "a", "a", "a", "a", -- 고블린 (전투 중 물약 사용 -> "아이템 2번 사용" 1/2)
+  "n", "i", "1", -- 철검 장착 ("아이템 2번 사용" 2/2 완료!)
+  "n", "x", "a", "a", "a", "a", -- 오크 처치 (처치 골드 누적 18 >= 15 -> 업적 달성!)
   "n", "r", -- 박쥐 떼에게서 도망
-  "n", "b", "e", -- 상점 진입 -> 물약 구매 -> 상점 나가기
+  "n", "b", "l", -- 상점 진입 -> 물약 구매(b) -> 상점 나가기(l)
   "n", -- 출구
   "q",
 }

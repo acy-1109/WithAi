@@ -18,6 +18,8 @@ local InventoryModel = require("models.inventory_model")
 local DungeonModel = require("models.dungeon_model")
 local QuestModel = require("models.quest_model")
 local LogModel = require("models.log_model")
+local KillListModel = require("models.kill_list_model")
+local AchievementModel = require("models.achievement_model")
 
 local GameModel = {}
 GameModel.__index = GameModel
@@ -28,12 +30,24 @@ function GameModel.new(data)
   self.bus = EventBus.new()
   self.log = LogModel.new(self.bus, data.logLimit)
   self.quests = QuestModel.new(self.bus, data.quests)
+  self.killList = KillListModel.new(self.bus)
+  self.achievements = AchievementModel.new(self.bus)
   self.player = PlayerModel.new(data.player)
   self.inventory = InventoryModel.new(data.inventoryCapacity)
   self.dungeon = DungeonModel.new(data.rooms)
   self.enemy = nil
   self.mode = "explore"
   self.returnMode = nil
+
+  -- 기존 explore() 메서드를 수정하지 않고 생성자에서 방 진입 이벤트를 구독해 상점 모드로 전환
+  self.bus:on("room_entered", function(d)
+    local room = self.dungeon.rooms[d and d.index]
+    if room and room.kind == "shop" then
+      self.mode = "shop"
+      self.bus:emit("shop_entered", { price = 5 })
+    end
+  end)
+
   return self
 end
 
@@ -72,10 +86,6 @@ function GameModel:explore()
     else
       self.bus:emit("item_lost", { name = room.item.name, reason = reason })
     end
-  elseif room.kind == "shop" then
-    self.mode = "shop"
-    self.bus:emit("shop_entered", {})
-    self.bus:emit("log_added", { text = "상점에 들어왔습니다. (물약 1개 = 5골드)" })
   elseif room.kind == "exit" then
     self.mode = "victory"
     self.bus:emit("dungeon_cleared", { gold = self.player.gold })
@@ -179,34 +189,37 @@ function GameModel:useItem(index)
   return true
 end
 
--- ── 과제 4: 상점 기능 ───────────────────────────────────────────────────────
+-- ── 과제 4: 상점 기능 (새 메서드 추가) ─────────────────────────────────────
 function GameModel:buyPotion()
   local ok, err = requireMode(self, "shop")
   if not ok then
     return false, err
   end
-  if self.player.gold < 5 then
-    return false, "골드가 부족합니다! (필요: 5골드, 보유: " .. self.player.gold .. "골드)"
+  local price = 5
+  if self.player.gold < price then
+    return false, "골드가 부족합니다"
   end
-  local potion = { name = "상점 물약", kind = "potion", power = 10 }
+  local potion = { name = "회복 물약", kind = "potion", power = 10 }
   local added, reason = self.inventory:add(potion)
   if not added then
-    return false, "가방이 꽉 찼습니다: " .. reason
+    return false, reason
   end
 
-  self.player.gold = self.player.gold - 5
-  self.bus:emit("log_added", { text = "물약을 5골드에 구매했습니다! (남은 골드: " .. self.player.gold .. "G)" })
+  self.player:addGold(-price)
+  self.bus:emit("item_bought", { name = potion.name, price = price, gold = self.player.gold })
   return true
 end
 
-function GameModel:exitShop()
+function GameModel:leaveShop()
   local ok, err = requireMode(self, "shop")
   if not ok then
     return false, err
   end
   self.mode = "explore"
-  self.bus:emit("log_added", { text = "상점에서 나왔습니다." })
+  self.bus:emit("shop_left", {})
   return true
 end
+
+GameModel.exitShop = GameModel.leaveShop
 
 return GameModel

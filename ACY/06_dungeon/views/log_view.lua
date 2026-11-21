@@ -42,11 +42,20 @@ local FORMAT = {
   dungeon_cleared = function(d)
     return string.format("출구를 찾았다! 총 골드 %d", d.gold)
   end,
-  log_added = function(d)
-    return d.text
+  achievement_unlocked = function(d)
+    return "★ 업적 달성: " .. d.text
   end,
   shop_entered = function(d)
-    return "상점에 들어왔습니다. (물약 1개 = 5골드)"
+    return string.format("상점에 들어섰다. (물약 1개 = %d골드)", (d and d.price) or 5)
+  end,
+  item_bought = function(d)
+    return string.format("%s 구매! (-%d골드, 잔여 %d골드)", d.name, d.price, d.gold)
+  end,
+  shop_left = function()
+    return "상점을 나섰다."
+  end,
+  log_added = function(d)
+    return d.text
   end,
 }
 
