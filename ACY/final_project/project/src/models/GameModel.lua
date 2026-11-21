@@ -72,14 +72,14 @@ function GameModel:spawnFormation()
     local wave = self.waves[self.waveIndex]
     for i = 1, #wave.enemies do
       local spec = wave.enemies[i]
-      self.enemies[#self.enemies + 1] = EnemyModel(spec.x, spec.y, spec.kind)
+      self.enemies[#self.enemies + 1] = EnemyModel.create(spec.kind, spec.x, spec.y)
     end
     return
   end
 
   for row = 0, 3 do
     for col = 0, 7 do
-      self.enemies[#self.enemies + 1] = EnemyModel(60 + col * 60, 60 + row * 50)
+      self.enemies[#self.enemies + 1] = EnemyModel.create("grunt", 60 + col * 60, 60 + row * 50)
     end
   end
 end
@@ -206,8 +206,9 @@ function GameModel:_updateEnemyFire(dt)
     return
   end
   local e = alive[self.rng:range(#alive)]
+  local bulletSpeed = ENEMY_BULLET_SPEED * (e.bulletSpeedMul or 1)
   self.enemyBullets[#self.enemyBullets + 1] =
-    BulletModel(e:centerX() - 2, e.y + e.h, 0, ENEMY_BULLET_SPEED, 4, 12, "enemy")
+    BulletModel(e:centerX() - 2, e.y + e.h, 0, bulletSpeed, 4, 12, "enemy")
 end
 
 -- 모든 단계에 공통인 충돌. 단계 고유 충돌(보스)은 phase:resolveCollisions 가 맡는다.
@@ -217,9 +218,11 @@ function GameModel:_resolveCollisions()
     local b = self.bullets[bi]
     for _, e in ipairs(self.enemies) do
       if e.alive and overlaps(b, e) then
-        e.alive = false
-        self.score = self.score + 100
-        self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+        local stillAlive = e:takeDamage(1)
+        if not stillAlive then
+          self.score = self.score + (e.score or 100)
+          self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+        end
         table.remove(self.bullets, bi)
         break
       end
