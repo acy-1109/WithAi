@@ -10,6 +10,7 @@ local EnemyModel = require("EnemyModel")
 local BulletModel = require("BulletModel")
 local homing = require("homing")
 local FormationPhase = require("FormationPhase")
+local WaveParser = require("WaveParser")
 
 local GameModel = class()
 
@@ -30,12 +31,13 @@ local function overlaps(a, b)
   return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
 end
 
---- @param opts table  { width=number, height=number, seed=number }
+--- @param opts table  { width=number, height=number, seed=number, wavesText=string|nil }
 function GameModel:init(opts)
   opts = opts or {}
   self.width = opts.width or 600
   self.height = opts.height or 800
   self.rng = Rng(opts.seed or 1)
+  self.waves = opts.wavesText and WaveParser.parse(opts.wavesText) or nil
   self:reset()
 end
 
@@ -52,6 +54,7 @@ function GameModel:reset()
   self.missileCooldown = 0
   self.boss = nil -- BossPhase 가 채운다 (View 가 읽는다)
   self.events = {} -- 스텝마다 쌓이고, 소비자(View)가 drainEvents() 로 비운다
+  self.waveIndex = 0
   self:spawnFormation()
   self.phase = nil
   self:changePhase(FormationPhase())
@@ -64,6 +67,16 @@ function GameModel:changePhase(phase)
 end
 
 function GameModel:spawnFormation()
+  if self.waves and #self.waves > 0 then
+    self.waveIndex = (self.waveIndex % #self.waves) + 1
+    local wave = self.waves[self.waveIndex]
+    for i = 1, #wave.enemies do
+      local spec = wave.enemies[i]
+      self.enemies[#self.enemies + 1] = EnemyModel(spec.x, spec.y, spec.kind)
+    end
+    return
+  end
+
   for row = 0, 3 do
     for col = 0, 7 do
       self.enemies[#self.enemies + 1] = EnemyModel(60 + col * 60, 60 + row * 50)

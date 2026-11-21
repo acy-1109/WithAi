@@ -15,7 +15,12 @@ local MAX_FRAME_DT = 0.25
 function PlayScene:init(ctx)
   self.ctx = ctx
   self.acc = 0
-  self.game = GameModel({ width = ctx.width, height = ctx.height, seed = ctx.seed() })
+  self.game = GameModel({
+    width = ctx.width,
+    height = ctx.height,
+    seed = ctx.seed(),
+    wavesText = ctx.wavesText,
+  })
   self.view = GameView({ width = ctx.width, height = ctx.height, rand = ctx.rand })
   self.controller = InputController(ctx.isDown)
 end

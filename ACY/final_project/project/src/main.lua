@@ -20,6 +20,8 @@ end
 function love.load()
   love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
 
+  local wavesText = love.filesystem.read("waves.txt")
+
   -- 씬끼리 서로 require 하면 순환이 생긴다(Title→Play→Result→Title). 목록을 여기서 한 번 주입한다.
   local ctx = {
     width = 600,
@@ -28,6 +30,7 @@ function love.load()
     seed = newSeed,
     quit = love.event.quit,
     difficulty = "normal",
+    wavesText = wavesText,
     scenes = {
       Title = require("TitleScene"),
       Difficulty = require("DifficultyScene"),

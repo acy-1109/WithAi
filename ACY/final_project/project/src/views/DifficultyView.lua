@@ -4,9 +4,9 @@
 local DifficultyView = {}
 
 local LABELS = {
-  easy = "1. EASY   (느린 탄환 / 여유로운 적)",
-  normal = "2. NORMAL (기본 밸런스)",
-  hard = "3. HARD   (빠른 탄환 / 공격적인 적)",
+  easy = "1. EASY   (Slow bullets / Relaxed enemies)",
+  normal = "2. NORMAL (Standard balance)",
+  hard = "3. HARD   (Fast bullets / Aggressive enemies)",
 }
 
 function DifficultyView.draw(gfx, width, height, options, selected)
