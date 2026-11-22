@@ -6,27 +6,27 @@ local BulletView = {}
 local PLAYER_COLOR = { 1, 1, 0.3 }
 local MISSILE_COLOR = { 0.4, 1, 0.6 }
 local ENEMY_COLOR = { 1, 0.6, 0.2 }
+local SNIPER_ENEMY_COLOR = { 0.85, 0.5, 1.0 }
 
-local function drawAll(gfx, list)
+local KIND_COLORS = {
+  missile = MISSILE_COLOR,
+  enemy_sniper = SNIPER_ENEMY_COLOR,
+}
+
+local function drawAll(gfx, list, defaultColor)
   for i = 1, #list do
     local b = list[i]
-    if b.kind == "missile" then
-      gfx.setColor(MISSILE_COLOR[1], MISSILE_COLOR[2], MISSILE_COLOR[3])
-      gfx.rectangle("fill", b.x, b.y, b.w, b.h)
-      gfx.setColor(PLAYER_COLOR[1], PLAYER_COLOR[2], PLAYER_COLOR[3])
-    else
-      gfx.rectangle("fill", b.x, b.y, b.w, b.h)
-    end
+    local c = KIND_COLORS[b.kind] or defaultColor
+    gfx.setColor(c[1], c[2], c[3])
+    gfx.rectangle("fill", b.x, b.y, b.w, b.h)
   end
 end
 
 --- @param bullets      table  플레이어 BulletModel 배열 (읽기 전용)
 --- @param enemyBullets table  적 BulletModel 배열 (읽기 전용)
 function BulletView.draw(gfx, bullets, enemyBullets)
-  gfx.setColor(PLAYER_COLOR[1], PLAYER_COLOR[2], PLAYER_COLOR[3])
-  drawAll(gfx, bullets)
-  gfx.setColor(ENEMY_COLOR[1], ENEMY_COLOR[2], ENEMY_COLOR[3])
-  drawAll(gfx, enemyBullets)
+  drawAll(gfx, bullets, PLAYER_COLOR)
+  drawAll(gfx, enemyBullets, ENEMY_COLOR)
 end
 
 return BulletView

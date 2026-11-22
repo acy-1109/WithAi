@@ -292,6 +292,7 @@ function SniperFireState.enter(e, ctx)
       vy = speed
     end
     ctx.spawnEnemyBullet(sx, sy, vx, vy, 6, 12, {
+      kind = "enemy_sniper",
       splitAfter = SNIPER_SPLIT_AFTER,
       splitSpread = SNIPER_SPLIT_SPREAD,
     })

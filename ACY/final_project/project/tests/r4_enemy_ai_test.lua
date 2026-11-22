@@ -8,6 +8,7 @@ h.setup(app)
 
 local EnemyModel = require("EnemyModel")
 local GameModel = require("GameModel")
+local EffectsView = require("EffectsView")
 local Rng = require("rng")
 
 local function stepFrames(e, dt, frames, ctx)
@@ -154,14 +155,23 @@ h.test("R4: SniperEnemy wait -> aim -> fire -> wait 전이 및 조준 3갈래 �
   local sawReturnWait = false
   local sawSingleAimedBullet = false
   local sawSplitThreeBullets = false
+  local sawSplitEvent = false
+  local fx = EffectsView(function() return 0.5 end)
 
   for _ = 1, 360 do
     g:update(1 / 60, { move = 0, fire = false })
+    local evts = g:drainEvents()
+    for i = 1, #evts do
+      if evts[i].type == "bullet_split" then
+        sawSplitEvent = true
+        fx:onEvent(evts[i])
+      end
+    end
     if s.aiState == "aim" then
       sawAim = true
     elseif s.aiState == "fire" then
       sawFire = true
-      if #g.enemyBullets == 1 and g.enemyBullets[1].vx > 0 then
+      if #g.enemyBullets == 1 and g.enemyBullets[1].vx > 0 and g.enemyBullets[1].kind == "enemy_sniper" then
         sawSingleAimedBullet = true
       end
     elseif sawFire and s.aiState == "wait" then
@@ -169,7 +179,8 @@ h.test("R4: SniperEnemy wait -> aim -> fire -> wait 전이 및 조준 3갈래 �
     end
     if #g.enemyBullets == 3 then
       local b1, b2, b3 = g.enemyBullets[1], g.enemyBullets[2], g.enemyBullets[3]
-      if b1.vx ~= b2.vx and b2.vx ~= b3.vx and b1.vx ~= b3.vx then
+      if b1.vx ~= b2.vx and b2.vx ~= b3.vx and b1.vx ~= b3.vx
+        and b1.kind == "enemy_sniper" and b2.kind == "enemy_sniper" and b3.kind == "enemy_sniper" then
         sawSplitThreeBullets = true
         break
       end
@@ -178,6 +189,7 @@ h.test("R4: SniperEnemy wait -> aim -> fire -> wait 전이 및 조준 3갈래 �
 
   return sawWait and sawAim and sawFire and sawReturnWait
     and sawSingleAimedBullet and sawSplitThreeBullets
+    and sawSplitEvent and #fx.particles == 4
 end)
 
 h.test("R4: 동일 시드 2회 실행 시 적 AI 상태·위치·결과가 완전히 동일하다", function()

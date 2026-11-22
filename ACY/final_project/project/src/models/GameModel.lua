@@ -101,6 +101,7 @@ end
 -- 이벤트 계약 (GameModel → View):
 --   { type = "fire" }
 --   { type = "enemy_destroyed", x = number, y = number }
+--   { type = "bullet_split", x = number, y = number }
 --   { type = "player_hit" }
 --   { type = "game_over" }
 --   { type = "formation_cleared" }
@@ -155,7 +156,7 @@ function GameModel:update(dt, input)
     height = self.height,
     spawnEnemyBullet = function(x, y, vx, vy, w, h, opts)
       self.enemyBullets[#self.enemyBullets + 1] =
-        BulletModel(x, y, vx, vy, w or 4, h or 12, "enemy", opts)
+        BulletModel(x, y, vx, vy, w or 4, h or 12, (opts and opts.kind) or "enemy", opts)
     end,
   }
   for _, e in ipairs(self.enemies) do
@@ -171,6 +172,7 @@ function GameModel:update(dt, input)
     local b = self.enemyBullets[i]
     b:update(dt)
     if b:shouldSplit() then
+      self:_emit({ type = "bullet_split", x = b.x + b.w * 0.5, y = b.y + b.h * 0.5 })
       local children = b:spawnSplitBullets()
       table.remove(self.enemyBullets, i)
       for j = 1, #children do

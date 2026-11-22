@@ -24,12 +24,28 @@ function EffectsView:init(rand)
   self.ox, self.oy = 0, 0
 end
 
-function EffectsView:_burst(x, y)
-  for _ = 1, BURST do
+local DEFAULT_COLOR = { 1, 0.8, 0.2 }
+local SPLIT_COLOR = { 0.85, 0.5, 1.0 }
+
+function EffectsView:_burst(x, y, count, life, minSpeed, speedRange, color, size)
+  local n = count or BURST
+  local pLife = life or PARTICLE_LIFE
+  local sMin = minSpeed or 40
+  local sRange = speedRange or 120
+  local c = color or DEFAULT_COLOR
+  local pSize = size or 3
+  for _ = 1, n do
     local a = self.rand() * math.pi * 2
-    local s = 40 + self.rand() * 120
-    self.particles[#self.particles + 1] =
-      { x = x, y = y, vx = math.cos(a) * s, vy = math.sin(a) * s, life = PARTICLE_LIFE }
+    local s = sMin + self.rand() * sRange
+    self.particles[#self.particles + 1] = {
+      x = x,
+      y = y,
+      vx = math.cos(a) * s,
+      vy = math.sin(a) * s,
+      life = pLife,
+      color = c,
+      size = pSize,
+    }
   end
 end
 
@@ -38,6 +54,8 @@ function EffectsView:onEvent(ev)
   if ev.type == "enemy_destroyed" then
     self:_burst(ev.x, ev.y)
     self.flash = FLASH_TIME
+  elseif ev.type == "bullet_split" then
+    self:_burst(ev.x, ev.y, 4, 0.16, 30, 45, SPLIT_COLOR, 2)
   elseif ev.type == "player_hit" then
     self.shake = SHAKE_TIME
   elseif ev.type == "formation_cleared" then
@@ -81,10 +99,12 @@ function EffectsView:drawFlash(gfx, width, height)
 end
 
 function EffectsView:drawParticles(gfx)
-  gfx.setColor(1, 0.8, 0.2)
   for i = 1, #self.particles do
     local p = self.particles[i]
-    gfx.rectangle("fill", p.x, p.y, 3, 3)
+    local c = p.color or DEFAULT_COLOR
+    local sz = p.size or 3
+    gfx.setColor(c[1], c[2], c[3])
+    gfx.rectangle("fill", p.x, p.y, sz, sz)
   end
 end
 
