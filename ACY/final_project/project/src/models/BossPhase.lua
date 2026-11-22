@@ -25,7 +25,7 @@ end
 function BossPhase:update(game, dt)
   local boss = game.boss
   if boss and boss.alive then
-    boss:update(dt, game.width, game.enemyBullets)
+    boss:update(dt, game.width, game.enemyBullets, game.player)
   end
 end
 
@@ -39,7 +39,12 @@ function BossPhase:resolveCollisions(game)
     if overlaps(b, boss) then
       table.remove(game.bullets, bi)
       game:_emit({ type = "boss_hit", x = b.x, y = b.y })
-      if boss:takeDamage(1) then
+      local killed = boss:takeDamage(1)
+      if boss.justEnraged then
+        boss.justEnraged = false
+        game:_emit({ type = "boss_enraged", x = boss:centerX(), y = boss:centerY() })
+      end
+      if killed then
         game.score = game.score + BOSS_REWARD
         game.state = "won"
         game:_emit({ type = "boss_destroyed", x = boss:centerX(), y = boss:centerY() })

@@ -8,7 +8,11 @@ function BossView.draw(gfx, boss, width)
   if not (boss and boss.alive) then
     return
   end
-  gfx.setColor(0.9, 0.3, 0.9)
+  if boss.enraged then
+    gfx.setColor(1.0, 0.25, 0.25)
+  else
+    gfx.setColor(0.9, 0.3, 0.9)
+  end
   gfx.rectangle("fill", boss.x, boss.y, boss.w, boss.h)
 
   local barW = width - 200

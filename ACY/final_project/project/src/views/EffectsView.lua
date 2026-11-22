@@ -56,6 +56,10 @@ function EffectsView:onEvent(ev)
     self.flash = FLASH_TIME
   elseif ev.type == "bullet_split" then
     self:_burst(ev.x, ev.y, 4, 0.16, 30, 45, SPLIT_COLOR, 2)
+  elseif ev.type == "boss_enraged" then
+    self.shake = SHAKE_TIME
+    self.flash = FLASH_TIME
+    self:_burst(ev.x, ev.y, 12, 0.4, 60, 140, { 1.0, 0.25, 0.25 }, 4)
   elseif ev.type == "player_hit" then
     self.shake = SHAKE_TIME
   elseif ev.type == "formation_cleared" then
