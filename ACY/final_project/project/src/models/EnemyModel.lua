@@ -54,6 +54,19 @@ function EnemyModel:isA(targetClass)
   return false
 end
 
+function EnemyModel:inFormation()
+  return true
+end
+
+function EnemyModel:shiftHome(dx, dy)
+end
+
+function EnemyModel:updateAI(dt, ctx)
+end
+
+function EnemyModel:onPlayerCollision(ctx)
+end
+
 --- 기본 편대 적 ("grunt")
 local GruntEnemy = class(EnemyModel)
 
@@ -75,7 +88,93 @@ function TankEnemy:init(x, y)
   self.fireCooldownMul = 1.2
 end
 
---- 돌진하는 적 ("sprinter")
+local CHARGE_SPEED = 320
+local RETURN_SPEED = 220
+local CHARGE_MAX_TIME = 5.0
+local CHARGE_CHANCE = 0.7
+
+local WaitState, ChargeState, ReturnState
+
+WaitState = { name = "wait" }
+ChargeState = { name = "charge" }
+ReturnState = { name = "return" }
+
+function WaitState.enter(e, ctx)
+  e.vx = 0
+  e.vy = 0
+  if ctx and ctx.rng then
+    e.waitTimer = 1.2 + ctx.rng:nextFloat() * 1.5
+  else
+    e.waitTimer = nil
+  end
+end
+
+function WaitState.update(e, dt, ctx)
+  if e.waitTimer == nil then
+    e.waitTimer = 1.2 + ctx.rng:nextFloat() * 1.5
+  end
+  e.waitTimer = e.waitTimer - dt
+  if e.waitTimer <= 0 then
+    if ctx.rng:nextFloat() < CHARGE_CHANCE then
+      e:changeAIState(ChargeState, ctx)
+    else
+      e.waitTimer = 0.6
+    end
+  end
+end
+
+function ChargeState.enter(e, ctx)
+  e.homeX = e.x
+  e.homeY = e.y
+  e.chargeTimer = 0
+  local p = ctx.player
+  local tx = p and (p.centerX and p:centerX() or (p.x + (p.w or 0) * 0.5)) or e:centerX()
+  local ty = p and (p.centerY and p:centerY() or (p.y + (p.h or 0) * 0.5)) or (ctx.height or 800)
+  local dx = tx - e:centerX()
+  local dy = ty - e:centerY()
+  local dist = math.sqrt(dx * dx + dy * dy)
+  if dist > 0 then
+    e.vx = (dx / dist) * CHARGE_SPEED
+    e.vy = (dy / dist) * CHARGE_SPEED
+  else
+    e.vx = 0
+    e.vy = CHARGE_SPEED
+  end
+end
+
+function ChargeState.update(e, dt, ctx)
+  e.chargeTimer = e.chargeTimer + dt
+  e.x = e.x + e.vx * dt
+  e.y = e.y + e.vy * dt
+  local limitY = ctx.height or 800
+  if e.y > limitY or e.chargeTimer >= CHARGE_MAX_TIME then
+    e:changeAIState(ReturnState, ctx)
+  end
+end
+
+function ReturnState.enter(e)
+  e.vx = 0
+  e.vy = 0
+  e.x = e.homeX
+  e.y = -e.h
+end
+
+function ReturnState.update(e, dt, ctx)
+  local dx = e.homeX - e.x
+  local dy = e.homeY - e.y
+  local dist = math.sqrt(dx * dx + dy * dy)
+  local step = RETURN_SPEED * dt
+  if dist <= step or dist <= 1e-6 then
+    e.x = e.homeX
+    e.y = e.homeY
+    e:changeAIState(WaitState, ctx)
+  else
+    e.x = e.x + (dx / dist) * step
+    e.y = e.y + (dy / dist) * step
+  end
+end
+
+--- 돌진하는 근접형 적 ("sprinter") — State 패턴 FSM(wait -> charge -> return)
 local SprinterEnemy = class(EnemyModel)
 
 function SprinterEnemy:init(x, y)
@@ -83,6 +182,47 @@ function SprinterEnemy:init(x, y)
   self.kind = "sprinter"
   self.score = 150
   self.speedMul = 1.8
+  self.homeX = x
+  self.homeY = y
+  self.aiState = WaitState.name
+  self.stateObj = WaitState
+  self.waitTimer = nil
+  self.chargeTimer = 0
+  self.vx = 0
+  self.vy = 0
+end
+
+function SprinterEnemy:inFormation()
+  return self.aiState == "wait"
+end
+
+function SprinterEnemy:shiftHome(dx, dy)
+  self.homeX = self.homeX + dx
+  self.homeY = self.homeY + dy
+end
+
+function SprinterEnemy:changeAIState(nextState, ctx)
+  if self.stateObj and self.stateObj.exit then
+    self.stateObj.exit(self, ctx)
+  end
+  self.stateObj = nextState
+  self.aiState = nextState.name
+  if nextState.enter then
+    nextState.enter(self, ctx)
+  end
+end
+
+function SprinterEnemy:updateAI(dt, ctx)
+  if not self.alive then
+    return
+  end
+  self.stateObj.update(self, dt, ctx)
+end
+
+function SprinterEnemy:onPlayerCollision(ctx)
+  if self.aiState == "charge" then
+    self:changeAIState(ReturnState, ctx)
+  end
 end
 
 --- 원거리 특화 적 ("sniper")

@@ -148,6 +148,17 @@ function GameModel:update(dt, input)
   end
 
   self:_updateFormation(dt)
+  local aiCtx = {
+    rng = self.rng,
+    player = self.player,
+    width = self.width,
+    height = self.height,
+  }
+  for _, e in ipairs(self.enemies) do
+    if e.alive then
+      e:updateAI(dt, aiCtx)
+    end
+  end
   self:_updateEnemyFire(dt)
   self.phase:update(self, dt)
 
@@ -168,7 +179,7 @@ end
 function GameModel:_updateFormation(dt)
   local minx, maxx = math.huge, -math.huge
   for _, e in ipairs(self.enemies) do
-    if e.alive then
+    if e.alive and e:inFormation() then
       minx = math.min(minx, e.x)
       maxx = math.max(maxx, e.x + e.w)
     end
@@ -180,11 +191,19 @@ function GameModel:_updateFormation(dt)
   if maxx + dx > self.width - 10 or minx + dx < 10 then
     self.formationDir = -self.formationDir
     for _, e in ipairs(self.enemies) do
-      e.y = e.y + FORMATION_DESCEND
+      if e:inFormation() then
+        e.y = e.y + FORMATION_DESCEND
+      else
+        e:shiftHome(0, FORMATION_DESCEND)
+      end
     end
   else
     for _, e in ipairs(self.enemies) do
-      e.x = e.x + dx
+      if e:inFormation() then
+        e.x = e.x + dx
+      else
+        e:shiftHome(dx, 0)
+      end
     end
   end
 end
@@ -224,6 +243,26 @@ function GameModel:_resolveCollisions()
           self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
         end
         table.remove(self.bullets, bi)
+        break
+      end
+    end
+  end
+
+  -- 적(돌진 중) × 플레이어 몸통 충돌: 플레이어 피격 후 적은 소멸하지 않고 복귀
+  local aiCtx = {
+    rng = self.rng,
+    player = self.player,
+    width = self.width,
+    height = self.height,
+  }
+  for _, e in ipairs(self.enemies) do
+    if e.alive and e.aiState == "charge" and overlaps(e, self.player) then
+      self.lives = self.lives - 1
+      self:_emit({ type = "player_hit" })
+      e:onPlayerCollision(aiCtx)
+      if self.lives <= 0 then
+        self.state = "gameover"
+        self:_emit({ type = "game_over" })
         break
       end
     end
