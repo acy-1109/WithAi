@@ -1,0 +1,195 @@
+﻿aaa553f (HEAD -> main, origin/main, origin/HEAD) Sniper 트리플 샷 구현
+ .../project/src/models/EnemyModel.lua              |  1 +
+ ACY/final_project/project/src/models/GameModel.lua |  4 ++-
+ ACY/final_project/project/src/views/BulletView.lua | 24 +++++++--------
+ .../project/src/views/EffectsView.lua              | 34 +++++++++++++++++-----
+ .../project/tests/r4_enemy_ai_test.lua             | 16 ++++++++--
+ 5 files changed, 57 insertions(+), 22 deletions(-)
+8b3c3e4 R4 SniperEnemy FSM(wait->aim->fire) 및 3갈래 분열탄 구현
+ .../project/src/models/BulletModel.lua             |  37 ++++++-
+ .../project/src/models/EnemyModel.lua              | 107 ++++++++++++++++++++-
+ ACY/final_project/project/src/models/GameModel.lua |  16 ++-
+ .../project/tests/r4_enemy_ai_test.lua             |  48 ++++++++-
+ 4 files changed, 201 insertions(+), 7 deletions(-)
+bd098c7 R4 SprinterEnemy FSM(wait->charge->return) 구현
+ .../project/src/models/EnemyModel.lua              | 142 +++++++++++++++++-
+ ACY/final_project/project/src/models/GameModel.lua |  45 +++++-
+ .../project/tests/r4_enemy_ai_test.lua             | 163 +++++++++++++++++++++
+ 3 files changed, 346 insertions(+), 4 deletions(-)
+e4cc1d8 R3 적 종류 구현
+ .../project/src/models/EnemyModel.lua              | 97 +++++++++++++++++++++-
+ ACY/final_project/project/src/models/GameModel.lua | 15 ++--
+ ACY/final_project/project/src/views/EnemyView.lua  | 20 ++++-
+ ACY/final_project/project/src/waves.txt            | 47 +++++------
+ .../project/tests/r3_enemy_factory_test.lua        | 95 +++++++++++++++++++++
+ .../worklogs/001_2026-11-21_session.md             | 38 +++++++--
+ 6 files changed, 268 insertions(+), 44 deletions(-)
+ba2a274 R2 웨이브파서 구현
+ ACY/final_project/docs/waves_format.md             | 36 ++++++--
+ ACY/final_project/project/src/main.lua             |  3 +
+ ACY/final_project/project/src/models/GameModel.lua | 15 +++-
+ .../project/src/models/WaveParser.lua              | 98 ++++++++++++++++++++++
+ ACY/final_project/project/src/scenes/PlayScene.lua |  7 +-
+ .../project/src/views/DifficultyView.lua           |  6 +-
+ ACY/final_project/project/src/waves.txt            | 43 ++++++++++
+ .../project/tests/r2_wave_parser_test.lua          | 72 ++++++++++++++++
+ .../worklogs/001_2026-11-21_session.md             | 51 +++++++++--
+ 9 files changed, 314 insertions(+), 17 deletions(-)
+9953a97 스킬 추가
+ .../.agents/skills/deterministic-ai-guard/SKILL.md | 26 +++++++++
+ ACY/final_project/project/src/main.lua             |  2 +
+ .../project/src/scenes/DifficultyScene.lua         | 48 ++++++++++++++++
+ .../project/src/scenes/TitleScene.lua              |  2 +
+ .../project/src/views/DifficultyView.lua           | 34 +++++++++++
+ ACY/final_project/project/src/views/TitleView.lua  |  2 +-
+ .../project/tests/r1_difficulty_scene_test.lua     | 53 +++++++++++++++++
+ .../worklogs/001_2026-11-21_session.md             | 66 +++++++++++++++++-----
+ 8 files changed, 219 insertions(+), 14 deletions(-)
+60d2484 기말과제 틀
+ .../.agents/agents/love2d-architect.md             |  25 ++
+ .../.agents/agents/love2d-feature-scaffold.md      |  23 ++
+ ACY/final_project/.agents/agents/lua-expert.md     |  26 +++
+ ACY/final_project/.agents/agents/lua-reviewer.md   |  31 +++
+ ACY/final_project/.agents/agents/planner.md        |  33 +++
+ ACY/final_project/.agents/agents/test-runner.md    |  28 +++
+ ACY/final_project/.agents/rules/lua-expert.md      |  14 ++
+ ACY/final_project/.agents/rules/lua-love2d.md      |  27 +++
+ ACY/final_project/.agents/rules/project-core.md    |  51 +++++
+ .../.agents/skills/game-ai-pattern-coach/SKILL.md  |  59 +++++
+ .../.agents/skills/headless-test-writer/SKILL.md   |  57 +++++
+ .../.agents/skills/love2d-architect/SKILL.md       |  29 +++
+ .../skills/love2d-feature-scaffold/SKILL.md        |  23 ++
+ .../.agents/skills/lua-expert/SKILL.md             |  24 ++
+ .../.agents/skills/lua51-guard/SKILL.md            |  62 +++++
+ .../.agents/skills/mvc-boundary/SKILL.md           |  39 ++++
+ .../.agents/skills/prompt-improver/SKILL.md        |  54 +++++
+ .../.agents/skills/worklog-writer/SKILL.md         |  54 +++++
+ ACY/final_project/.agents/workflows/end-session.md |  13 ++
+ .../.agents/workflows/prompt-expert.md             |  24 ++
+ .../.agents/workflows/start-session.md             |  13 ++
+ ACY/final_project/README.md                        |  28 +++
+ ...212\244\355\205\234\354\204\244\352\263\204.md" |  22 ++
+ ...235\270\352\263\265\354\247\200\353\212\245.md" |  31 +++
+ ACY/final_project/docs/waves_format.md             |   8 +
+ ACY/final_project/project/src/conf.lua             |  10 +
+ .../project/src/controllers/InputController.lua    |  51 +++++
+ ACY/final_project/project/src/main.lua             |  52 +++++
+ ACY/final_project/project/src/models/BossModel.lua |  69 ++++++
+ ACY/final_project/project/src/models/BossPhase.lua |  54 +++++
+ .../project/src/models/BulletModel.lua             |  38 +++
+ .../project/src/models/EnemyModel.lua              |  28 +++
+ .../project/src/models/FormationPhase.lua          |  43 ++++
+ ACY/final_project/project/src/models/GameModel.lua | 255 +++++++++++++++++++++
+ .../project/src/models/PlayerModel.lua             |  47 ++++
+ ACY/final_project/project/src/models/class.lua     |  25 ++
+ ACY/final_project/project/src/models/homing.lua    |  39 ++++
+ ACY/final_project/project/src/models/rng.lua       |  37 +++
+ .../project/src/scenes/PauseScene.lua              |  28 +++
+ ACY/final_project/project/src/scenes/PlayScene.lua |  57 +++++
+ .../project/src/scenes/ResultScene.lua             |  31 +++
+ .../project/src/scenes/SceneStack.lua              | 103 +++++++++
+ .../project/src/scenes/TitleScene.lua              |  27 +++
+ ACY/final_project/project/src/views/BossView.lua   |  21 ++
+ ACY/final_project/project/src/views/BulletView.lua |  32 +++
+ .../project/src/views/EffectsView.lua              |  98 ++++++++
+ ACY/final_project/project/src/views/EnemyView.lua  |  19 ++
+ ACY/final_project/project/src/views/GameView.lua   |  50 ++++
+ ACY/final_project/project/src/views/HudView.lua    |  14 ++
+ ACY/final_project/project/src/views/PauseView.lua  |  13 ++
+ ACY/final_project/project/src/views/PlayerView.lua |  15 ++
+ ACY/final_project/project/src/views/ResultView.lua |  19 ++
+ ACY/final_project/project/src/views/TitleView.lua  |  13 ++
+ ACY/final_project/project/tests/helper.lua         | 146 ++++++++++++
+ ACY/final_project/project/tests/layer_check.lua    |  90 ++++++++
+ ACY/final_project/project/tests/scene_test.lua     | 239 +++++++++++++++++++
+ ACY/final_project/run.bat                          |   9 +
+ ACY/final_project/run.sh                           |   5 +
+ .../worklogs/001_2026-11-21_session.md             |  17 ++
+ ACY/final_project/worklogs/999_retrospective.md    |  15 ++
+ 60 files changed, 2607 insertions(+)
+ec37515 메타테이블 과제
+ ACY/08_metatables/metatable_tasks.lua      | 135 +++++++++++++++++++++
+ ACY/08_metatables/metatable_tasks_test.lua | 185 +++++++++++++++++++++++++++++
+ 2 files changed, 320 insertions(+)
+b7b7f64 과제 제출
+ ACY/06_dungeon/REPORT.md                           | 181 ++++++++++
+ ACY/06_dungeon/controllers/shop_controller.lua     |  14 +-
+ ACY/06_dungeon/main.lua                            |  17 +-
+ ACY/06_dungeon/models/achievement_model.lua        |  37 +-
+ ACY/06_dungeon/models/game_model.lua               |  39 ++-
+ ACY/06_dungeon/skills/lua-expert-SKILL.md          |  18 +
+ ACY/06_dungeon/test/dungeon_test.lua               | 125 ++++++-
+ ACY/06_dungeon/tests/dungeon_test.lua              | 374 +++++++++++++++++++++
+ ACY/06_dungeon/views/command_view.lua              |   2 +-
+ ACY/06_dungeon/views/log_view.lua                  |  15 +-
+ ...54\270\354\240\234_\354\240\225\353\213\265.md" |  91 +++++
+ ...54\354\230\201_MVC\355\200\264\354\246\210.zip" | Bin 0 -> 38962 bytes
+ 12 files changed, 866 insertions(+), 47 deletions(-)
+d7dfa28 week04
+ ACY/week04/starter/conf.lua                        |  10 +
+ ACY/week04/starter/controllers/InputController.lua |  70 +++++++
+ ACY/week04/starter/main.lua                        |  54 ++++++
+ ACY/week04/starter/models/BulletModel.lua          |  38 ++++
+ ACY/week04/starter/models/EnemyModel.lua           |  28 +++
+ ACY/week04/starter/models/GameModel.lua            | 211 +++++++++++++++++++++
+ ACY/week04/starter/models/PlayerModel.lua          |  47 +++++
+ ACY/week04/starter/models/class.lua                |  25 +++
+ ACY/week04/starter/models/rng.lua                  |  37 ++++
+ ACY/week04/starter/views/BulletView.lua            |  25 +++
+ ACY/week04/starter/views/EffectsView.lua           | 104 ++++++++++
+ ACY/week04/starter/views/EnemyView.lua             |  21 ++
+ ACY/week04/starter/views/GameView.lua              |  49 +++++
+ ACY/week04/starter/views/HudView.lua               |  19 ++
+ ACY/week04/starter/views/PlayerView.lua            |  15 ++
+ 15 files changed, 753 insertions(+)
+a3c8573 게임모델
+ ACY/Week03/starter/BossModel.lua   |  73 +++++++++
+ ACY/Week03/starter/BulletModel.lua |  62 +++++++
+ ACY/Week03/starter/EnemyModel.lua  |  28 ++++
+ ACY/Week03/starter/GameModel.lua   | 321 +++++++++++++++++++++++++++++++++++++
+ ACY/Week03/starter/PlayerModel.lua |  62 +++++++
+ ACY/Week03/starter/class.lua       |  25 +++
+ ACY/Week03/starter/conf.lua        |  11 ++
+ ACY/Week03/starter/main.lua        | 191 ++++++++++++++++++++++
+ ACY/Week03/starter/rng.lua         |  37 +++++
+ 9 files changed, 810 insertions(+)
+458a471 과제 작성
+ ACY/06_dungeon/test/dungeon_test.lua               | 255 +++++++++++++++++++++
+ ...4\225\210\354\260\254\354\230\2012025391016.md" |  44 ++++
+ 2 files changed, 299 insertions(+)
+af96325 던전 연습문제
+ ACY/06_dungeon/README.md                           | 147 ++++++++++++++
+ ACY/06_dungeon/controllers/battle_controller.lua   |  22 +++
+ ACY/06_dungeon/controllers/end_controller.lua      |  15 ++
+ ACY/06_dungeon/controllers/explore_controller.lua  |  20 ++
+ ACY/06_dungeon/controllers/input_router.lua        |  42 ++++
+ .../controllers/inventory_controller.lua           |  22 +++
+ ACY/06_dungeon/controllers/shop_controller.lua     |  22 +++
+ ACY/06_dungeon/data/dungeon_data.lua               |  27 +++
+ ACY/06_dungeon/main.lua                            | 102 ++++++++++
+ ACY/06_dungeon/models/achievement_model.lua        |  16 ++
+ ACY/06_dungeon/models/dungeon_model.lua            |  26 +++
+ ACY/06_dungeon/models/enemy_model.lua              |  26 +++
+ ACY/06_dungeon/models/event_bus.lua                |  42 ++++
+ ACY/06_dungeon/models/game_model.lua               | 212 +++++++++++++++++++++
+ ACY/06_dungeon/models/inventory_model.lua          |  33 ++++
+ ACY/06_dungeon/models/kill_list_model.lua          |  13 ++
+ ACY/06_dungeon/models/log_model.lua                |  25 +++
+ ACY/06_dungeon/models/player_model.lua             |  46 +++++
+ ACY/06_dungeon/models/quest_model.lua              |  42 ++++
+ ACY/06_dungeon/views/command_view.lua              |  24 +++
+ ACY/06_dungeon/views/enemy_view.lua                |  23 +++
+ ACY/06_dungeon/views/inventory_view.lua            |  34 ++++
+ ACY/06_dungeon/views/kill_list_view.lua            |  19 ++
+ ACY/06_dungeon/views/log_view.lua                  |  72 +++++++
+ ACY/06_dungeon/views/quest_view.lua                |  20 ++
+ ACY/06_dungeon/views/screen_view.lua               |  62 ++++++
+ ACY/06_dungeon/views/status_view.lua               |  22 +++
+ ACY/06_dungeon/views/widgets.lua                   |  14 ++
+ 28 files changed, 1190 insertions(+)
+3eb0588 중복 코드 정리
+ ACY/galaga/main.lua | 71 +++++++++++++++++++++++++----------------------------
+ 1 file changed, 34 insertions(+), 37 deletions(-)
+3de572f 처치했을때만 피격 이펙트 나오도록 수정
+ ACY/galaga/main.lua | 20 ++++----------------
+ 1 file changed, 4 insertions(+), 16 deletions(-)

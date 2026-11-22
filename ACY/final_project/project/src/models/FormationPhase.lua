@@ -13,14 +13,14 @@ local BossPhase = require("BossPhase")
 
 local FormationPhase = class()
 
-local BOSS_SCORE = 1000
+local BOSS_WAVE = 5
 
 FormationPhase.name = "formation"
 
 function FormationPhase:enter(game) end
 
 function FormationPhase:update(game, dt)
-  if game.score >= BOSS_SCORE then
+  if (game.wave or 1) >= BOSS_WAVE then
     local boss = BossPhase()
     game:changePhase(boss)
     boss:update(game, dt) -- 등장한 스텝에도 보스가 움직인다(4주차 동작 보존)

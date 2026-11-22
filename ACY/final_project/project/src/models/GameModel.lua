@@ -54,6 +54,7 @@ function GameModel:reset()
   self.missileCooldown = 0
   self.boss = nil -- BossPhase 가 채운다 (View 가 읽는다)
   self.events = {} -- 스텝마다 쌓이고, 소비자(View)가 drainEvents() 로 비운다
+  self.wave = 0
   self.waveIndex = 0
   self:spawnFormation()
   self.phase = nil
@@ -67,6 +68,7 @@ function GameModel:changePhase(phase)
 end
 
 function GameModel:spawnFormation()
+  self.wave = (self.wave or 0) + 1
   if self.waves and #self.waves > 0 then
     self.waveIndex = (self.waveIndex % #self.waves) + 1
     local wave = self.waves[self.waveIndex]

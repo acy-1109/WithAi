@@ -8,6 +8,7 @@ h.setup(app)
 
 local WaveParser = require("WaveParser")
 local GameModel = require("GameModel")
+local HudView = require("HudView")
 
 local function raises(fn, pattern)
   local ok, err = pcall(fn)
@@ -66,6 +67,54 @@ h.test("R2: GameModel 이 wavesText 를 파싱해 웨이브별 적을 생성한�
   g.phase:afterStep(g)
   local ok2 = (#g.enemies == 1 and g.enemies[1].x == 200 and g.enemies[1].y == 90)
   return ok1 and ok2
+end)
+
+h.test("웨이브: 1~4웨이브 동안 편대전 유지 후 5웨이브부터 보스전 전환 및 HUD WAVE 표시", function()
+  local text = "wave 1\nenemy grunt 100 100\nwave 2\nenemy tank 200 100\n"
+  local g = GameModel({ width = 600, height = 800, seed = 1, wavesText = text })
+
+  -- 초기 wave == 1, score가 높아도 5웨이브 전엔 보스 등장 안 함
+  g.score = 5000
+  g:update(1 / 60, { move = 0, fire = false })
+  if g.wave ~= 1 or g.phase.name ~= "formation" or g.boss ~= nil then
+    return false
+  end
+
+  -- 1~4웨이브 전멸을 거쳐 5웨이브 도달
+  for expectedWave = 2, 5 do
+    for _, e in ipairs(g.enemies) do
+      e.alive = false
+    end
+    g:update(1 / 60, { move = 0, fire = false })
+    if g.wave ~= expectedWave then
+      return false
+    end
+    if expectedWave < 5 and g.phase.name ~= "formation" then
+      return false
+    end
+  end
+
+  -- 5웨이브 업데이트 시 BossPhase 전환 확인
+  g:update(1 / 60, { move = 0, fire = false })
+  local okBoss = (g.phase.name == "boss" and g.boss ~= nil)
+
+  -- HudView 에 "WAVE 5" 표시 확인
+  local printed = {}
+  local fakeGfx = {
+    setColor = function() end,
+    print = function(msg) printed[#printed + 1] = tostring(msg) end,
+    printf = function(msg) printed[#printed + 1] = tostring(msg) end,
+  }
+  HudView.draw(fakeGfx, g, 600, 800)
+  local sawWaveHud = false
+  for i = 1, #printed do
+    if printed[i] == "WAVE 5" then
+      sawWaveHud = true
+      break
+    end
+  end
+
+  return okBoss and sawWaveHud
 end)
 
 h.finish()
