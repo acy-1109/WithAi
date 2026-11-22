@@ -216,4 +216,32 @@ h.test("R4: 동일 시드 2회 실행 시 적 AI 상태·위치·결과가 완�
   return true
 end)
 
+h.test("Tank: HP 3->2->1 감소 시 탄속·발사딜레이가 빨라져 HP 1에서 기본 적과 같아진다", function()
+  local grunt = EnemyModel.create("grunt", 0, 0)
+  local tank = EnemyModel.create("tank", 100, 100)
+
+  local ok3 = (tank.bulletSpeedMul == 0.45 and tank.fireCooldownMul == 2.0)
+  tank:takeDamage(1)
+  local ok2 = (tank.hp == 2 and tank.bulletSpeedMul == 0.72 and tank.fireCooldownMul == 1.5)
+  tank:takeDamage(1)
+  local ok1 = (tank.hp == 1
+    and tank.bulletSpeedMul == grunt.bulletSpeedMul
+    and tank.fireCooldownMul == grunt.fireCooldownMul)
+
+  -- GameModel:_updateEnemyFire 에서 fireCooldownMul 과 bulletSpeedMul 반영 확인
+  local g = GameModel({ width = 600, height = 800, seed = 1, wavesText = "wave 1\nenemy tank 100 100\n" })
+  g.enemyFireTimer = 0
+  g:_updateEnemyFire(0)
+  local slowTimer = g.enemyFireTimer
+  local slowVy = g.enemyBullets[1].vy
+
+  g.enemies[1]:takeDamage(2) -- HP 1
+  g.enemyFireTimer = 0
+  g:_updateEnemyFire(0)
+  local fastTimer = g.enemyFireTimer
+  local fastVy = g.enemyBullets[2].vy
+
+  return ok3 and ok2 and ok1 and slowTimer > fastTimer and slowVy < fastVy
+end)
+
 h.finish()

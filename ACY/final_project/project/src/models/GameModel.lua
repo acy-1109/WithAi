@@ -227,7 +227,6 @@ function GameModel:_updateEnemyFire(dt)
   if self.enemyFireTimer > 0 then
     return
   end
-  self.enemyFireTimer = ENEMY_FIRE_INTERVAL
 
   local alive = {}
   for _, e in ipairs(self.enemies) do
@@ -236,9 +235,11 @@ function GameModel:_updateEnemyFire(dt)
     end
   end
   if #alive == 0 then
+    self.enemyFireTimer = ENEMY_FIRE_INTERVAL
     return
   end
   local e = alive[self.rng:range(#alive)]
+  self.enemyFireTimer = ENEMY_FIRE_INTERVAL * (e.fireCooldownMul or 1)
   local bulletSpeed = ENEMY_BULLET_SPEED * (e.bulletSpeedMul or 1)
   self.enemyBullets[#self.enemyBullets + 1] =
     BulletModel(e:centerX() - 2, e.y + e.h, 0, bulletSpeed, 4, 12, "enemy")

@@ -75,7 +75,13 @@ function GruntEnemy:init(x, y)
   self.kind = "grunt"
 end
 
---- 고체력 적 ("tank")
+local TANK_STAGE_STATS = {
+  [3] = { bulletSpeedMul = 0.45, fireCooldownMul = 2.0 },
+  [2] = { bulletSpeedMul = 0.72, fireCooldownMul = 1.5 },
+  [1] = { bulletSpeedMul = 1.0, fireCooldownMul = 1.0 },
+}
+
+--- 고체력 적 ("tank") — HP가 깎일수록 탄속·발사딜레이가 기본 적(1.0)에 가까워진다
 local TankEnemy = class(EnemyModel)
 
 function TankEnemy:init(x, y)
@@ -85,7 +91,20 @@ function TankEnemy:init(x, y)
   self.maxHp = 3
   self.score = 300
   self.speedMul = 0.7
-  self.fireCooldownMul = 1.2
+  self:_syncCombatStats()
+end
+
+function TankEnemy:_syncCombatStats()
+  local key = self.hp >= 3 and 3 or (self.hp <= 1 and 1 or 2)
+  local st = TANK_STAGE_STATS[key]
+  self.bulletSpeedMul = st.bulletSpeedMul
+  self.fireCooldownMul = st.fireCooldownMul
+end
+
+function TankEnemy:takeDamage(amount)
+  local alive = EnemyModel.takeDamage(self, amount)
+  self:_syncCombatStats()
+  return alive
 end
 
 local CHARGE_SPEED = 320

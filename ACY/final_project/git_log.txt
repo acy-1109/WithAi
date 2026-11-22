@@ -1,4 +1,20 @@
-﻿aaa553f (HEAD -> main, origin/main, origin/HEAD) Sniper 트리플 샷 구현
+﻿1cea4d0 (HEAD -> main) 보스 FSM 구현
+ ACY/final_project/project/src/models/BossModel.lua | 141 ++++++++++++++++++---
+ ACY/final_project/project/src/models/BossPhase.lua |   9 +-
+ ACY/final_project/project/src/views/BossView.lua   |   6 +-
+ .../project/src/views/EffectsView.lua              |   4 +
+ ACY/final_project/project/tests/boss_fsm_test.lua  | 111 ++++++++++++++++
+ 5 files changed, 247 insertions(+), 24 deletions(-)
+df649f5 (origin/main, origin/HEAD) 문서 작성 및 웨이브 표시
+ ACY/final_project/git_log.txt                      | 195 +++++++++++++++++++++
+ .../project/src/models/FormationPhase.lua          |   4 +-
+ ACY/final_project/project/src/models/GameModel.lua |   2 +
+ ACY/final_project/project/src/views/HudView.lua    |   3 +-
+ .../project/tests/r2_wave_parser_test.lua          |  49 ++++++
+ .../worklogs/001_2026-11-21_session.md             |  10 +-
+ .../worklogs/002_2026-11-22_session.md             | 122 +++++++++++++
+ 7 files changed, 377 insertions(+), 8 deletions(-)
+aaa553f Sniper 트리플 샷 구현
  .../project/src/models/EnemyModel.lua              |  1 +
  ACY/final_project/project/src/models/GameModel.lua |  4 ++-
  ACY/final_project/project/src/views/BulletView.lua | 24 +++++++--------
@@ -187,9 +203,3 @@ af96325 던전 연습문제
  ACY/06_dungeon/views/status_view.lua               |  22 +++
  ACY/06_dungeon/views/widgets.lua                   |  14 ++
  28 files changed, 1190 insertions(+)
-3eb0588 중복 코드 정리
- ACY/galaga/main.lua | 71 +++++++++++++++++++++++++----------------------------
- 1 file changed, 34 insertions(+), 37 deletions(-)
-3de572f 처치했을때만 피격 이펙트 나오도록 수정
- ACY/galaga/main.lua | 20 ++++----------------
- 1 file changed, 4 insertions(+), 16 deletions(-)
