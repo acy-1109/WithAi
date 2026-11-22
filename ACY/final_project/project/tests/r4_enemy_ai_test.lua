@@ -137,8 +137,51 @@ h.test("R4: 돌진 중 플레이어와 충돌 시 플레이어 피격 후 적은
     and e.y == -e.h
 end)
 
+h.test("R4: SniperEnemy wait -> aim -> fire -> wait 전이 및 조준 3갈래 분열탄", function()
+  local g = GameModel({
+    width = 600,
+    height = 800,
+    seed = 21,
+    wavesText = "wave 1\nenemy sniper 100 80\n",
+  })
+  local s = g.enemies[1]
+  -- 플레이어를 오른쪽으로 이동시켜 대각선 조준 확인
+  g.player.x = 460
+
+  local sawWait = (s.aiState == "wait")
+  local sawAim = false
+  local sawFire = false
+  local sawReturnWait = false
+  local sawSingleAimedBullet = false
+  local sawSplitThreeBullets = false
+
+  for _ = 1, 360 do
+    g:update(1 / 60, { move = 0, fire = false })
+    if s.aiState == "aim" then
+      sawAim = true
+    elseif s.aiState == "fire" then
+      sawFire = true
+      if #g.enemyBullets == 1 and g.enemyBullets[1].vx > 0 then
+        sawSingleAimedBullet = true
+      end
+    elseif sawFire and s.aiState == "wait" then
+      sawReturnWait = true
+    end
+    if #g.enemyBullets == 3 then
+      local b1, b2, b3 = g.enemyBullets[1], g.enemyBullets[2], g.enemyBullets[3]
+      if b1.vx ~= b2.vx and b2.vx ~= b3.vx and b1.vx ~= b3.vx then
+        sawSplitThreeBullets = true
+        break
+      end
+    end
+  end
+
+  return sawWait and sawAim and sawFire and sawReturnWait
+    and sawSingleAimedBullet and sawSplitThreeBullets
+end)
+
 h.test("R4: 동일 시드 2회 실행 시 적 AI 상태·위치·결과가 완전히 동일하다", function()
-  local wave = "wave 1\nenemy sprinter 120 80\nenemy sprinter 300 80\nenemy grunt 200 120\n"
+  local wave = "wave 1\nenemy sprinter 120 80\nenemy sprinter 300 80\nenemy sniper 420 80\nenemy grunt 200 120\n"
   local g1 = GameModel({ width = 600, height = 800, seed = 12345, wavesText = wave })
   local g2 = GameModel({ width = 600, height = 800, seed = 12345, wavesText = wave })
 
@@ -148,7 +191,8 @@ h.test("R4: 동일 시드 2회 실행 시 적 AI 상태·위치·결과가 완�
     g2:update(1 / 60, { move = move, fire = false })
   end
 
-  if #g1.enemies ~= #g2.enemies or g1.lives ~= g2.lives or g1.score ~= g2.score then
+  if #g1.enemies ~= #g2.enemies or #g1.enemyBullets ~= #g2.enemyBullets
+    or g1.lives ~= g2.lives or g1.score ~= g2.score then
     return false
   end
   for i = 1, #g1.enemies do

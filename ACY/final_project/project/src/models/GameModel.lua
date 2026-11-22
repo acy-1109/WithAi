@@ -153,6 +153,10 @@ function GameModel:update(dt, input)
     player = self.player,
     width = self.width,
     height = self.height,
+    spawnEnemyBullet = function(x, y, vx, vy, w, h, opts)
+      self.enemyBullets[#self.enemyBullets + 1] =
+        BulletModel(x, y, vx, vy, w or 4, h or 12, "enemy", opts)
+    end,
   }
   for _, e in ipairs(self.enemies) do
     if e.alive then
@@ -162,11 +166,17 @@ function GameModel:update(dt, input)
   self:_updateEnemyFire(dt)
   self.phase:update(self, dt)
 
-  -- 적 총알 이동/제거
+  -- 적 총알 이동/분열/제거
   for i = #self.enemyBullets, 1, -1 do
     local b = self.enemyBullets[i]
     b:update(dt)
-    if b:isOffscreen(self.width, self.height) then
+    if b:shouldSplit() then
+      local children = b:spawnSplitBullets()
+      table.remove(self.enemyBullets, i)
+      for j = 1, #children do
+        self.enemyBullets[#self.enemyBullets + 1] = children[j]
+      end
+    elseif b:isOffscreen(self.width, self.height) then
       table.remove(self.enemyBullets, i)
     end
   end
@@ -217,7 +227,7 @@ function GameModel:_updateEnemyFire(dt)
 
   local alive = {}
   for _, e in ipairs(self.enemies) do
-    if e.alive then
+    if e.alive and e.kind ~= "sniper" then
       alive[#alive + 1] = e
     end
   end

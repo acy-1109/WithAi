@@ -225,7 +225,87 @@ function SprinterEnemy:onPlayerCollision(ctx)
   end
 end
 
---- 원거리 특화 적 ("sniper")
+local SNIPER_BULLET_BASE_SPEED = 240
+local SNIPER_AIM_TIME = 0.45
+local SNIPER_FIRE_PAUSE = 0.1
+local SNIPER_SPLIT_AFTER = 0.45
+local SNIPER_SPLIT_SPREAD = 0.32
+
+local SniperWaitState, SniperAimState, SniperFireState
+
+SniperWaitState = { name = "wait" }
+SniperAimState = { name = "aim" }
+SniperFireState = { name = "fire" }
+
+function SniperWaitState.enter(e, ctx)
+  if ctx and ctx.rng then
+    e.waitTimer = 1.6 + ctx.rng:nextFloat() * 1.4
+  else
+    e.waitTimer = nil
+  end
+end
+
+function SniperWaitState.update(e, dt, ctx)
+  if e.waitTimer == nil then
+    e.waitTimer = 1.6 + ctx.rng:nextFloat() * 1.4
+  end
+  e.waitTimer = e.waitTimer - dt
+  if e.waitTimer <= 0 then
+    e:changeAIState(SniperAimState, ctx)
+  end
+end
+
+function SniperAimState.enter(e, ctx)
+  e.aimTimer = SNIPER_AIM_TIME
+  local p = ctx.player
+  e.aimX = p and (p.centerX and p:centerX() or (p.x + (p.w or 0) * 0.5)) or e:centerX()
+  e.aimY = p and (p.centerY and p:centerY() or (p.y + (p.h or 0) * 0.5)) or (ctx.height or 800)
+end
+
+function SniperAimState.update(e, dt, ctx)
+  local p = ctx.player
+  if p then
+    e.aimX = p.centerX and p:centerX() or (p.x + (p.w or 0) * 0.5)
+    e.aimY = p.centerY and p:centerY() or (p.y + (p.h or 0) * 0.5)
+  end
+  e.aimTimer = e.aimTimer - dt
+  if e.aimTimer <= 0 then
+    e:changeAIState(SniperFireState, ctx)
+  end
+end
+
+function SniperFireState.enter(e, ctx)
+  e.firePause = SNIPER_FIRE_PAUSE
+  if ctx and ctx.spawnEnemyBullet then
+    local sx = e:centerX() - 3
+    local sy = e.y + e.h
+    local dx = (e.aimX or sx) - e:centerX()
+    local dy = (e.aimY or (sy + 100)) - sy
+    local dist = math.sqrt(dx * dx + dy * dy)
+    local speed = SNIPER_BULLET_BASE_SPEED * (e.bulletSpeedMul or 1)
+    local vx, vy
+    if dist > 0 then
+      vx = (dx / dist) * speed
+      vy = (dy / dist) * speed
+    else
+      vx = 0
+      vy = speed
+    end
+    ctx.spawnEnemyBullet(sx, sy, vx, vy, 6, 12, {
+      splitAfter = SNIPER_SPLIT_AFTER,
+      splitSpread = SNIPER_SPLIT_SPREAD,
+    })
+  end
+end
+
+function SniperFireState.update(e, dt, ctx)
+  e.firePause = e.firePause - dt
+  if e.firePause <= 0 then
+    e:changeAIState(SniperWaitState, ctx)
+  end
+end
+
+--- 원거리 특화 적 ("sniper") — 자리 이동 없이 State 패턴 FSM(wait -> aim -> fire)
 local SniperEnemy = class(EnemyModel)
 
 function SniperEnemy:init(x, y)
@@ -235,6 +315,31 @@ function SniperEnemy:init(x, y)
   self.speedMul = 0.9
   self.fireCooldownMul = 0.6
   self.bulletSpeedMul = 1.5
+  self.aiState = SniperWaitState.name
+  self.stateObj = SniperWaitState
+  self.waitTimer = nil
+  self.aimTimer = 0
+  self.firePause = 0
+  self.aimX = x
+  self.aimY = y
+end
+
+function SniperEnemy:changeAIState(nextState, ctx)
+  if self.stateObj and self.stateObj.exit then
+    self.stateObj.exit(self, ctx)
+  end
+  self.stateObj = nextState
+  self.aiState = nextState.name
+  if nextState.enter then
+    nextState.enter(self, ctx)
+  end
+end
+
+function SniperEnemy:updateAI(dt, ctx)
+  if not self.alive then
+    return
+  end
+  self.stateObj.update(self, dt, ctx)
 end
 
 local FACTORY = {
