@@ -45,6 +45,7 @@ function GameView:draw(gfx, game)
 
   HudView.draw(gfx, game, self.width, self.height)
   fx:drawBanner(gfx, self.width, self.height)
+  fx:drawAchievement(gfx, self.width)
 end
 
 return GameView

@@ -3,6 +3,7 @@
 -- P/Esc → 일시정지(push), 게임이 끝나면 결과 화면을 위에 쌓는다(push).
 
 local class = require("class")
+local AchievementModel = require("AchievementModel")
 local GameModel = require("GameModel")
 local GameView = require("GameView")
 local InputController = require("InputController")
@@ -21,6 +22,7 @@ function PlayScene:init(ctx)
     seed = ctx.seed(),
     wavesText = ctx.wavesText,
   })
+  self.achievements = AchievementModel()
   self.view = GameView({ width = ctx.width, height = ctx.height, rand = ctx.rand })
   self.controller = InputController(ctx.isDown)
 end
@@ -39,7 +41,12 @@ function PlayScene:update(dt)
 
   local events = self.game:drainEvents()
   for i = 1, #events do
-    self.view:onEvent(events[i])
+    local ev = events[i]
+    self.view:onEvent(ev)
+    local newly = self.achievements:onEvent(ev)
+    for j = 1, #newly do
+      self.view:onEvent({ type = "achievement_unlocked", id = newly[j].id, title = newly[j].title })
+    end
   end
   self.view:update(dt)
 

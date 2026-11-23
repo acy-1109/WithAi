@@ -13,6 +13,7 @@ local FLASH_TIME = 0.06
 local SHAKE_TIME = 0.3
 local SHAKE_PIXELS = 10
 local BANNER_TIME = 1.0
+local NOTICE_TIME = 2.5
 
 --- @param rand function|nil  0~1 난수 함수. 테스트에서 고정값을 주입할 수 있다. 기본 math.random
 function EffectsView:init(rand)
@@ -22,6 +23,9 @@ function EffectsView:init(rand)
   self.shake = 0
   self.banner = 0
   self.ox, self.oy = 0, 0
+  self.noticeQueue = {}
+  self.noticeText = nil
+  self.noticeTimer = 0
 end
 
 local DEFAULT_COLOR = { 1, 0.8, 0.2 }
@@ -64,6 +68,8 @@ function EffectsView:onEvent(ev)
     self.shake = SHAKE_TIME
   elseif ev.type == "formation_cleared" then
     self.banner = BANNER_TIME
+  elseif ev.type == "achievement_unlocked" then
+    self.noticeQueue[#self.noticeQueue + 1] = "ACHIEVEMENT: " .. tostring(ev.title or "")
   end
 end
 
@@ -74,6 +80,16 @@ function EffectsView:update(dt)
   end
   if self.banner > 0 then
     self.banner = self.banner - dt
+  end
+  if self.noticeTimer > 0 then
+    self.noticeTimer = self.noticeTimer - dt
+    if self.noticeTimer <= 0 then
+      self.noticeText = nil
+    end
+  end
+  if not self.noticeText and #self.noticeQueue > 0 then
+    self.noticeText = table.remove(self.noticeQueue, 1)
+    self.noticeTimer = NOTICE_TIME
   end
   if self.shake > 0 then
     self.shake = self.shake - dt
@@ -116,6 +132,15 @@ function EffectsView:drawBanner(gfx, width, height)
   if self.banner > 0 then
     gfx.setColor(0.6, 1, 0.6)
     gfx.printf("WAVE CLEAR", 0, height * 0.4, width, "center")
+  end
+end
+
+function EffectsView:drawAchievement(gfx, width)
+  if self.noticeText then
+    gfx.setColor(0.15, 0.2, 0.35)
+    gfx.rectangle("fill", width * 0.5 - 150, 56, 300, 26)
+    gfx.setColor(1.0, 0.9, 0.3)
+    gfx.printf(self.noticeText, 0, 62, width, "center")
   end
 end
 
