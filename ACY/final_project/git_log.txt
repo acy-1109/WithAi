@@ -1,4 +1,35 @@
-﻿4fcd23c (HEAD -> main, origin/main, origin/HEAD) TANK 구현
+﻿a2ae021 (HEAD -> main, origin/main, origin/HEAD) R7 새 적 종류 WeaverEnemy 추가
+ .../project/src/models/EnemyModel.lua              | 24 +++++++++++
+ ACY/final_project/project/src/views/EnemyView.lua  |  1 +
+ ACY/final_project/project/src/waves.txt            |  4 +-
+ .../project/tests/r7_weaver_enemy_test.lua         | 49 ++++++++++++++++++++++
+ 4 files changed, 76 insertions(+), 2 deletions(-)
+5ca8947 (tag: before-r7) 베스트레코드 표시
+ ACY/final_project/project/src/scenes/PlayScene.lua |  2 +-
+ .../project/src/scenes/TitleScene.lua              |  3 +-
+ ACY/final_project/project/src/views/GameView.lua   |  9 ++---
+ ACY/final_project/project/src/views/HudView.lua    | 10 ++++--
+ ACY/final_project/project/src/views/TitleView.lua  |  4 ++-
+ .../project/tests/r6_highscore_test.lua            | 42 ++++++++++++++++++++++
+ 6 files changed, 60 insertions(+), 10 deletions(-)
+7cf3e5f R6 하이스코어, 불러오기 구현
+ ACY/final_project/project/src/main.lua             |  7 ++
+ .../project/src/models/HighScoreModel.lua          | 48 +++++++++++++
+ .../project/src/scenes/ResultScene.lua             | 11 ++-
+ ACY/final_project/project/src/views/ResultView.lua | 10 ++-
+ .../project/tests/r6_highscore_test.lua            | 79 ++++++++++++++++++++++
+ 5 files changed, 151 insertions(+), 4 deletions(-)
+b5c4827 R5 구현
+ ACY/final_project/git_log.txt                      |  23 +++-
+ .../project/src/models/AchievementModel.lua        |  80 ++++++++++++
+ ACY/final_project/project/src/scenes/PlayScene.lua |   9 +-
+ .../project/src/views/EffectsView.lua              |  25 ++++
+ ACY/final_project/project/src/views/GameView.lua   |   1 +
+ .../project/tests/r5_achievement_test.lua          | 136 +++++++++++++++++++++
+ .../worklogs/002_2026-11-22_session.md             |   6 +-
+ .../worklogs/003_2026-11-23_session.md             |  61 +++++++++
+ 8 files changed, 335 insertions(+), 6 deletions(-)
+4fcd23c TANK 구현
  ACY/final_project/git_log.txt                      | 24 ++++++++---
  .../project/src/models/EnemyModel.lua              | 23 +++++++++-
  ACY/final_project/project/src/models/GameModel.lua |  3 +-
@@ -222,3 +253,6 @@ af96325 던전 연습문제
 e4252f0 feat(galaga): 과제 B - 보스 탄막(Bullet Pattern) 및 보스전 구현
  ACY/galaga/main.lua | 179 ++++++++++++++++++++++++++++++++++++++++------------
  1 file changed, 139 insertions(+), 40 deletions(-)
+1db70ca feat(galaga): 7. HUD(점수/라이프 아이콘) + 게임오버 오버레이/재시작(resetGame)
+ ACY/galaga/main.lua | 122 +++++++++++++++++++++++++++++++---------------------
+ 1 file changed, 73 insertions(+), 49 deletions(-)
