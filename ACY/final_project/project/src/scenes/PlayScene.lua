@@ -57,7 +57,7 @@ function PlayScene:update(dt)
 end
 
 function PlayScene:draw(gfx)
-  self.view:draw(gfx, self.game)
+  self.view:draw(gfx, self.game, self.ctx.highScore)
 end
 
 function PlayScene:keypressed(key)

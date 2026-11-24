@@ -7,6 +7,8 @@ local app = arg[1] or "src"
 h.setup(app)
 
 local HighScoreModel = require("HighScoreModel")
+local TitleView = require("TitleView")
+local HudView = require("HudView")
 
 h.test("R6: 정상 직렬화 -> 역직렬화 왕복 및 최고점수 갱신", function()
   local hs = HighScoreModel(0)
@@ -74,6 +76,46 @@ h.test("R6: ResultScene 에서 신기록 갱신 시 ctx.saveHighScore 호출 및
     and res2.isNewBest == true
     and ctx.highScore.best == 1200
     and sawNewBest
+end)
+
+h.test("R6: TitleView 와 HudView 에 기존 하이스코어가 지정된 위치에 표시된다", function()
+  local calls = {}
+  local fakeGfx = {
+    setColor = function() end,
+    print = function(msg, x, y)
+      calls[#calls + 1] = { msg = tostring(msg), x = x, y = y }
+    end,
+    printf = function(msg, x, y)
+      calls[#calls + 1] = { msg = tostring(msg), x = x, y = y }
+    end,
+  }
+
+  -- TitleView: 제목(0.35*800=280)과 가이드(0.5*800=400) 사이에 BEST 900 표시
+  TitleView.draw(fakeGfx, 600, 800, 900)
+  local titleBestOk = false
+  for i = 1, #calls do
+    local c = calls[i]
+    if c.msg == "BEST 900" and c.y > 800 * 0.35 and c.y < 800 * 0.5 then
+      titleBestOk = true
+      break
+    end
+  end
+
+  -- HudView: score(1500)가 best(900)를 넘어도 BEST 는 기존 900 유지, SCORE 는 한 칸 아래(y=28)
+  calls = {}
+  local hs = HighScoreModel(900)
+  HudView.draw(fakeGfx, { score = 1500, wave = 2, lives = 3 }, 600, 800, hs)
+  local hudBestOk, hudScoreOk = false, false
+  for i = 1, #calls do
+    local c = calls[i]
+    if c.msg == "BEST 900" and c.x == 10 and c.y == 10 then
+      hudBestOk = true
+    elseif c.msg == "SCORE 1500" and c.x == 10 and c.y == 28 then
+      hudScoreOk = true
+    end
+  end
+
+  return titleBestOk and hudBestOk and hudScoreOk
 end)
 
 h.finish()

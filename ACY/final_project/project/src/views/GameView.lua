@@ -29,9 +29,10 @@ function GameView:update(dt)
   self.effects:update(dt)
 end
 
---- @param gfx  table  love.graphics 또는 가짜
---- @param game table  GameModel (읽기 전용)
-function GameView:draw(gfx, game)
+--- @param gfx       table       love.graphics 또는 가짜
+--- @param game      table       GameModel (읽기 전용)
+--- @param highScore table|nil   HighScoreModel (읽기 전용)
+function GameView:draw(gfx, game, highScore)
   local fx = self.effects
   gfx.push()
   gfx.translate(fx.ox, fx.oy)
@@ -43,7 +44,7 @@ function GameView:draw(gfx, game)
   fx:drawParticles(gfx)
   gfx.pop()
 
-  HudView.draw(gfx, game, self.width, self.height)
+  HudView.draw(gfx, game, self.width, self.height, highScore)
   fx:drawBanner(gfx, self.width, self.height)
   fx:drawAchievement(gfx, self.width)
 end

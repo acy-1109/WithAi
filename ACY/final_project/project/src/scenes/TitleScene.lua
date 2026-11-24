@@ -23,7 +23,8 @@ function TitleScene:keypressed(key)
 end
 
 function TitleScene:draw(gfx)
-  TitleView.draw(gfx, self.ctx.width, self.ctx.height)
+  local best = self.ctx.highScore and self.ctx.highScore.best or 0
+  TitleView.draw(gfx, self.ctx.width, self.ctx.height, best)
 end
 
 return TitleScene
