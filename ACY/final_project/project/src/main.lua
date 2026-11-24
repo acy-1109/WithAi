@@ -7,6 +7,7 @@
 love.filesystem.setRequirePath("?.lua;?/init.lua;models/?.lua;views/?.lua;controllers/?.lua;scenes/?.lua")
 
 local SceneStack = require("SceneStack")
+local HighScoreModel = require("HighScoreModel")
 
 local stack
 local games = 0
@@ -21,6 +22,8 @@ function love.load()
   love.graphics.setBackgroundColor(0.02, 0.02, 0.06)
 
   local wavesText = love.filesystem.read("waves.txt")
+  local rawHighScore = love.filesystem.read("highscore.txt")
+  local highScore = HighScoreModel.deserialize(rawHighScore)
 
   -- 씬끼리 서로 require 하면 순환이 생긴다(Title→Play→Result→Title). 목록을 여기서 한 번 주입한다.
   local ctx = {
@@ -31,6 +34,10 @@ function love.load()
     quit = love.event.quit,
     difficulty = "normal",
     wavesText = wavesText,
+    highScore = highScore,
+    saveHighScore = function()
+      love.filesystem.write("highscore.txt", highScore:serialize())
+    end,
     scenes = {
       Title = require("TitleScene"),
       Difficulty = require("DifficultyScene"),

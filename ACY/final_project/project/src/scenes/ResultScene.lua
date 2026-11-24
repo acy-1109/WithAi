@@ -14,6 +14,15 @@ function ResultScene:init(ctx, game)
   self.ctx = ctx
   self.won = game.state == "won"
   self.score = game.score
+  self.best = ctx.highScore and ctx.highScore.best or nil
+  self.isNewBest = false
+  if ctx.highScore and ctx.highScore:submit(game.score) then
+    self.best = ctx.highScore.best
+    self.isNewBest = true
+    if ctx.saveHighScore then
+      ctx.saveHighScore()
+    end
+  end
 end
 
 function ResultScene:keypressed(key)
@@ -25,7 +34,7 @@ function ResultScene:keypressed(key)
 end
 
 function ResultScene:draw(gfx)
-  ResultView.draw(gfx, self.ctx.width, self.ctx.height, self.won, self.score)
+  ResultView.draw(gfx, self.ctx.width, self.ctx.height, self.won, self.score, self.best, self.isNewBest)
 end
 
 return ResultScene

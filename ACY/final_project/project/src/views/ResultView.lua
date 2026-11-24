@@ -3,7 +3,7 @@
 
 local ResultView = {}
 
-function ResultView.draw(gfx, width, height, won, score)
+function ResultView.draw(gfx, width, height, won, score, best, isNewBest)
   gfx.setColor(0, 0, 0, 0.5)
   gfx.rectangle("fill", 0, 0, width, height)
   if won then
@@ -11,9 +11,13 @@ function ResultView.draw(gfx, width, height, won, score)
   else
     gfx.setColor(1, 0.5, 0.5)
   end
-  gfx.printf((won and "YOU WIN!" or "GAME OVER") .. "\nSCORE " .. score, 0, height * 0.4, width, "center")
+  local text = (won and "YOU WIN!" or "GAME OVER") .. "\nSCORE " .. score
+  if best ~= nil then
+    text = text .. "\n" .. (isNewBest and "NEW BEST! " or "BEST ") .. best
+  end
+  gfx.printf(text, 0, height * 0.36, width, "center")
   gfx.setColor(1, 1, 1)
-  gfx.printf("R : RETRY\nEnter : TITLE", 0, height * 0.55, width, "center")
+  gfx.printf("R : RETRY\nEnter : TITLE", 0, height * 0.56, width, "center")
 end
 
 return ResultView
