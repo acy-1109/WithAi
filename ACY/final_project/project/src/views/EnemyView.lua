@@ -9,6 +9,7 @@ local KIND_COLORS = {
   tank = { 0.35, 0.7, 1.0 },
   sprinter = { 1.0, 0.85, 0.25 },
   sniper = { 0.8, 0.45, 1.0 },
+  weaver = { 0.3, 1.0, 0.75 },
 }
 
 --- @param enemies table  EnemyModel 배열 (읽기 전용)

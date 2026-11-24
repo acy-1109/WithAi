@@ -35,8 +35,8 @@ enemy tank 330 60
 enemy sniper 390 60
 enemy tank 450 60
 enemy sprinter 120 115
-enemy sprinter 180 115
+enemy weaver 180 115
 enemy grunt 240 115
 enemy grunt 300 115
-enemy sprinter 360 115
+enemy weaver 360 115
 enemy sprinter 420 115

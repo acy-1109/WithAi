@@ -1,0 +1,49 @@
+-- r7_weaver_enemy_test.lua
+-- R7(새 적 종류 WeaverEnemy 추가) 헤드리스 테스트.
+
+package.path = ((arg[0] or ""):match("(.*/)") or "./") .. "?.lua;" .. package.path
+local h = require("helper")
+local app = arg[1] or "src"
+h.setup(app)
+
+local EnemyModel = require("EnemyModel")
+local EnemyView = require("EnemyView")
+local GameModel = require("GameModel")
+
+h.test("R7: Factory 로 weaver 생성 및 지그재그 이동 확인", function()
+  local w = EnemyModel.create("weaver", 200, 100)
+  local okType = (w.kind == "weaver" and w:isA(EnemyModel.Weaver) and w:isA(EnemyModel))
+
+  local minX, maxX = w.x, w.x
+  for _ = 1, 120 do
+    w:updateAI(1 / 60)
+    if w.x < minX then minX = w.x end
+    if w.x > maxX then maxX = w.x end
+  end
+
+  return okType and minX < 200 and maxX > 200
+end)
+
+h.test("R7: GameModel 웨이브 파싱으로 weaver 스폰 및 EnemyView 렌더링", function()
+  local g = GameModel({
+    width = 600,
+    height = 800,
+    seed = 1,
+    wavesText = "wave 1\nenemy weaver 180 115\n",
+  })
+  local w = g.enemies[1]
+
+  local drawnColor
+  local fakeGfx = {
+    setColor = function(r, gCol, b) drawnColor = { r, gCol, b } end,
+    rectangle = function() end,
+  }
+  EnemyView.draw(fakeGfx, g.enemies)
+
+  return #g.enemies == 1
+    and w:isA(EnemyModel.Weaver)
+    and drawnColor ~= nil
+    and drawnColor[1] == 0.3 and drawnColor[2] == 1.0 and drawnColor[3] == 0.75
+end)
+
+h.finish()

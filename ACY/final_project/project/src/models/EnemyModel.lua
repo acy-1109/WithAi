@@ -362,11 +362,34 @@ function SniperEnemy:updateAI(dt, ctx)
   self.stateObj.update(self, dt, ctx)
 end
 
+--- 지그재그로 흔들리며 이동하는 적 ("weaver")
+local WeaverEnemy = class(EnemyModel)
+
+function WeaverEnemy:init(x, y)
+  EnemyModel.init(self, x, y)
+  self.kind = "weaver"
+  self.score = 180
+  self.weavePhase = 0
+  self.weaveAmp = 24
+  self.weaveFreq = 3.2
+end
+
+function WeaverEnemy:updateAI(dt)
+  if not self.alive then
+    return
+  end
+  local prevOffset = math.sin(self.weavePhase) * self.weaveAmp
+  self.weavePhase = self.weavePhase + dt * self.weaveFreq
+  local nextOffset = math.sin(self.weavePhase) * self.weaveAmp
+  self.x = self.x + (nextOffset - prevOffset)
+end
+
 local FACTORY = {
   grunt = GruntEnemy,
   tank = TankEnemy,
   sprinter = SprinterEnemy,
   sniper = SniperEnemy,
+  weaver = WeaverEnemy,
 }
 
 --- 문자열 키로 적 인스턴스를 생성한다. 미등록 종류면 에러를 발생시킨다.
@@ -382,5 +405,6 @@ EnemyModel.Grunt = GruntEnemy
 EnemyModel.Tank = TankEnemy
 EnemyModel.Sprinter = SprinterEnemy
 EnemyModel.Sniper = SniperEnemy
+EnemyModel.Weaver = WeaverEnemy
 
 return EnemyModel
