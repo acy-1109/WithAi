@@ -1,4 +1,23 @@
-﻿a2ae021 (HEAD -> main, origin/main, origin/HEAD) R7 새 적 종류 WeaverEnemy 추가
+﻿a45ac48 (HEAD -> main) feat: 유도탄 추격 개선·탄수 제한(3발)·500점 충전 및 HUD 표시
+ ACY/final_project/project/src/models/BossPhase.lua |  2 +-
+ ACY/final_project/project/src/models/GameModel.lua | 64 ++++++++++++++++++++--
+ ACY/final_project/project/src/views/HudView.lua    | 16 +++++-
+ ACY/final_project/project/tests/hud_view_test.lua  | 43 +++++++++++++++
+ .../project/tests/missile_ammo_test.lua            | 64 ++++++++++++++++++++++
+ 5 files changed, 181 insertions(+), 8 deletions(-)
+3191296 feat: 체력 회복 아이템 Model/View 및 테스트 구현
+ ACY/final_project/project/src/models/ItemModel.lua |  81 ++++++++++++++++
+ ACY/final_project/project/src/views/GameView.lua   |   2 +
+ ACY/final_project/project/src/views/ItemView.lua   |  61 ++++++++++++
+ .../project/tests/item_model_test.lua              | 103 +++++++++++++++++++++
+ ACY/final_project/project/tests/item_view_test.lua |  57 ++++++++++++
+ 5 files changed, 304 insertions(+)
+497426e (origin/main, origin/HEAD) 문서 업데이트
+ ACY/final_project/git_log.txt                      | 36 +++++++++-
+ .../worklogs/003_2026-11-23_session.md             |  4 +-
+ .../worklogs/004_2026-11-24_session.md             | 77 ++++++++++++++++++++++
+ 3 files changed, 114 insertions(+), 3 deletions(-)
+a2ae021 R7 새 적 종류 WeaverEnemy 추가
  .../project/src/models/EnemyModel.lua              | 24 +++++++++++
  ACY/final_project/project/src/views/EnemyView.lua  |  1 +
  ACY/final_project/project/src/waves.txt            |  4 +-
@@ -70,6 +89,7 @@ bd098c7 R4 SprinterEnemy FSM(wait->charge->return) 구현
  ACY/final_project/project/src/models/GameModel.lua |  45 +++++-
  .../project/tests/r4_enemy_ai_test.lua             | 163 +++++++++++++++++++++
  3 files changed, 346 insertions(+), 4 deletions(-)
+e4d3a21 Merge remote-tracking branch 'upstream/main'
 e4cc1d8 R3 적 종류 구현
  .../project/src/models/EnemyModel.lua              | 97 +++++++++++++++++++++-
  ACY/final_project/project/src/models/GameModel.lua | 15 ++--
@@ -78,6 +98,9 @@ e4cc1d8 R3 적 종류 구현
  .../project/tests/r3_enemy_factory_test.lua        | 95 +++++++++++++++++++++
  .../worklogs/001_2026-11-21_session.md             | 38 +++++++--
  6 files changed, 268 insertions(+), 44 deletions(-)
+a2b1e07 (upstream/main, upstream/HEAD) 가이드 추가
+ docs/ai/graduate-career-guide-ai-era.md | 368 ++++++++++++++++++++++++++++++++
+ 1 file changed, 368 insertions(+)
 ba2a274 R2 웨이브파서 구현
  ACY/final_project/docs/waves_format.md             | 36 ++++++--
  ACY/final_project/project/src/main.lua             |  3 +
@@ -165,6 +188,60 @@ ec37515 메타테이블 과제
  ACY/08_metatables/metatable_tasks.lua      | 135 +++++++++++++++++++++
  ACY/08_metatables/metatable_tasks_test.lua | 185 +++++++++++++++++++++++++++++
  2 files changed, 320 insertions(+)
+16aea85 Merge remote-tracking branch 'upstream/main'
+88e8117 added report for metatable
+ lua_tuto/08_metatables.md                          |   2 +
+ lua_tuto/README.md                                 |   1 +
+ lua_tuto/assignments/08_metatables/README.md       |  91 ++++++++++
+ .../assignments/08_metatables/metatable_tasks.lua  |  60 +++++++
+ .../08_metatables/metatable_tasks_test.lua         | 183 +++++++++++++++++++++
+ 5 files changed, 337 insertions(+)
+a91afb8 final report
+ docs/ai/prompt-engineering-guide-student.md        |   6 +-
+ ...235\264\353\270\214\354\275\224\353\224\251.md" |  89 ++++++++++
+ ...235\264\353\270\214\354\275\224\353\224\251.md" |  98 +++++++++++
+ ...235\264\353\270\214\354\275\224\353\224\251.md" | 180 +++++++++++++++++++++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |   3 +-
+ ...40\234_\354\261\204\354\240\220\355\221\234.md" |  89 ++++++++++
+ ...04\261_\352\260\200\354\235\264\353\223\234.md" |   2 +-
+ ...12\270_\354\230\210\354\213\234\354\247\221.md" |   2 +-
+ 8 files changed, 464 insertions(+), 5 deletions(-)
+379cdef updated agents
+ .agents/agents/love2d-architect.md                 |  25 +++
+ .agents/agents/love2d-feature-scaffold.md          |  23 +++
+ .agents/agents/lua-expert.md                       |  26 +++
+ .agents/agents/lua-reviewer.md                     |  31 ++++
+ .agents/agents/planner.md                          |  33 ++++
+ .agents/agents/test-runner.md                      |  28 +++
+ .agents/skills/game-ai-pattern-coach/SKILL.md      |  59 ++++++
+ .agents/skills/headless-test-writer/SKILL.md       |  57 ++++++
+ .agents/skills/lua51-guard/SKILL.md                |  62 +++++++
+ .agents/skills/mvc-boundary/SKILL.md               |  39 ++++
+ .agents/skills/prompt-improver/SKILL.md            |  54 ++++++
+ .agents/skills/worklog-writer/SKILL.md             |  54 ++++++
+ .agents/workflows/end-session.md                   |  13 ++
+ .agents/workflows/release-check.md                 |  20 ---
+ .agents/workflows/start-session.md                 |  13 ++
+ docs/ai/antigravity-setup.md                       |  28 ++-
+ docs/ai/prompt-engineering-guide-student.md        |   5 +
+ lua_tuto/mvc/skill_agent/README.md                 |  42 ++++-
+ lua_tuto/mvc/skill_agent/antigravity_kit.zip       | Bin 14376 -> 24146 bytes
+ .../skill_agent/gemini_skills/love2d-architect.zip | Bin 0 -> 1389 bytes
+ .../gemini_skills/love2d-feature-scaffold.zip      | Bin 0 -> 1113 bytes
+ .../mvc/skill_agent/gemini_skills/lua-expert.zip   | Bin 0 -> 599 bytes
+ .../kit/.agents/agents/love2d-architect.md         |  25 +++
+ .../kit/.agents/agents/love2d-feature-scaffold.md  |  23 +++
+ .../skill_agent/kit/.agents/agents/lua-expert.md   |  26 +++
+ .../skill_agent/kit/.agents/rules/lua-expert.md    |  14 ++
+ .../skill_agent/kit/.agents/rules/lua-love2d.md    |  27 +++
+ .../skill_agent/kit/.agents/rules/project-core.md  |  51 ++++++
+ .../kit/.agents/skills/love2d-architect/SKILL.md   |  29 +++
+ .../skills/love2d-feature-scaffold/SKILL.md        |  23 +++
+ .../kit/.agents/skills/lua-expert/SKILL.md         |  24 +++
+ .../kit/.agents/workflows/prompt-expert.md         |  24 +++
+ ...40\201_\354\225\224\354\213\234\354\240\201.md" | 200 +++++++++++++++++++++
+ 33 files changed, 1045 insertions(+), 33 deletions(-)
+91d59fb Merge remote-tracking branch 'upstream/main'
 b7b7f64 과제 제출
  ACY/06_dungeon/REPORT.md                           | 181 ++++++++++
  ACY/06_dungeon/controllers/shop_controller.lua     |  14 +-
@@ -179,6 +256,45 @@ b7b7f64 과제 제출
  ...54\270\354\240\234_\354\240\225\353\213\265.md" |  91 +++++
  ...54\354\230\201_MVC\355\200\264\354\246\210.zip" | Bin 0 -> 38962 bytes
  12 files changed, 866 insertions(+), 47 deletions(-)
+9e46cd6 skill_agent
+ {.antigravity => .agents}/rules/lua-expert.md      |   0
+ {.antigravity => .agents}/rules/lua-love2d.md      |   0
+ .../rules/project-core.md                          |   4 +
+ .../skills/love2d-architect/SKILL.md               |   0
+ .../skills/love2d-feature-scaffold/SKILL.md        |   0
+ .../skills/lua-expert/SKILL.md                     |   0
+ .../workflows/prompt-expert.md                     |   4 +
+ .../workflows/release-check.md                     |   4 +
+ docs/ai/antigravity-setup.md                       |  21 +-
+ docs/ai/prompt-engineering-guide-student.md        | 258 ++++++++++++++
+ lua_tuto/mvc/skill_agent/README.md                 | 136 ++++++++
+ lua_tuto/mvc/skill_agent/antigravity_kit.zip       | Bin 0 -> 14376 bytes
+ .../gemini_skills/game-ai-pattern-coach.zip        | Bin 0 -> 1664 bytes
+ .../gemini_skills/headless-test-writer.zip         | Bin 0 -> 1587 bytes
+ .../mvc/skill_agent/gemini_skills/lua51-guard.zip  | Bin 0 -> 1466 bytes
+ .../mvc/skill_agent/gemini_skills/mvc-boundary.zip | Bin 0 -> 1233 bytes
+ .../skill_agent/gemini_skills/prompt-improver.zip  | Bin 0 -> 1332 bytes
+ .../skill_agent/gemini_skills/worklog-writer.zip   | Bin 0 -> 1240 bytes
+ .../skill_agent/kit/.agents/agents/lua-reviewer.md |  31 ++
+ .../mvc/skill_agent/kit/.agents/agents/planner.md  |  33 ++
+ .../skill_agent/kit/.agents/agents/test-runner.md  |  28 ++
+ .../.agents/skills/game-ai-pattern-coach/SKILL.md  |  59 ++++
+ .../.agents/skills/headless-test-writer/SKILL.md   |  57 +++
+ .../kit/.agents/skills/lua51-guard/SKILL.md        |  62 ++++
+ .../kit/.agents/skills/mvc-boundary/SKILL.md       |  39 +++
+ .../kit/.agents/skills/prompt-improver/SKILL.md    |  54 +++
+ .../kit/.agents/skills/worklog-writer/SKILL.md     |  54 +++
+ .../kit/.agents/workflows/end-session.md           |  13 +
+ .../kit/.agents/workflows/start-session.md         |  13 +
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |  86 +++++
+ ...04\261_\352\260\200\354\235\264\353\223\234.md" | 381 +++++++++++++++++++++
+ ...12\270_\354\230\210\354\213\234\354\247\221.md" | 286 ++++++++++++++++
+ 32 files changed, 1615 insertions(+), 8 deletions(-)
+a884009 Merge remote-tracking branch 'upstream/main'
+d92dc88 report.md 작성가이드
+ ...204\261\352\260\200\354\235\264\353\223\234.md" | 130 +++++++++++++++++++++
+ ...REPORT_\355\205\234\355\224\214\353\246\277.md" |  58 +++++++++
+ 2 files changed, 188 insertions(+)
 d7dfa28 week04
  ACY/week04/starter/conf.lua                        |  10 +
  ACY/week04/starter/controllers/InputController.lua |  70 +++++++
@@ -241,12 +357,112 @@ af96325 던전 연습문제
  ACY/06_dungeon/views/status_view.lua               |  22 +++
  ACY/06_dungeon/views/widgets.lua                   |  14 ++
  28 files changed, 1190 insertions(+)
+5990699 Merge remote-tracking branch 'upstream/main'
 3eb0588 중복 코드 정리
  ACY/galaga/main.lua | 71 +++++++++++++++++++++++++----------------------------
  1 file changed, 34 insertions(+), 37 deletions(-)
 3de572f 처치했을때만 피격 이펙트 나오도록 수정
  ACY/galaga/main.lua | 20 ++++----------------
  1 file changed, 4 insertions(+), 16 deletions(-)
+c421a02 week02 galaga_steps 9/9 기능 추가: 유도 미사일 [H*]
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 71 +++++++++++++++++++---
+ 1 file changed, 64 insertions(+), 7 deletions(-)
+b72a2a8 week02 galaga_steps 8/9 기능 추가: 보스 탄막 [B*]
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 100 +++++++++++++++++++--
+ 1 file changed, 93 insertions(+), 7 deletions(-)
+2c874b3 week02 galaga_steps 7/9 HUD(점수/라이프) + 게임오버/재시작
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+48b070d week02 galaga_steps 6/9 연출: 파괴 파티클, 화면 번쩍임(flash), 피격 시 화면 흔들림(shake)
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 66 +++++++++++++++++++++-
+ 1 file changed, 65 insertions(+), 1 deletion(-)
+571a6ee week02 galaga_steps 5/9 충돌: 내 총알x적(점수+파괴), 적 총알x플레이어(라이프 감소)
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 42 ++++++++++++++++++++++
+ 1 file changed, 42 insertions(+)
+5f7794f week02 galaga_steps 4/9 적 랜덤 발사 + 적 총알 아래로 이동
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 37 ++++++++++++++++++++++
+ 1 file changed, 37 insertions(+)
+807626e week02 galaga_steps 3/9 적 편대(그리드) 생성 + 좌우 이동 + 끝에서 한 칸 하강
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 47 ++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+80067d9 week02 galaga_steps 2/9 Space 발사(쿨다운) + 총알 위로 이동
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 26 +++++++++++++++++++++-
+ 1 file changed, 25 insertions(+), 1 deletion(-)
+4fab5ff week02 galaga_steps 1/9 플레이어 사각형 + 좌우 이동 + 화면 경계 클램프
+ lua_tuto/mvc/week02/examples/galaga_steps/conf.lua | 10 +++++
+ lua_tuto/mvc/week02/examples/galaga_steps/main.lua | 48 ++++++++++++++++++++++
+ 2 files changed, 58 insertions(+)
+3b0ee0c added week08_more
+ lua_tuto/mvc/week07/README.md                      |    4 +
+ lua_tuto/mvc/week08_more/README.md                 | 1044 ++++++++++++++++++++
+ .../mvc/week08_more/examples/catch_ecs/class.lua   |   25 +
+ .../mvc/week08_more/examples/catch_ecs/conf.lua    |    5 +
+ .../week08_more/examples/catch_ecs/ecs/World.lua   |   80 ++
+ .../examples/catch_ecs/game/CatchGame.lua          |   82 ++
+ .../week08_more/examples/catch_ecs/game/kinds.lua  |   35 +
+ .../mvc/week08_more/examples/catch_ecs/main.lua    |   53 +
+ .../mvc/week08_more/examples/catch_ecs/prng.lua    |   22 +
+ .../mvc/week08_more/examples/catch_ecs/rules.lua   |   13 +
+ .../examples/catch_ecs/systems/collect.lua         |   31 +
+ .../examples/catch_ecs/systems/fall.lua            |    9 +
+ .../examples/catch_ecs/systems/render.lua          |   45 +
+ .../examples/catch_ecs/systems/spawn.lua           |   24 +
+ .../examples/catch_hex/adapters/FileScores.lua     |   29 +
+ .../examples/catch_hex/adapters/MemoryScores.lua   |   22 +
+ .../examples/catch_hex/adapters/PrngRandom.lua     |   19 +
+ .../examples/catch_hex/adapters/Renderer.lua       |   44 +
+ .../examples/catch_hex/adapters/ScriptedRandom.lua |   23 +
+ .../mvc/week08_more/examples/catch_hex/class.lua   |   25 +
+ .../mvc/week08_more/examples/catch_hex/conf.lua    |    6 +
+ .../examples/catch_hex/core/CatchGame.lua          |   75 ++
+ .../week08_more/examples/catch_hex/core/Ports.lua  |   21 +
+ .../mvc/week08_more/examples/catch_hex/main.lua    |   55 ++
+ .../mvc/week08_more/examples/catch_hex/prng.lua    |   22 +
+ .../mvc/week08_more/examples/catch_hex/rules.lua   |   13 +
+ .../mvc/week08_more/examples/catch_mvc/class.lua   |   25 +
+ .../mvc/week08_more/examples/catch_mvc/conf.lua    |    5 +
+ .../catch_mvc/controllers/CatchController.lua      |   31 +
+ .../mvc/week08_more/examples/catch_mvc/main.lua    |   39 +
+ .../examples/catch_mvc/models/CatchModel.lua       |   65 ++
+ .../mvc/week08_more/examples/catch_mvc/prng.lua    |   22 +
+ .../mvc/week08_more/examples/catch_mvc/rules.lua   |   13 +
+ .../examples/catch_mvc/views/CatchView.lua         |   46 +
+ .../mvc/week08_more/examples/catch_mvp/class.lua   |   25 +
+ .../mvc/week08_more/examples/catch_mvp/conf.lua    |    5 +
+ .../mvc/week08_more/examples/catch_mvp/main.lua    |   39 +
+ .../examples/catch_mvp/models/CatchModel.lua       |   65 ++
+ .../catch_mvp/presenters/CatchPresenter.lua        |   54 +
+ .../mvc/week08_more/examples/catch_mvp/prng.lua    |   22 +
+ .../mvc/week08_more/examples/catch_mvp/rules.lua   |   13 +
+ .../examples/catch_mvp/views/CatchView.lua         |   76 ++
+ .../mvc/week08_more/examples/catch_mvvm/class.lua  |   25 +
+ .../mvc/week08_more/examples/catch_mvvm/conf.lua   |    5 +
+ .../examples/catch_mvvm/core/Observable.lua        |   45 +
+ .../mvc/week08_more/examples/catch_mvvm/main.lua   |   43 +
+ .../examples/catch_mvvm/models/CatchModel.lua      |   65 ++
+ .../mvc/week08_more/examples/catch_mvvm/prng.lua   |   22 +
+ .../mvc/week08_more/examples/catch_mvvm/rules.lua  |   13 +
+ .../catch_mvvm/viewmodels/CatchViewModel.lua       |   72 ++
+ .../examples/catch_mvvm/views/CatchView.lua        |  109 ++
+ .../mvc/week08_more/examples/catch_tea/class.lua   |   25 +
+ .../mvc/week08_more/examples/catch_tea/conf.lua    |    5 +
+ .../mvc/week08_more/examples/catch_tea/main.lua    |   58 ++
+ .../mvc/week08_more/examples/catch_tea/prng.lua    |   22 +
+ .../mvc/week08_more/examples/catch_tea/rules.lua   |   13 +
+ .../week08_more/examples/catch_tea/tea/Runtime.lua |   76 ++
+ .../week08_more/examples/catch_tea/tea/catch.lua   |  144 +++
+ .../mvc/week08_more/examples/tests/ecs_test.lua    |  117 +++
+ .../examples/tests/equivalence_test.lua            |  183 ++++
+ lua_tuto/mvc/week08_more/examples/tests/helper.lua |  149 +++
+ .../mvc/week08_more/examples/tests/hex_test.lua    |  111 +++
+ .../mvc/week08_more/examples/tests/layer_check.lua |  147 +++
+ .../mvc/week08_more/examples/tests/mvc_test.lua    |   68 ++
+ .../mvc/week08_more/examples/tests/mvp_test.lua    |   94 ++
+ .../mvc/week08_more/examples/tests/mvvm_test.lua   |  116 +++
+ .../mvc/week08_more/examples/tests/rules_test.lua  |   92 ++
+ .../mvc/week08_more/examples/tests/run_all.lua     |   40 +
+ .../mvc/week08_more/examples/tests/tea_test.lua    |  102 ++
+ 69 files changed, 4332 insertions(+)
 7d1ad9a 유도탄 추가
  ACY/galaga/main.lua | 209 +++++++++++++++++++++++++++++++++++++++-------------
  1 file changed, 157 insertions(+), 52 deletions(-)
@@ -256,3 +472,1626 @@ e4252f0 feat(galaga): 과제 B - 보스 탄막(Bullet Pattern) 및 보스전 구
 1db70ca feat(galaga): 7. HUD(점수/라이프 아이콘) + 게임오버 오버레이/재시작(resetGame)
  ACY/galaga/main.lua | 122 +++++++++++++++++++++++++++++++---------------------
  1 file changed, 73 insertions(+), 49 deletions(-)
+a05fbbd 화면비율
+ ACY/galaga/conf.lua | 11 +++++++++++
+ ACY/galaga/main.lua | 55 ++++++++++++++++++-----------------------------------
+ 2 files changed, 30 insertions(+), 36 deletions(-)
+a7822eb feat(galaga): 6. 연출 (파괴 파티클, flash 번쩍임, 피격 shake 흔들림)
+ ACY/galaga/main.lua | 88 ++++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 80 insertions(+), 8 deletions(-)
+48b26bf feat(galaga): 5. 충돌 판정 (내 총알x적 파괴/점수, 적 총알x플레이어 라이프 감소)
+ ACY/galaga/main.lua | 74 ++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 70 insertions(+), 4 deletions(-)
+b29d419 feat(galaga): 4. 적 랜덤 발사 + 적 총알 아래로 이동 (T1 측정 시점)
+ ACY/galaga/main.lua | 55 +++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 51 insertions(+), 4 deletions(-)
+1436ba8 feat(galaga): 3. 적 편대(그리드) 생성 + 좌우 이동 + 끝에서 한 칸 하강
+ ACY/galaga/main.lua | 68 +++++++++++++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 61 insertions(+), 7 deletions(-)
+76ba0a3 feat(galaga): 2. Space 발사(쿨다운) + 총알 위로 이동
+ ACY/galaga/main.lua | 39 +++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 37 insertions(+), 2 deletions(-)
+6a11e0d feat(galaga): 1. 플레이어 사각형 + 좌우 이동 + 화면 경계 클램프
+ ACY/galaga/conf.lua |  0
+ ACY/galaga/main.lua | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 50 insertions(+)
+9a370e4 Merge remote-tracking branch 'upstream/main'
+cc1bce1 updated mvc
+ lua_tuto/README.md                                 |   1 +
+ ...225\231\354\212\265\352\263\204\355\232\215.md" | 103 ++---
+ .../mvc/basics/01_counter/counter_controller.lua   |  36 ++
+ lua_tuto/mvc/basics/01_counter/counter_model.lua   |  36 ++
+ lua_tuto/mvc/basics/01_counter/counter_view.lua    |  20 +
+ lua_tuto/mvc/basics/01_counter/main.lua            |  41 ++
+ lua_tuto/mvc/basics/02_todo/main.lua               |  49 +++
+ lua_tuto/mvc/basics/02_todo/todo_controller.lua    |  48 +++
+ lua_tuto/mvc/basics/02_todo/todo_model.lua         |  52 +++
+ lua_tuto/mvc/basics/02_todo/todo_view.lua          |  31 ++
+ lua_tuto/mvc/basics/03_temperature/gauge_view.lua  |  27 ++
+ lua_tuto/mvc/basics/03_temperature/main.lua        |  53 +++
+ .../03_temperature/temperature_controller.lua      |  40 ++
+ .../basics/03_temperature/temperature_model.lua    |  58 +++
+ lua_tuto/mvc/basics/03_temperature/text_view.lua   |  21 +
+ .../basics/04_guess_number/guess_controller.lua    |  39 ++
+ .../mvc/basics/04_guess_number/guess_model.lua     |  65 +++
+ lua_tuto/mvc/basics/04_guess_number/guess_view.lua |  35 ++
+ lua_tuto/mvc/basics/04_guess_number/main.lua       |  53 +++
+ lua_tuto/mvc/basics/05_grid_robot/console_view.lua |  37 ++
+ lua_tuto/mvc/basics/05_grid_robot/main.lua         |  49 +++
+ .../mvc/basics/05_grid_robot/robot_controller.lua  |  49 +++
+ lua_tuto/mvc/basics/05_grid_robot/robot_model.lua  |  70 ++++
+ lua_tuto/mvc/basics/06_dungeon/README.md           | 147 +++++++
+ .../06_dungeon/controllers/battle_controller.lua   |  22 +
+ .../06_dungeon/controllers/end_controller.lua      |  15 +
+ .../06_dungeon/controllers/explore_controller.lua  |  20 +
+ .../basics/06_dungeon/controllers/input_router.lua |  42 ++
+ .../controllers/inventory_controller.lua           |  22 +
+ .../mvc/basics/06_dungeon/data/dungeon_data.lua    |  25 ++
+ lua_tuto/mvc/basics/06_dungeon/main.lua            |  91 +++++
+ .../mvc/basics/06_dungeon/models/dungeon_model.lua |  26 ++
+ .../mvc/basics/06_dungeon/models/enemy_model.lua   |  26 ++
+ .../mvc/basics/06_dungeon/models/event_bus.lua     |  42 ++
+ .../mvc/basics/06_dungeon/models/game_model.lua    | 178 ++++++++
+ .../basics/06_dungeon/models/inventory_model.lua   |  33 ++
+ .../mvc/basics/06_dungeon/models/log_model.lua     |  25 ++
+ .../mvc/basics/06_dungeon/models/player_model.lua  |  46 +++
+ .../mvc/basics/06_dungeon/models/quest_model.lua   |  42 ++
+ .../mvc/basics/06_dungeon/views/command_view.lua   |  23 ++
+ .../mvc/basics/06_dungeon/views/enemy_view.lua     |  23 ++
+ .../mvc/basics/06_dungeon/views/inventory_view.lua |  34 ++
+ lua_tuto/mvc/basics/06_dungeon/views/log_view.lua  |  66 +++
+ .../mvc/basics/06_dungeon/views/quest_view.lua     |  20 +
+ .../mvc/basics/06_dungeon/views/screen_view.lua    |  62 +++
+ .../mvc/basics/06_dungeon/views/status_view.lua    |  22 +
+ lua_tuto/mvc/basics/06_dungeon/views/widgets.lua   |  14 +
+ lua_tuto/mvc/basics/README.md                      | 260 ++++++++++++
+ lua_tuto/mvc/basics/tests/dungeon_test.lua         | 255 ++++++++++++
+ lua_tuto/mvc/basics/tests/mvc_basics_test.lua      | 205 ++++++++++
+ lua_tuto/mvc/week02/README.md                      |  54 ++-
+ .../mvc/week02/examples/monolith_pain_template.md  |  23 ++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |  44 ++
+ ...04\235_\354\231\204\354\204\261\353\263\270.md" |  12 +-
+ lua_tuto/mvc/week03/README.md                      | 219 +++++++---
+ lua_tuto/mvc/week03/examples/models/GameModel.lua  |  20 +-
+ .../mvc/week03/examples/starter/BulletModel.lua    |  35 ++
+ .../mvc/week03/examples/starter/EnemyModel.lua     |  28 ++
+ lua_tuto/mvc/week03/examples/starter/GameModel.lua | 115 ++++++
+ .../mvc/week03/examples/starter/PlayerModel.lua    |  45 +++
+ lua_tuto/mvc/week03/examples/starter/class.lua     |  25 ++
+ lua_tuto/mvc/week03/examples/starter/rng.lua       |  37 ++
+ .../mvc/week03/examples/tests/decoupling_check.lua |  33 +-
+ lua_tuto/mvc/week03/examples/tests/model_test.lua  | 180 +++++++--
+ lua_tuto/mvc/week03/examples/tests/simulate.lua    |  94 +++++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |  61 +++
+ lua_tuto/mvc/week04/README.md                      | 326 +++++++++++++++
+ lua_tuto/mvc/week04/examples/galaga_mvc/conf.lua   |  10 +
+ .../galaga_mvc/controllers/InputController.lua     |  66 +++
+ lua_tuto/mvc/week04/examples/galaga_mvc/main.lua   |  61 +++
+ .../examples/galaga_mvc/models/BulletModel.lua     |  38 ++
+ .../examples/galaga_mvc/models/EnemyModel.lua      |  28 ++
+ .../examples/galaga_mvc/models/GameModel.lua       | 211 ++++++++++
+ .../examples/galaga_mvc/models/PlayerModel.lua     |  47 +++
+ .../week04/examples/galaga_mvc/models/class.lua    |  25 ++
+ .../mvc/week04/examples/galaga_mvc/models/rng.lua  |  37 ++
+ .../examples/galaga_mvc/views/BulletView.lua       |  25 ++
+ .../examples/galaga_mvc/views/EffectsView.lua      |  98 +++++
+ .../week04/examples/galaga_mvc/views/EnemyView.lua |  19 +
+ .../week04/examples/galaga_mvc/views/GameView.lua  |  48 +++
+ .../week04/examples/galaga_mvc/views/HudView.lua   |  16 +
+ .../examples/galaga_mvc/views/PlayerView.lua       |  15 +
+ .../mvc/week04/examples/galaga_mvc_full/conf.lua   |  10 +
+ .../controllers/InputController.lua                |  68 ++++
+ .../mvc/week04/examples/galaga_mvc_full/main.lua   |  61 +++
+ .../examples/galaga_mvc_full/models/BossModel.lua  |  69 ++++
+ .../galaga_mvc_full/models/BulletModel.lua         |  38 ++
+ .../examples/galaga_mvc_full/models/EnemyModel.lua |  28 ++
+ .../examples/galaga_mvc_full/models/GameModel.lua  | 295 ++++++++++++++
+ .../galaga_mvc_full/models/PlayerModel.lua         |  47 +++
+ .../examples/galaga_mvc_full/models/class.lua      |  25 ++
+ .../examples/galaga_mvc_full/models/homing.lua     |  39 ++
+ .../week04/examples/galaga_mvc_full/models/rng.lua |  37 ++
+ .../examples/galaga_mvc_full/views/BossView.lua    |  21 +
+ .../examples/galaga_mvc_full/views/BulletView.lua  |  32 ++
+ .../examples/galaga_mvc_full/views/EffectsView.lua |  98 +++++
+ .../examples/galaga_mvc_full/views/EnemyView.lua   |  19 +
+ .../examples/galaga_mvc_full/views/GameView.lua    |  50 +++
+ .../examples/galaga_mvc_full/views/HudView.lua     |  18 +
+ .../examples/galaga_mvc_full/views/PlayerView.lua  |  15 +
+ lua_tuto/mvc/week04/examples/starter/conf.lua      |  10 +
+ .../starter/controllers/InputController.lua        |  44 ++
+ lua_tuto/mvc/week04/examples/starter/main.lua      |  42 ++
+ .../week04/examples/starter/models/BulletModel.lua |  38 ++
+ .../week04/examples/starter/models/EnemyModel.lua  |  28 ++
+ .../week04/examples/starter/models/GameModel.lua   | 211 ++++++++++
+ .../week04/examples/starter/models/PlayerModel.lua |  47 +++
+ .../mvc/week04/examples/starter/models/class.lua   |  25 ++
+ .../mvc/week04/examples/starter/models/rng.lua     |  37 ++
+ .../week04/examples/starter/views/BulletView.lua   |  15 +
+ .../week04/examples/starter/views/EffectsView.lua  |  96 +++++
+ .../week04/examples/starter/views/EnemyView.lua    |  14 +
+ .../mvc/week04/examples/starter/views/GameView.lua |  39 ++
+ .../mvc/week04/examples/starter/views/HudView.lua  |  13 +
+ .../week04/examples/starter/views/PlayerView.lua   |  15 +
+ .../mvc/week04/examples/tests/controller_test.lua  |  82 ++++
+ .../mvc/week04/examples/tests/feature_test.lua     | 165 ++++++++
+ lua_tuto/mvc/week04/examples/tests/helper.lua      | 120 ++++++
+ .../mvc/week04/examples/tests/integration_test.lua | 111 +++++
+ lua_tuto/mvc/week04/examples/tests/layer_check.lua |  84 ++++
+ lua_tuto/mvc/week04/examples/tests/view_test.lua   | 127 ++++++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |  79 ++++
+ lua_tuto/mvc/week05/README.md                      | 359 +++++++++++++++++
+ .../mvc/week05/examples/galaga_states/conf.lua     |  10 +
+ .../galaga_states/controllers/InputController.lua  |  51 +++
+ .../mvc/week05/examples/galaga_states/main.lua     |  52 +++
+ .../examples/galaga_states/models/BossModel.lua    |  69 ++++
+ .../examples/galaga_states/models/BossPhase.lua    |  54 +++
+ .../examples/galaga_states/models/BulletModel.lua  |  38 ++
+ .../examples/galaga_states/models/EnemyModel.lua   |  28 ++
+ .../galaga_states/models/FormationPhase.lua        |  43 ++
+ .../examples/galaga_states/models/GameModel.lua    | 255 ++++++++++++
+ .../examples/galaga_states/models/PlayerModel.lua  |  47 +++
+ .../week05/examples/galaga_states/models/class.lua |  25 ++
+ .../examples/galaga_states/models/homing.lua       |  39 ++
+ .../week05/examples/galaga_states/models/rng.lua   |  37 ++
+ .../examples/galaga_states/scenes/PauseScene.lua   |  28 ++
+ .../examples/galaga_states/scenes/PlayScene.lua    |  57 +++
+ .../examples/galaga_states/scenes/ResultScene.lua  |  31 ++
+ .../examples/galaga_states/scenes/SceneStack.lua   | 103 +++++
+ .../examples/galaga_states/scenes/TitleScene.lua   |  27 ++
+ .../examples/galaga_states/views/BossView.lua      |  21 +
+ .../examples/galaga_states/views/BulletView.lua    |  32 ++
+ .../examples/galaga_states/views/EffectsView.lua   |  98 +++++
+ .../examples/galaga_states/views/EnemyView.lua     |  19 +
+ .../examples/galaga_states/views/GameView.lua      |  50 +++
+ .../examples/galaga_states/views/HudView.lua       |  14 +
+ .../examples/galaga_states/views/PauseView.lua     |  13 +
+ .../examples/galaga_states/views/PlayerView.lua    |  15 +
+ .../examples/galaga_states/views/ResultView.lua    |  19 +
+ .../examples/galaga_states/views/TitleView.lua     |  13 +
+ lua_tuto/mvc/week05/examples/starter/conf.lua      |  10 +
+ .../starter/controllers/InputController.lua        |  51 +++
+ lua_tuto/mvc/week05/examples/starter/main.lua      |  52 +++
+ .../week05/examples/starter/models/BossModel.lua   |  69 ++++
+ .../week05/examples/starter/models/BossPhase.lua   |  38 ++
+ .../week05/examples/starter/models/BulletModel.lua |  38 ++
+ .../week05/examples/starter/models/EnemyModel.lua  |  28 ++
+ .../examples/starter/models/FormationPhase.lua     |  43 ++
+ .../week05/examples/starter/models/GameModel.lua   | 255 ++++++++++++
+ .../week05/examples/starter/models/PlayerModel.lua |  47 +++
+ .../mvc/week05/examples/starter/models/class.lua   |  25 ++
+ .../mvc/week05/examples/starter/models/homing.lua  |  39 ++
+ .../mvc/week05/examples/starter/models/rng.lua     |  37 ++
+ .../week05/examples/starter/scenes/PauseScene.lua  |  25 ++
+ .../week05/examples/starter/scenes/PlayScene.lua   |  55 +++
+ .../week05/examples/starter/scenes/ResultScene.lua |  31 ++
+ .../week05/examples/starter/scenes/SceneStack.lua  |  59 +++
+ .../week05/examples/starter/scenes/TitleScene.lua  |  27 ++
+ .../mvc/week05/examples/starter/views/BossView.lua |  21 +
+ .../week05/examples/starter/views/BulletView.lua   |  32 ++
+ .../week05/examples/starter/views/EffectsView.lua  |  98 +++++
+ .../week05/examples/starter/views/EnemyView.lua    |  19 +
+ .../mvc/week05/examples/starter/views/GameView.lua |  50 +++
+ .../mvc/week05/examples/starter/views/HudView.lua  |  14 +
+ .../week05/examples/starter/views/PauseView.lua    |  13 +
+ .../week05/examples/starter/views/PlayerView.lua   |  15 +
+ .../week05/examples/starter/views/ResultView.lua   |  19 +
+ .../week05/examples/starter/views/TitleView.lua    |  13 +
+ .../mvc/week05/examples/tests/equivalence_test.lua | 169 ++++++++
+ lua_tuto/mvc/week05/examples/tests/helper.lua      | 146 +++++++
+ lua_tuto/mvc/week05/examples/tests/layer_check.lua |  90 +++++
+ lua_tuto/mvc/week05/examples/tests/phase_test.lua  | 152 +++++++
+ lua_tuto/mvc/week05/examples/tests/scene_test.lua  | 239 +++++++++++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |  94 +++++
+ lua_tuto/mvc/week06/README.md                      | 448 +++++++++++++++++++++
+ .../mvc/week06/examples/galaga_replay/conf.lua     |  10 +
+ .../galaga_replay/controllers/InputController.lua  |  51 +++
+ .../galaga_replay/controllers/InputRecorder.lua    |  49 +++
+ .../mvc/week06/examples/galaga_replay/main.lua     |  54 +++
+ .../examples/galaga_replay/models/BossModel.lua    |  69 ++++
+ .../examples/galaga_replay/models/BossPhase.lua    |  54 +++
+ .../examples/galaga_replay/models/BulletModel.lua  |  38 ++
+ .../examples/galaga_replay/models/EnemyModel.lua   |  28 ++
+ .../galaga_replay/models/FormationPhase.lua        |  43 ++
+ .../examples/galaga_replay/models/GameModel.lua    | 255 ++++++++++++
+ .../examples/galaga_replay/models/PlayerModel.lua  |  47 +++
+ .../week06/examples/galaga_replay/models/class.lua |  25 ++
+ .../examples/galaga_replay/models/homing.lua       |  39 ++
+ .../week06/examples/galaga_replay/models/rng.lua   |  37 ++
+ .../examples/galaga_replay/scenes/PauseScene.lua   |  28 ++
+ .../examples/galaga_replay/scenes/PlayScene.lua    |  62 +++
+ .../examples/galaga_replay/scenes/ReplayScene.lua  |  61 +++
+ .../examples/galaga_replay/scenes/ResultScene.lua  |  35 ++
+ .../examples/galaga_replay/scenes/SceneStack.lua   | 103 +++++
+ .../examples/galaga_replay/scenes/TitleScene.lua   |  27 ++
+ .../examples/galaga_replay/views/BossView.lua      |  21 +
+ .../examples/galaga_replay/views/BulletView.lua    |  32 ++
+ .../examples/galaga_replay/views/EffectsView.lua   |  98 +++++
+ .../examples/galaga_replay/views/EnemyView.lua     |  19 +
+ .../examples/galaga_replay/views/GameView.lua      |  50 +++
+ .../examples/galaga_replay/views/HudView.lua       |  14 +
+ .../examples/galaga_replay/views/PauseView.lua     |  13 +
+ .../examples/galaga_replay/views/PlayerView.lua    |  15 +
+ .../examples/galaga_replay/views/ReplayView.lua    |  17 +
+ .../examples/galaga_replay/views/ResultView.lua    |  19 +
+ .../examples/galaga_replay/views/TitleView.lua     |  13 +
+ lua_tuto/mvc/week06/examples/snake_flux/App.lua    | 117 ++++++
+ lua_tuto/mvc/week06/examples/snake_flux/conf.lua   |  10 +
+ .../snake_flux/controllers/InputController.lua     |  41 ++
+ .../snake_flux/controllers/ReplayPlayer.lua        |  33 ++
+ .../examples/snake_flux/controllers/Ticker.lua     |  25 ++
+ .../mvc/week06/examples/snake_flux/core/class.lua  |  25 ++
+ .../week06/examples/snake_flux/flux/ActionLog.lua  |  65 +++
+ .../week06/examples/snake_flux/flux/Dispatcher.lua |  50 +++
+ .../mvc/week06/examples/snake_flux/flux/Store.lua  |  37 ++
+ .../week06/examples/snake_flux/game/actions.lua    |  46 +++
+ .../mvc/week06/examples/snake_flux/game/prng.lua   |  24 ++
+ .../examples/snake_flux/game/snakeReducer.lua      | 145 +++++++
+ lua_tuto/mvc/week06/examples/snake_flux/main.lua   |  35 ++
+ .../week06/examples/snake_flux/views/SnakeView.lua |  45 +++
+ lua_tuto/mvc/week06/examples/starter/App.lua       | 117 ++++++
+ lua_tuto/mvc/week06/examples/starter/conf.lua      |  10 +
+ .../starter/controllers/InputController.lua        |  41 ++
+ .../examples/starter/controllers/ReplayPlayer.lua  |  33 ++
+ .../week06/examples/starter/controllers/Ticker.lua |  25 ++
+ .../mvc/week06/examples/starter/core/class.lua     |  25 ++
+ .../mvc/week06/examples/starter/flux/ActionLog.lua |  58 +++
+ .../week06/examples/starter/flux/Dispatcher.lua    |  45 +++
+ .../mvc/week06/examples/starter/flux/Store.lua     |  37 ++
+ .../mvc/week06/examples/starter/game/actions.lua   |  46 +++
+ lua_tuto/mvc/week06/examples/starter/game/prng.lua |  24 ++
+ .../week06/examples/starter/game/snakeReducer.lua  | 115 ++++++
+ lua_tuto/mvc/week06/examples/starter/main.lua      |  35 ++
+ .../week06/examples/starter/views/SnakeView.lua    |  45 +++
+ .../mvc/week06/examples/starter_galaga/conf.lua    |  10 +
+ .../starter_galaga/controllers/InputController.lua |  51 +++
+ .../starter_galaga/controllers/InputRecorder.lua   |  50 +++
+ .../mvc/week06/examples/starter_galaga/main.lua    |  54 +++
+ .../examples/starter_galaga/models/BossModel.lua   |  69 ++++
+ .../examples/starter_galaga/models/BossPhase.lua   |  54 +++
+ .../examples/starter_galaga/models/BulletModel.lua |  38 ++
+ .../examples/starter_galaga/models/EnemyModel.lua  |  28 ++
+ .../starter_galaga/models/FormationPhase.lua       |  43 ++
+ .../examples/starter_galaga/models/GameModel.lua   | 255 ++++++++++++
+ .../examples/starter_galaga/models/PlayerModel.lua |  47 +++
+ .../examples/starter_galaga/models/class.lua       |  25 ++
+ .../examples/starter_galaga/models/homing.lua      |  39 ++
+ .../week06/examples/starter_galaga/models/rng.lua  |  37 ++
+ .../examples/starter_galaga/scenes/PauseScene.lua  |  28 ++
+ .../examples/starter_galaga/scenes/PlayScene.lua   |  62 +++
+ .../examples/starter_galaga/scenes/ReplayScene.lua |  58 +++
+ .../examples/starter_galaga/scenes/ResultScene.lua |  35 ++
+ .../examples/starter_galaga/scenes/SceneStack.lua  | 103 +++++
+ .../examples/starter_galaga/scenes/TitleScene.lua  |  27 ++
+ .../examples/starter_galaga/views/BossView.lua     |  21 +
+ .../examples/starter_galaga/views/BulletView.lua   |  32 ++
+ .../examples/starter_galaga/views/EffectsView.lua  |  98 +++++
+ .../examples/starter_galaga/views/EnemyView.lua    |  19 +
+ .../examples/starter_galaga/views/GameView.lua     |  50 +++
+ .../examples/starter_galaga/views/HudView.lua      |  14 +
+ .../examples/starter_galaga/views/PauseView.lua    |  13 +
+ .../examples/starter_galaga/views/PlayerView.lua   |  15 +
+ .../examples/starter_galaga/views/ReplayView.lua   |  17 +
+ .../examples/starter_galaga/views/ResultView.lua   |  19 +
+ .../examples/starter_galaga/views/TitleView.lua    |  13 +
+ lua_tuto/mvc/week06/examples/tests/flux_test.lua   | 325 +++++++++++++++
+ lua_tuto/mvc/week06/examples/tests/helper.lua      | 122 ++++++
+ lua_tuto/mvc/week06/examples/tests/layer_check.lua | 113 ++++++
+ .../mvc/week06/examples/tests/reducer_test.lua     | 197 +++++++++
+ lua_tuto/mvc/week06/examples/tests/replay_test.lua | 156 +++++++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" | 107 +++++
+ lua_tuto/mvc/week07/README.md                      | 390 ++++++++++++++++++
+ ...67\234\354\271\231-\353\262\204\354\240\204.md" |  36 ++
+ .../ADR-\355\205\234\355\224\214\353\246\277.md"   |  33 ++
+ lua_tuto/mvc/week07/examples/galaga_final/conf.lua |  11 +
+ .../galaga_final/controllers/InputController.lua   |  51 +++
+ .../galaga_final/controllers/InputRecorder.lua     |  55 +++
+ lua_tuto/mvc/week07/examples/galaga_final/main.lua |  89 ++++
+ .../examples/galaga_final/models/BossModel.lua     |  69 ++++
+ .../examples/galaga_final/models/BossPhase.lua     |  54 +++
+ .../examples/galaga_final/models/BulletModel.lua   |  38 ++
+ .../examples/galaga_final/models/ComboModel.lua    |  47 +++
+ .../examples/galaga_final/models/EnemyModel.lua    |  28 ++
+ .../galaga_final/models/FormationPhase.lua         |  43 ++
+ .../examples/galaga_final/models/GameModel.lua     | 281 +++++++++++++
+ .../examples/galaga_final/models/PlayerModel.lua   |  47 +++
+ .../week07/examples/galaga_final/models/class.lua  |  25 ++
+ .../week07/examples/galaga_final/models/homing.lua |  39 ++
+ .../week07/examples/galaga_final/models/rng.lua    |  37 ++
+ .../examples/galaga_final/scenes/PauseScene.lua    |  28 ++
+ .../examples/galaga_final/scenes/PlayScene.lua     |  62 +++
+ .../examples/galaga_final/scenes/ReplayScene.lua   |  66 +++
+ .../examples/galaga_final/scenes/ResultScene.lua   |  40 ++
+ .../examples/galaga_final/scenes/SceneStack.lua    | 103 +++++
+ .../examples/galaga_final/scenes/TitleScene.lua    |  45 +++
+ .../examples/galaga_final/views/BossView.lua       |  21 +
+ .../examples/galaga_final/views/BulletView.lua     |  32 ++
+ .../examples/galaga_final/views/EffectsView.lua    |  98 +++++
+ .../examples/galaga_final/views/EnemyView.lua      |  19 +
+ .../examples/galaga_final/views/GameView.lua       |  50 +++
+ .../week07/examples/galaga_final/views/HudView.lua |  19 +
+ .../examples/galaga_final/views/PauseView.lua      |  13 +
+ .../examples/galaga_final/views/PlayerView.lua     |  15 +
+ .../examples/galaga_final/views/ReplayView.lua     |  25 ++
+ .../examples/galaga_final/views/ResultView.lua     |  22 +
+ .../examples/galaga_final/views/TitleView.lua      |  17 +
+ lua_tuto/mvc/week07/examples/starter/conf.lua      |  11 +
+ .../starter/controllers/InputController.lua        |  51 +++
+ .../examples/starter/controllers/InputRecorder.lua |  55 +++
+ lua_tuto/mvc/week07/examples/starter/main.lua      |  89 ++++
+ .../week07/examples/starter/models/BossModel.lua   |  69 ++++
+ .../week07/examples/starter/models/BossPhase.lua   |  54 +++
+ .../week07/examples/starter/models/BulletModel.lua |  38 ++
+ .../week07/examples/starter/models/EnemyModel.lua  |  28 ++
+ .../examples/starter/models/FormationPhase.lua     |  43 ++
+ .../week07/examples/starter/models/GameModel.lua   | 259 ++++++++++++
+ .../week07/examples/starter/models/PlayerModel.lua |  47 +++
+ .../mvc/week07/examples/starter/models/class.lua   |  25 ++
+ .../mvc/week07/examples/starter/models/homing.lua  |  39 ++
+ .../mvc/week07/examples/starter/models/rng.lua     |  37 ++
+ .../week07/examples/starter/scenes/PauseScene.lua  |  28 ++
+ .../week07/examples/starter/scenes/PlayScene.lua   |  62 +++
+ .../week07/examples/starter/scenes/ReplayScene.lua |  66 +++
+ .../week07/examples/starter/scenes/ResultScene.lua |  40 ++
+ .../week07/examples/starter/scenes/SceneStack.lua  | 103 +++++
+ .../week07/examples/starter/scenes/TitleScene.lua  |  45 +++
+ .../mvc/week07/examples/starter/views/BossView.lua |  21 +
+ .../week07/examples/starter/views/BulletView.lua   |  32 ++
+ .../week07/examples/starter/views/EffectsView.lua  |  98 +++++
+ .../week07/examples/starter/views/EnemyView.lua    |  19 +
+ .../mvc/week07/examples/starter/views/GameView.lua |  50 +++
+ .../mvc/week07/examples/starter/views/HudView.lua  |  14 +
+ .../week07/examples/starter/views/PauseView.lua    |  13 +
+ .../week07/examples/starter/views/PlayerView.lua   |  15 +
+ .../week07/examples/starter/views/ReplayView.lua   |  25 ++
+ .../week07/examples/starter/views/ResultView.lua   |  22 +
+ .../week07/examples/starter/views/TitleView.lua    |  17 +
+ lua_tuto/mvc/week07/examples/tests/bench.lua       | 131 ++++++
+ lua_tuto/mvc/week07/examples/tests/combo_test.lua  | 137 +++++++
+ .../mvc/week07/examples/tests/equivalence_test.lua | 185 +++++++++
+ .../mvc/week07/examples/tests/feature_test.lua     | 159 ++++++++
+ .../mvc/week07/examples/tests/globals_check.lua    | 134 ++++++
+ lua_tuto/mvc/week07/examples/tests/helper.lua      | 165 ++++++++
+ lua_tuto/mvc/week07/examples/tests/layer_check.lua |  86 ++++
+ lua_tuto/mvc/week07/examples/tests/perf_test.lua   |  52 +++
+ lua_tuto/mvc/week07/examples/tests/phase_test.lua  | 152 +++++++
+ lua_tuto/mvc/week07/examples/tests/replay_test.lua | 229 +++++++++++
+ lua_tuto/mvc/week07/examples/tests/run_all.lua     |  43 ++
+ lua_tuto/mvc/week07/examples/tests/scene_test.lua  | 239 +++++++++++
+ lua_tuto/mvc/week07/examples/tests/view_test.lua   | 127 ++++++
+ ...260\225\354\202\254\353\205\270\355\212\270.md" |  98 +++++
+ 362 files changed, 22078 insertions(+), 160 deletions(-)
+e56dad4 Merge remote-tracking branch 'upstream/main'
+690b96c 12
+ ACY/oop/Animal.lua      |  37 +++++++++++++++
+ ACY/oop/Bird.lua        |  17 +++++++
+ ACY/oop/Cat.lua         |  26 +++++++++++
+ ACY/oop/Dog.lua         |  35 +++++++++++++++
+ ACY/oop/Eagle.lua       |  36 +++++++++++++++
+ ACY/oop/Mammal.lua      |  16 +++++++
+ ACY/oop/Penguin.lua     |  26 +++++++++++
+ ACY/oop/class.lua       |  32 +++++++++++++
+ ACY/oop/tst.lua         | 116 ++++++++++++++++++++++++++++++++++++++++++++++++
+ love-11.5-win64/lua.exe | Bin 0 -> 130560 bytes
+ 10 files changed, 341 insertions(+)
+0774d5a Update tst.lua
+ lua_tuto/mvc/week01/examples/oop/tst.lua | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+5175237 Update tst.lua
+ lua_tuto/mvc/week01/examples/oop/tst.lua | 6 ++++++
+ 1 file changed, 6 insertions(+)
+b44ed2d Merge remote-tracking branch 'upstream/main'
+b10a3dc updated oop
+ lua_tuto/mvc/week01/examples/oop/Bird.lua    | 22 ++++++++++++++++
+ lua_tuto/mvc/week01/examples/oop/Cat.lua     | 39 ++++++++++++++++++++++++++++
+ lua_tuto/mvc/week01/examples/oop/Dog.lua     | 33 +++++++++++++++++++++++
+ lua_tuto/mvc/week01/examples/oop/Eagle.lua   | 30 +++++++++++++++++++++
+ lua_tuto/mvc/week01/examples/oop/Mammal.lua  | 14 ++++++++++
+ lua_tuto/mvc/week01/examples/oop/Panguin.lua |  0
+ lua_tuto/mvc/week01/examples/oop/Penguin.lua | 33 +++++++++++++++++++++++
+ 7 files changed, 171 insertions(+)
+91ba3ad Update tst.lua
+ lua_tuto/mvc/week01/examples/oop/tst.lua | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+2f9ddf9 Merge remote-tracking branch 'upstream/main'
+e0da713 1
+ ACY/pong/class.lua   |  31 ++++++
+ ACY/pong/conf.lua    |  12 +++
+ ACY/pong/main.lua    | 263 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ ACY/pong2/ball.lua   |  49 ++++++++++
+ ACY/pong2/class.lua  |  34 +++++++
+ ACY/pong2/conf.lua   |  12 +++
+ ACY/pong2/global.lua |  20 ++++
+ ACY/pong2/main.lua   | 152 +++++++++++++++++++++++++++++
+ ACY/pong2/paddle.lua |  44 +++++++++
+ 9 files changed, 617 insertions(+)
+34d8573 added oop
+ lua_tuto/mvc/week01/examples/oop/Animal.lua  |  36 +++++++++
+ lua_tuto/mvc/week01/examples/oop/Bird.lua    |   0
+ lua_tuto/mvc/week01/examples/oop/Cat.lua     |   0
+ lua_tuto/mvc/week01/examples/oop/Dog.lua     |   0
+ lua_tuto/mvc/week01/examples/oop/Eagle.lua   |   0
+ lua_tuto/mvc/week01/examples/oop/Mammal.lua  |   0
+ lua_tuto/mvc/week01/examples/oop/Panguin.lua |   0
+ lua_tuto/mvc/week01/examples/oop/class.lua   |  20 +++++
+ lua_tuto/mvc/week01/examples/oop/tst.lua     | 107 +++++++++++++++++++++++++++
+ 9 files changed, 163 insertions(+)
+9fa309e mvc added
+ .../design_patterns/behavioral/visitor/README.md   |  72 ++++
+ ...225\231\354\212\265\352\263\204\355\232\215.md" | 186 +++++++++
+ lua_tuto/mvc/week01/README.md                      | 223 +++++++++++
+ lua_tuto/mvc/week01/examples/01_class_demo.lua     |  33 ++
+ .../mvc/week01/examples/02_fixed_timestep_demo.lua |  57 +++
+ lua_tuto/mvc/week01/examples/class.lua             |  38 ++
+ lua_tuto/mvc/week01/examples/pong/class.lua        |  26 ++
+ lua_tuto/mvc/week01/examples/pong/conf.lua         |  10 +
+ lua_tuto/mvc/week01/examples/pong/main.lua         | 158 ++++++++
+ lua_tuto/mvc/week02/.DS_Store                      | Bin 0 -> 8196 bytes
+ lua_tuto/mvc/week02/README.md                      | 182 +++++++++
+ lua_tuto/mvc/week02/examples/.DS_Store             | Bin 0 -> 10244 bytes
+ .../mvc/week02/examples/galaga_monolith/conf.lua   |  10 +
+ .../mvc/week02/examples/galaga_monolith/main.lua   | 280 ++++++++++++++
+ .../week02/examples/galaga_monolith_full/conf.lua  |  10 +
+ .../week02/examples/galaga_monolith_full/main.lua  | 418 +++++++++++++++++++++
+ .../mvc/week02/examples/monolith_pain_template.md  |  47 +++
+ ...04\235_\354\231\204\354\204\261\353\263\270.md" | 100 +++++
+ lua_tuto/mvc/week03/README.md                      | 261 +++++++++++++
+ .../mvc/week03/examples/models/BulletModel.lua     |  38 ++
+ lua_tuto/mvc/week03/examples/models/EnemyModel.lua |  28 ++
+ lua_tuto/mvc/week03/examples/models/GameModel.lua  | 197 ++++++++++
+ .../mvc/week03/examples/models/PlayerModel.lua     |  47 +++
+ lua_tuto/mvc/week03/examples/models/class.lua      |  25 ++
+ lua_tuto/mvc/week03/examples/models/rng.lua        |  37 ++
+ .../mvc/week03/examples/tests/decoupling_check.lua |  41 ++
+ lua_tuto/mvc/week03/examples/tests/model_test.lua  |  87 +++++
+ 27 files changed, 2611 insertions(+)
+f776272 design pattern quiz
+ ...60\276\352\270\260_\353\254\270\354\240\234.md" | 201 +++++++++++++++++++++
+ ...226\264\353\226\244\355\214\250\355\204\264.md" | 101 +++++++++++
+ 2 files changed, 302 insertions(+)
+5118652 updated ~ visitor
+ .../behavioral/command/example_03.lua              |  2 +
+ .../behavioral/command/example_04.lua              |  2 +
+ .../behavioral/command/example_05.lua              |  1 +
+ .../design_patterns/behavioral/iterator/README.md  |  1 +
+ .../behavioral/template_method/README.md           | 99 ++++++++++++++++++++--
+ .../behavioral/template_method/example_02.lua      | 42 +++++----
+ .../behavioral/template_method/example_04.lua      | 12 ++-
+ .../design_patterns/behavioral/visitor/README.md   |  1 +
+ .../behavioral/visitor/example_02.lua              |  3 +-
+ .../creational/builder/example_04.lua              |  4 +-
+ .../creational/singleton/example_03.lua            |  8 +-
+ 11 files changed, 143 insertions(+), 32 deletions(-)
+bbf82a9 udpated ~ flyweight
+ .../behavioral/chain_of_responsibility/README.md   | 58 ++++++++++++++++++++
+ .../chain_of_responsibility/example_01.lua         |  1 +
+ .../chain_of_responsibility/example_05.lua         |  1 +
+ .../design_patterns/behavioral/mediator/README.md  | 49 +++++++++++++++++
+ .../behavioral/mediator/example_03.lua             | 19 +++++--
+ .../design_patterns/behavioral/memento/README.md   | 50 ++++++++++++++++++
+ .../behavioral/memento/example_02.lua              | 20 ++++---
+ .../behavioral/memento/example_05.lua              | 23 +++++---
+ .../creational/abstract_factory/README.md          | 60 +++++++++++++++++++++
+ .../creational/abstract_factory/example_01.lua     | 44 ++++++++++++----
+ .../design_patterns/creational/prototype/README.md | 49 +++++++++++++++++
+ .../creational/prototype/example_01.lua            | 14 ++---
+ .../creational/prototype/example_05.lua            | 32 ++++++++----
+ .../design_patterns/structural/bridge/README.md    | 52 ++++++++++++++++++
+ .../structural/bridge/example_01.lua               | 12 +++++
+ .../design_patterns/structural/decorator/README.md | 61 ++++++++++++++++++++--
+ .../structural/decorator/example_02.lua            |  5 +-
+ .../structural/decorator/example_05.lua            |  8 ++-
+ .../design_patterns/structural/flyweight/README.md | 57 ++++++++++++++++++--
+ .../design_patterns/structural/proxy/README.md     | 48 +++++++++++++++++
+ .../structural/proxy/example_02.lua                |  5 ++
+ .../structural/proxy/example_03.lua                |  5 +-
+ .../structural/proxy/example_04.lua                | 13 +++--
+ 23 files changed, 622 insertions(+), 64 deletions(-)
+00fabc7 added senarios
+ .../design_patterns/behavioral/chain_of_responsibility/README.md | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/command/README.md            | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/iterator/README.md           | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/mediator/README.md           | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/memento/README.md            | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/observer/README.md           | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/state/README.md              | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/strategy/README.md           | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/template_method/README.md    | 9 +++++++++
+ lua_tuto/design_patterns/behavioral/visitor/README.md            | 9 +++++++++
+ lua_tuto/design_patterns/creational/abstract_factory/README.md   | 9 +++++++++
+ lua_tuto/design_patterns/creational/builder/README.md            | 9 +++++++++
+ lua_tuto/design_patterns/creational/factory_method/README.md     | 9 +++++++++
+ lua_tuto/design_patterns/creational/prototype/README.md          | 9 +++++++++
+ lua_tuto/design_patterns/creational/singleton/README.md          | 9 +++++++++
+ lua_tuto/design_patterns/structural/adapter/README.md            | 9 +++++++++
+ lua_tuto/design_patterns/structural/bridge/README.md             | 9 +++++++++
+ lua_tuto/design_patterns/structural/composite/README.md          | 9 +++++++++
+ lua_tuto/design_patterns/structural/decorator/README.md          | 9 +++++++++
+ lua_tuto/design_patterns/structural/facade/README.md             | 9 +++++++++
+ lua_tuto/design_patterns/structural/flyweight/README.md          | 9 +++++++++
+ lua_tuto/design_patterns/structural/proxy/README.md              | 9 +++++++++
+ 22 files changed, 198 insertions(+)
+2673c84 updated patterns
+ .../design_patterns/behavioral/command/README.md   | 45 ++++++++++++++++
+ .../behavioral/command/example_02.lua              |  2 +
+ .../design_patterns/structural/adapter/README.md   | 42 +++++++++++++--
+ .../structural/adapter/example_01.lua              |  5 ++
+ .../structural/adapter/example_02.lua              | 24 +++++++--
+ .../structural/adapter/example_03.lua              | 13 +++--
+ .../structural/adapter/example_04.lua              | 10 ++--
+ .../structural/adapter/example_05.lua              |  9 +++-
+ .../design_patterns/structural/composite/README.md | 63 +++++++++++++++++++++-
+ .../structural/composite/example_01.lua            | 24 +++++++--
+ .../design_patterns/structural/facade/README.md    | 36 ++++++++++++-
+ .../structural/facade/example_01.lua               | 10 +++-
+ .../structural/facade/example_04.lua               | 15 ++++--
+ .../structural/facade/example_05.lua               |  3 +-
+ 14 files changed, 274 insertions(+), 27 deletions(-)
+f031986 updated docs
+ .vscode/settings.json                              | 10 ++++-
+ lua_tuto/07_tables_advanced.md                     |  9 ++++
+ .../design_patterns/behavioral/observer/README.md  | 26 ++++++++++-
+ .../behavioral/observer/example_05.lua             | 14 ++++--
+ .../design_patterns/behavioral/state/README.md     | 48 +++++++++++++++++---
+ .../behavioral/state/example_02.lua                | 10 ++++-
+ .../behavioral/state/example_03.lua                | 32 +++++++++++++
+ .../behavioral/state/fsm_example.lua               | 24 ++++++++++
+ .../design_patterns/behavioral/strategy/README.md  | 52 ++++++++++++++++++++++
+ .../behavioral/strategy/strategy-uml.svg           | 37 +++++++++++++++
+ .../creational/factory_method/README.md            | 43 +++++++++++++++++-
+ .../creational/factory_method/example_02.lua       | 13 ++++--
+ tst.lua                                            |  5 ++-
+ 13 files changed, 303 insertions(+), 20 deletions(-)
+00b54e5 Create 04_strings_find_match_gmatch_answers.md
+ lua_tuto/04_strings_find_match_gmatch_answers.md | 704 +++++++++++++++++++++++
+ 1 file changed, 704 insertions(+)
+fdacaf9 added design pattern
+ lua_tuto/design_patterns/README.md                 |  83 +++++
+ lua_tuto/design_patterns/STUDY_GUIDE.md            | 385 +++++++++++++++++++++
+ .../behavioral/chain_of_responsibility/README.md   |  60 ++++
+ .../chain_of_responsibility/example_01.lua         |  24 ++
+ .../chain_of_responsibility/example_02.lua         |  23 ++
+ .../chain_of_responsibility/example_03.lua         |  20 ++
+ .../chain_of_responsibility/example_04.lua         |  18 +
+ .../chain_of_responsibility/example_05.lua         |  11 +
+ .../design_patterns/behavioral/command/README.md   |  57 +++
+ .../behavioral/command/example_01.lua              |  18 +
+ .../behavioral/command/example_02.lua              |  23 ++
+ .../behavioral/command/example_03.lua              |  16 +
+ .../behavioral/command/example_04.lua              |  21 ++
+ .../behavioral/command/example_05.lua              |  20 ++
+ .../design_patterns/behavioral/iterator/README.md  |  61 ++++
+ .../behavioral/iterator/example_01.lua             |  13 +
+ .../behavioral/iterator/example_02.lua             |  15 +
+ .../behavioral/iterator/example_03.lua             |  13 +
+ .../behavioral/iterator/example_04.lua             |  17 +
+ .../behavioral/iterator/example_05.lua             |  17 +
+ .../design_patterns/behavioral/mediator/README.md  |  58 ++++
+ .../behavioral/mediator/example_01.lua             |  28 ++
+ .../behavioral/mediator/example_02.lua             |  18 +
+ .../behavioral/mediator/example_03.lua             |  18 +
+ .../behavioral/mediator/example_04.lua             |  26 ++
+ .../behavioral/mediator/example_05.lua             |  31 ++
+ .../design_patterns/behavioral/memento/README.md   |  60 ++++
+ .../behavioral/memento/example_01.lua              |  15 +
+ .../behavioral/memento/example_02.lua              |  24 ++
+ .../behavioral/memento/example_03.lua              |  18 +
+ .../behavioral/memento/example_04.lua              |  16 +
+ .../behavioral/memento/example_05.lua              |  22 ++
+ .../design_patterns/behavioral/observer/README.md  |  68 ++++
+ .../behavioral/observer/example_01.lua             |  33 ++
+ .../behavioral/observer/example_02.lua             |  26 ++
+ .../behavioral/observer/example_03.lua             |  21 ++
+ .../behavioral/observer/example_04.lua             |  18 +
+ .../behavioral/observer/example_05.lua             |  32 ++
+ .../design_patterns/behavioral/state/README.md     |  68 ++++
+ .../behavioral/state/example_01.lua                |  41 +++
+ .../behavioral/state/example_02.lua                |  34 ++
+ .../behavioral/state/example_03.lua                |  40 +++
+ .../behavioral/state/example_04.lua                |  32 ++
+ .../behavioral/state/example_05.lua                |  45 +++
+ .../design_patterns/behavioral/strategy/README.md  |  70 ++++
+ .../behavioral/strategy/example_01.lua             |  24 ++
+ .../behavioral/strategy/example_02.lua             |  17 +
+ .../behavioral/strategy/example_03.lua             |  19 +
+ .../behavioral/strategy/example_04.lua             |  16 +
+ .../behavioral/strategy/example_05.lua             |  16 +
+ .../behavioral/template_method/README.md           |  59 ++++
+ .../behavioral/template_method/example_01.lua      |  21 ++
+ .../behavioral/template_method/example_02.lua      |  20 ++
+ .../behavioral/template_method/example_03.lua      |  21 ++
+ .../behavioral/template_method/example_04.lua      |  15 +
+ .../behavioral/template_method/example_05.lua      |  19 +
+ .../design_patterns/behavioral/visitor/README.md   |  64 ++++
+ .../behavioral/visitor/example_01.lua              |  22 ++
+ .../behavioral/visitor/example_02.lua              |  13 +
+ .../behavioral/visitor/example_03.lua              |  13 +
+ .../behavioral/visitor/example_04.lua              |  13 +
+ .../behavioral/visitor/example_05.lua              |  13 +
+ .../creational/abstract_factory/README.md          |  61 ++++
+ .../creational/abstract_factory/example_01.lua     |  20 ++
+ .../creational/abstract_factory/example_02.lua     |  16 +
+ .../creational/abstract_factory/example_03.lua     |  16 +
+ .../creational/abstract_factory/example_04.lua     |  16 +
+ .../creational/abstract_factory/example_05.lua     |  16 +
+ .../design_patterns/creational/builder/README.md   |  61 ++++
+ .../creational/builder/example_01.lua              |  15 +
+ .../creational/builder/example_02.lua              |  15 +
+ .../creational/builder/example_03.lua              |  14 +
+ .../creational/builder/example_04.lua              |  14 +
+ .../creational/builder/example_05.lua              |  16 +
+ .../creational/factory_method/README.md            |  65 ++++
+ .../creational/factory_method/example_01.lua       |  21 ++
+ .../creational/factory_method/example_02.lua       |  14 +
+ .../creational/factory_method/example_03.lua       |  17 +
+ .../creational/factory_method/example_04.lua       |  13 +
+ .../creational/factory_method/example_05.lua       |  15 +
+ .../design_patterns/creational/prototype/README.md |  59 ++++
+ .../creational/prototype/example_01.lua            |  15 +
+ .../creational/prototype/example_02.lua            |  12 +
+ .../creational/prototype/example_03.lua            |  12 +
+ .../creational/prototype/example_04.lua            |  12 +
+ .../creational/prototype/example_05.lua            |  18 +
+ .../design_patterns/creational/singleton/README.md |  57 +++
+ .../creational/singleton/example_01.lua            |  22 ++
+ .../creational/singleton/example_02.lua            |  17 +
+ .../creational/singleton/example_03.lua            |  19 +
+ .../creational/singleton/example_04.lua            |  16 +
+ .../creational/singleton/example_05.lua            |  12 +
+ .../design_patterns/structural/adapter/README.md   |  57 +++
+ .../structural/adapter/example_01.lua              |  10 +
+ .../structural/adapter/example_02.lua              |   4 +
+ .../structural/adapter/example_03.lua              |  10 +
+ .../structural/adapter/example_04.lua              |   8 +
+ .../structural/adapter/example_05.lua              |   9 +
+ .../design_patterns/structural/bridge/README.md    |  58 ++++
+ .../structural/bridge/example_01.lua               |  16 +
+ .../structural/bridge/example_02.lua               |   9 +
+ .../structural/bridge/example_03.lua               |  12 +
+ .../structural/bridge/example_04.lua               |   9 +
+ .../structural/bridge/example_05.lua               |  12 +
+ .../design_patterns/structural/composite/README.md |  60 ++++
+ .../structural/composite/example_01.lua            |  21 ++
+ .../structural/composite/example_02.lua            |  20 ++
+ .../structural/composite/example_03.lua            |  18 +
+ .../structural/composite/example_04.lua            |  18 +
+ .../structural/composite/example_05.lua            |  18 +
+ .../design_patterns/structural/decorator/README.md |  60 ++++
+ .../structural/decorator/example_01.lua            |  18 +
+ .../structural/decorator/example_02.lua            |  15 +
+ .../structural/decorator/example_03.lua            |  11 +
+ .../structural/decorator/example_04.lua            |   8 +
+ .../structural/decorator/example_05.lua            |  18 +
+ .../design_patterns/structural/facade/README.md    |  65 ++++
+ .../structural/facade/example_01.lua               |  10 +
+ .../structural/facade/example_02.lua               |  11 +
+ .../structural/facade/example_03.lua               |  10 +
+ .../structural/facade/example_04.lua               |  10 +
+ .../structural/facade/example_05.lua               |  11 +
+ .../design_patterns/structural/flyweight/README.md |  62 ++++
+ .../structural/flyweight/example_01.lua            |  15 +
+ .../structural/flyweight/example_02.lua            |  10 +
+ .../structural/flyweight/example_03.lua            |  10 +
+ .../structural/flyweight/example_04.lua            |  10 +
+ .../structural/flyweight/example_05.lua            |  14 +
+ .../design_patterns/structural/proxy/README.md     |  60 ++++
+ .../structural/proxy/example_01.lua                |  10 +
+ .../structural/proxy/example_02.lua                |  16 +
+ .../structural/proxy/example_03.lua                |  21 ++
+ .../structural/proxy/example_04.lua                |  16 +
+ .../structural/proxy/example_05.lua                |  11 +
+ 134 files changed, 3729 insertions(+)
+9391322 updated
+ lua_tuto/05_functions.md       |  43 ++++++++++-
+ lua_tuto/07_tables_advanced.md | 158 +++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 193 insertions(+), 8 deletions(-)
+9c500f6 string training hint
+ lua_tuto/04_strings_find_match_gmatch_hints.md | 134 +++++++++++++++++++++++++
+ 1 file changed, 134 insertions(+)
+ca71980 string training
+ lua_tuto/04_strings_find_match_gmatch_data.md | 135 ++++++++++++++++++++++++++
+ 1 file changed, 135 insertions(+)
+1bd889a Update 00_lua_dev_env.md
+ lua_tuto/00_lua_dev_env.md | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+aa6481a lua 개발환경 셋팅
+ lua_tuto/00_lua_dev_env.md | 188 +++++++++++++++++++++++++++++++++++++++++++++
+ lua_tuto/README.md         |   6 ++
+ 2 files changed, 194 insertions(+)
+3195514 added love2d tuto
+ .DS_Store                       | Bin 10244 -> 10244 bytes
+ love2d_tuto/01_setup.md         | 135 +++++++++++++
+ love2d_tuto/02_game_loop.md     | 201 +++++++++++++++++++
+ love2d_tuto/03_drawing.md       | 237 ++++++++++++++++++++++
+ love2d_tuto/04_input.md         | 222 +++++++++++++++++++++
+ love2d_tuto/05_movement.md      | 231 +++++++++++++++++++++
+ love2d_tuto/06_images.md        | 237 ++++++++++++++++++++++
+ love2d_tuto/07_animation.md     | 227 +++++++++++++++++++++
+ love2d_tuto/08_text.md          | 244 +++++++++++++++++++++++
+ love2d_tuto/09_audio.md         | 268 +++++++++++++++++++++++++
+ love2d_tuto/10_scenes.md        | 351 ++++++++++++++++++++++++++++++++
+ love2d_tuto/11_collision.md     | 245 +++++++++++++++++++++++
+ love2d_tuto/12_tilemap.md       | 297 +++++++++++++++++++++++++++
+ love2d_tuto/13_camera.md        | 292 +++++++++++++++++++++++++++
+ love2d_tuto/14_physics.md       | 244 +++++++++++++++++++++++
+ love2d_tuto/15_particles.md     | 242 ++++++++++++++++++++++
+ love2d_tuto/16_canvas.md        | 252 +++++++++++++++++++++++
+ love2d_tuto/17_shaders.md       | 275 +++++++++++++++++++++++++
+ love2d_tuto/18_save_load.md     | 315 +++++++++++++++++++++++++++++
+ love2d_tuto/19_mobile.md        | 348 ++++++++++++++++++++++++++++++++
+ love2d_tuto/20_performance.md   | 222 +++++++++++++++++++++
+ love2d_tuto/21_distribution.md  | 162 +++++++++++++++
+ love2d_tuto/22_mini_project.md  | 416 ++++++++++++++++++++++++++++++++++++++
+ love2d_tuto/README.md           | 100 ++++++++++
+ love2d_tuto/exercises/README.md |  46 +++++
+ lua_tuto/.DS_Store              | Bin 0 -> 6148 bytes
+ lua_tuto/04_strings.md          | 431 ++++++++++++++++++++++++++++++++++++----
+ lua_tuto/05_functions.md        |  21 +-
+ lua_tuto/07_tables_advanced.md  |  33 ++-
+ tst.lua                         |  61 +-----
+ 30 files changed, 6256 insertions(+), 99 deletions(-)
+1bcbe08 Merge branch 'main' of https://github.com/MunGyeongsam/WithAi
+df15e1d Add weekly reading order to README.md
+ c_tuto/README.md | 7 +++++++
+ 1 file changed, 7 insertions(+)
+e55927c docs(c_tuto/week10): add endianness and bitfield+endian deep-dive sections
+ c_tuto/week10/lesson.md | 372 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 372 insertions(+)
+0c02125 Merge branch 'main' of https://github.com/MunGyeongsam/WithAi
+07f961d feat: add C language 16-week course (c_tuto)
+ .github/agents/c-master-instructor.agent.md |  43 ++
+ c_tuto/16week-curriculum.md                 | 621 ++++++++++++++++++++++++++++
+ c_tuto/README.md                            |  17 +
+ c_tuto/week01/answers.md                    |  82 ++++
+ c_tuto/week01/examples/example01.c          |  35 ++
+ c_tuto/week01/further-more.md               |  53 +++
+ c_tuto/week01/lesson.md                     | 229 ++++++++++
+ c_tuto/week01/practice.md                   |  62 +++
+ c_tuto/week02/answers.md                    | 156 +++++++
+ c_tuto/week02/examples/example01.c          |  38 ++
+ c_tuto/week02/further-more.md               |  82 ++++
+ c_tuto/week02/lesson.md                     | 230 +++++++++++
+ c_tuto/week02/practice.md                   |  91 ++++
+ c_tuto/week03/answers.md                    | 197 +++++++++
+ c_tuto/week03/examples/example01.c          |  59 +++
+ c_tuto/week03/further-more.md               |  63 +++
+ c_tuto/week03/lesson.md                     | 325 +++++++++++++++
+ c_tuto/week03/practice.md                   |  89 ++++
+ c_tuto/week04/answers.md                    | 191 +++++++++
+ c_tuto/week04/examples/example01.c          |  56 +++
+ c_tuto/week04/further-more.md               |  56 +++
+ c_tuto/week04/lesson.md                     | 274 ++++++++++++
+ c_tuto/week04/practice.md                   |  88 ++++
+ c_tuto/week05/answers.md                    | 129 ++++++
+ c_tuto/week05/examples/example01.c          |  57 +++
+ c_tuto/week05/further-more.md               |  52 +++
+ c_tuto/week05/lesson.md                     | 257 ++++++++++++
+ c_tuto/week05/practice.md                   |  79 ++++
+ c_tuto/week06/answers.md                    | 144 +++++++
+ c_tuto/week06/examples/example01.c          |  33 ++
+ c_tuto/week06/further-more.md               |  30 ++
+ c_tuto/week06/lesson.md                     | 213 ++++++++++
+ c_tuto/week06/practice.md                   |  57 +++
+ c_tuto/week07/answers.md                    | 187 +++++++++
+ c_tuto/week07/examples/example01.c          |  46 +++
+ c_tuto/week07/further-more.md               |  33 ++
+ c_tuto/week07/lesson.md                     | 216 ++++++++++
+ c_tuto/week07/practice.md                   |  60 +++
+ c_tuto/week08/answers.md                    | 124 ++++++
+ c_tuto/week08/examples/example01.c          |  54 +++
+ c_tuto/week08/further-more.md               |  31 ++
+ c_tuto/week08/lesson.md                     | 232 +++++++++++
+ c_tuto/week08/practice.md                   |  60 +++
+ c_tuto/week09/answers.md                    |  73 ++++
+ c_tuto/week09/examples/example01.c          |  46 +++
+ c_tuto/week09/further-more.md               |  27 ++
+ c_tuto/week09/lesson.md                     | 198 +++++++++
+ c_tuto/week09/practice.md                   |  56 +++
+ c_tuto/week10/answers.md                    | 160 +++++++
+ c_tuto/week10/examples/example01.c          |  53 +++
+ c_tuto/week10/further-more.md               |  41 ++
+ c_tuto/week10/lesson.md                     | 247 +++++++++++
+ c_tuto/week10/practice.md                   |  46 +++
+ c_tuto/week11/answers.md                    | 165 ++++++++
+ c_tuto/week11/examples/example01.c          |  34 ++
+ c_tuto/week11/further-more.md               |  34 ++
+ c_tuto/week11/lesson.md                     | 223 ++++++++++
+ c_tuto/week11/practice.md                   |  51 +++
+ c_tuto/week12/answers.md                    | 130 ++++++
+ c_tuto/week12/examples/example01.c          |  36 ++
+ c_tuto/week12/further-more.md               |  29 ++
+ c_tuto/week12/lesson.md                     | 212 ++++++++++
+ c_tuto/week12/practice.md                   |  58 +++
+ c_tuto/week13/answers.md                    | 112 +++++
+ c_tuto/week13/examples/example01.c          |  41 ++
+ c_tuto/week13/further-more.md               |  36 ++
+ c_tuto/week13/lesson.md                     | 179 ++++++++
+ c_tuto/week13/practice.md                   |  44 ++
+ c_tuto/week14/answers.md                    | 110 +++++
+ c_tuto/week14/examples/example01.c          |  58 +++
+ c_tuto/week14/further-more.md               |  39 ++
+ c_tuto/week14/lesson.md                     | 229 ++++++++++
+ c_tuto/week14/practice.md                   |  42 ++
+ c_tuto/week15/answers.md                    |  68 +++
+ c_tuto/week15/examples/example01.c          |  66 +++
+ c_tuto/week15/further-more.md               |  28 ++
+ c_tuto/week15/lesson.md                     | 257 ++++++++++++
+ c_tuto/week15/practice.md                   |  23 ++
+ c_tuto/week16/answers.md                    |  61 +++
+ c_tuto/week16/examples/example01.c          |  60 +++
+ c_tuto/week16/further-more.md               |  39 ++
+ c_tuto/week16/lesson.md                     | 179 ++++++++
+ c_tuto/week16/practice.md                   |  83 ++++
+ docs/ai/vibe-coding-discussion-guide.md     | 117 ++++++
+ 84 files changed, 9021 insertions(+)
+573f626 Merge branch 'main' of https://github.com/MunGyeongsam/WithAi
+4317218 updated tst.lua
+ tst.lua | 68 ++++++++++++++++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 50 insertions(+), 18 deletions(-)
+e48a291 added discussion
+ docs/ai/vibe-coding-final-discussion.md | 47 +++++++++++++++++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+5289e90 added discussion for students
+ docs/ai/vibe-coding-discussion-student.md | 94 +++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
+cbca3c1 feat: add 02_tower_defense project (Xeno Tactic style maze-building TD)
+ .vscode/tasks.json                                 |  15 ++
+ 02_tower_defense/run.bat                           |  29 +++
+ 02_tower_defense/run.sh                            |  31 +++
+ 02_tower_defense/src/01_core/fixedTimestep.lua     |  41 ++++
+ 02_tower_defense/src/01_core/sceneStack.lua        |  72 ++++++
+ 02_tower_defense/src/01_core/virtualResolution.lua |  46 ++++
+ 02_tower_defense/src/03_game/economy.lua           |  55 +++++
+ 02_tower_defense/src/03_game/enemy.lua             | 223 ++++++++++++++++++
+ 02_tower_defense/src/03_game/gameMap.lua           | 211 +++++++++++++++++
+ .../src/03_game/input/inputAdapter.lua             |  77 ++++++
+ 02_tower_defense/src/03_game/levels.lua            |  56 +++++
+ 02_tower_defense/src/03_game/pathfinder.lua        | 117 ++++++++++
+ .../src/03_game/scenes/gameplayScene.lua           | 260 +++++++++++++++++++++
+ .../src/03_game/scenes/levelSelectScene.lua        |  89 +++++++
+ 02_tower_defense/src/03_game/scenes/titleScene.lua |  72 ++++++
+ 02_tower_defense/src/03_game/tower.lua             | 245 +++++++++++++++++++
+ 02_tower_defense/src/03_game/waveManager.lua       | 112 +++++++++
+ 02_tower_defense/src/04_ui/hud.lua                 | 190 +++++++++++++++
+ 02_tower_defense/src/conf.lua                      |  58 +++++
+ 02_tower_defense/src/main.lua                      |  92 ++++++++
+ 02_tower_defense/tests/economy_harness.lua         |  47 ++++
+ 02_tower_defense/tests/enemy_harness.lua           |  99 ++++++++
+ 02_tower_defense/tests/map_harness.lua             |  79 +++++++
+ 02_tower_defense/tests/pathfinder_harness.lua      |  99 ++++++++
+ 02_tower_defense/tests/tower_harness.lua           |  91 ++++++++
+ 02_tower_defense/tests/wave_harness.lua            |  68 ++++++
+ .../worklogs/001_2026-06-06_session.md             |  81 +++++++
+ 27 files changed, 2655 insertions(+)
+1a43f98 refactor: 멀티 프로젝트 구조로 전환 (project/ → 01_breakout/)
+ .DS_Store                                          | Bin 6148 -> 10244 bytes
+ .vscode/tasks.json                                 |   4 +-
+ .../001_2026-05-30_game-architecture-direction.md  |   0
+ ...-30_breakout-core-values-and-direction-draft.md |   0
+ ..._2026-05-30_mobile-real-device-check-routine.md |   0
+ .../src/00_common/spriteDemo.lua                   |   0
+ .../src/01_core/fixedTimestep.lua                  |   0
+ .../src/01_core/sceneStack.lua                     |   0
+ .../src/01_core/virtualResolution.lua              |   0
+ {project => 01_breakout}/src/02_render/camera.lua  |   0
+ .../src/02_render/worldAxis.lua                    |   0
+ {project => 01_breakout}/src/03_game/breakout.lua  | 273 ++++++++++++++++++++-
+ {project => 01_breakout}/src/03_game/combo.lua     |   0
+ .../src/03_game/input/inputAdapter.lua             |   0
+ .../src/03_game/input/mouseInput.lua               |   0
+ .../src/03_game/input/touchFollow.lua              |   0
+ .../src/03_game/input/touchInput.lua               |   0
+ {project => 01_breakout}/src/03_game/levels.lua    |  44 ++++
+ .../src/03_game/modes/classicMode.lua              |   0
+ .../src/03_game/modes/comboRushMode.lua            |   0
+ .../src/03_game/modes/modeBalance.lua              |   0
+ .../src/03_game/modes/modeRegistry.lua             |   0
+ .../src/03_game/progressStore.lua                  |   0
+ {project => 01_breakout}/src/03_game/riskLane.lua  |   0
+ .../src/03_game/scenes/breakoutScene.lua           |   0
+ .../src/03_game/scenes/levelSelectScene.lua        |   0
+ .../src/03_game/scenes/modeSelectScene.lua         |   0
+ .../src/03_game/scenes/pauseOverlayScene.lua       |   0
+ .../src/03_game/scenes/resultOverlayScene.lua      |   0
+ .../src/03_game/scenes/titleScene.lua              |  22 ++
+ {project => 01_breakout}/src/04_ui/hud.lua         |   0
+ {project => 01_breakout}/src/111.jpg               | Bin
+ {project => 01_breakout}/src/conf.lua              |   0
+ {project => 01_breakout}/src/main.lua              |   0
+ .../tests/classic_mode_harness.lua                 |   2 +-
+ {project => 01_breakout}/tests/combo_harness.lua   |   2 +-
+ .../tests/combo_rush_mode_harness.lua              |   2 +-
+ .../tests/input_adapter_harness.lua                |   2 +-
+ .../tests/level_select_progress_harness.lua        |   2 +-
+ .../tests/levels_set_harness.lua                   |   6 +-
+ .../tests/menu_flow_harness.lua                    |   2 +-
+ .../tests/mode_balance_harness.lua                 |   2 +-
+ .../tests/mode_registry_harness.lua                |   2 +-
+ .../tests/mouse_input_harness.lua                  |   2 +-
+ .../tests/progress_store_harness.lua               |   2 +-
+ .../tests/risk_lane_harness.lua                    |   2 +-
+ .../tests/scene_stack_harness.lua                  |   2 +-
+ .../tests/touch_follow_harness.lua                 |   2 +-
+ .../tests/touch_input_harness.lua                  |   2 +-
+ .../worklogs}/001_2026-05-30_session.md            |   0
+ .../worklogs}/002_2026-05-31_session.md            |   0
+ run.bat                                            |   2 +-
+ run.sh                                             |   2 +-
+ 53 files changed, 358 insertions(+), 23 deletions(-)
+6b427dd updated sprite demo
+ project/src/00_common/spriteDemo.lua | 135 +++++++++++++++++++++++++++++++++++
+ project/src/main.lua                 | 110 ++++++----------------------
+ 2 files changed, 157 insertions(+), 88 deletions(-)
+53a5cbe sprite demo
+ project/src/main.lua | 94 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 94 insertions(+)
+de2af11 added img
+ project/src/111.jpg | Bin 0 -> 255021 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+0b8a75e Merge branch 'main' of https://github.com/MunGyeongsam/WithAi
+c7963ea 과제 공지
+ ...235\264\353\270\214\354\275\224\353\224\251.md" | 130 +++++++++++++++++++++
+ ...235\264\353\270\214\354\275\224\353\224\251.md" | 124 ++++++++++++++++++++
+ 2 files changed, 254 insertions(+)
+0ccaedc feat: 서브 입력 모드 분리와 조작 UX 개선
+ project/src/03_game/input/inputAdapter.lua   |  30 +++++-
+ project/src/03_game/input/mouseInput.lua     |  59 +++++++++--
+ project/src/03_game/input/touchInput.lua     | 104 ++++++++++++++++----
+ project/src/03_game/scenes/breakoutScene.lua | 141 ++++++++++++++++++++++++++-
+ project/tests/input_adapter_harness.lua      |  26 ++++-
+ project/tests/mouse_input_harness.lua        |  36 ++++++-
+ project/tests/touch_input_harness.lua        |  82 ++++++++++++++--
+ 7 files changed, 430 insertions(+), 48 deletions(-)
+08e1db8 fix: 모바일 씬 입력과 UI 가이드 보강
+ project/src/01_core/sceneStack.lua                | 14 +++++
+ project/src/03_game/progressStore.lua             |  4 ++
+ project/src/03_game/scenes/breakoutScene.lua      | 34 +++++++++++
+ project/src/03_game/scenes/levelSelectScene.lua   | 71 ++++++++++++++++++++++-
+ project/src/03_game/scenes/modeSelectScene.lua    | 45 +++++++++++++-
+ project/src/03_game/scenes/pauseOverlayScene.lua  | 12 ++++
+ project/src/03_game/scenes/resultOverlayScene.lua | 21 +++++++
+ project/src/03_game/scenes/titleScene.lua         | 13 +++++
+ project/src/main.lua                              | 14 +++++
+ worklogs/002_2026-05-31_session.md                | 35 ++++++++++-
+ 10 files changed, 260 insertions(+), 3 deletions(-)
+07be7cf feat: 진행도 저장과 레벨 메타 UI 추가
+ project/src/03_game/progressStore.lua           | 237 ++++++++++++++++++++++++
+ project/src/03_game/scenes/breakoutScene.lua    |  35 ++++
+ project/src/03_game/scenes/levelSelectScene.lua |  47 ++++-
+ project/tests/level_select_progress_harness.lua |  59 ++++++
+ project/tests/menu_flow_harness.lua             |  16 ++
+ project/tests/progress_store_harness.lua        |  49 +++++
+ worklogs/002_2026-05-31_session.md              |  33 +++-
+ 7 files changed, 472 insertions(+), 4 deletions(-)
+b6538ed feat: 레벨 선택과 씬 뒤로가기 흐름 추가
+ project/src/03_game/breakout.lua                   |  10 +-
+ project/src/03_game/input/inputAdapter.lua         |   2 +-
+ project/src/03_game/levels.lua                     |  93 +++++++
+ project/src/03_game/{ => scenes}/breakoutScene.lua |  20 +-
+ project/src/03_game/scenes/levelSelectScene.lua    | 292 +++++++++++++++++++++
+ project/src/03_game/scenes/modeSelectScene.lua     |  23 +-
+ project/src/03_game/scenes/pauseOverlayScene.lua   |   4 +-
+ project/src/03_game/scenes/resultOverlayScene.lua  |   8 +
+ project/tests/input_adapter_harness.lua            |  11 +
+ project/tests/levels_set_harness.lua               |  26 +-
+ project/tests/menu_flow_harness.lua                |  84 ++++--
+ worklogs/002_2026-05-31_session.md                 |  35 ++-
+ 12 files changed, 575 insertions(+), 33 deletions(-)
+fc1390d feat: 윈도우 고정 타임스텝 적용
+ project/src/01_core/fixedTimestep.lua | 103 ++++++++++++++++++++++++++++++++++
+ project/src/conf.lua                  |   6 +-
+ project/src/main.lua                  |  17 +++++-
+ worklogs/002_2026-05-31_session.md    |  30 ++++++++++
+ 4 files changed, 151 insertions(+), 5 deletions(-)
+6b39cb7 feat(input): mouse serve aim and bounce guide preview
+ project/src/03_game/breakout.lua           | 112 +++++++++++++++++++++++++++--
+ project/src/03_game/input/inputAdapter.lua |  12 ++++
+ project/src/03_game/input/mouseInput.lua   |  80 +++++++++++++++++++++
+ project/src/04_ui/hud.lua                  |   2 +-
+ project/tests/input_adapter_harness.lua    |  45 +++++++++++-
+ project/tests/mouse_input_harness.lua      |  58 +++++++++++++++
+ worklogs/001_2026-05-30_session.md         |  31 ++++++++
+ 7 files changed, 333 insertions(+), 7 deletions(-)
+53201a1 feat(scene): add title and mode select flow
+ project/src/03_game/scenes/modeSelectScene.lua | 95 ++++++++++++++++++++++++++
+ project/src/03_game/scenes/titleScene.lua      | 50 ++++++++++++++
+ project/src/main.lua                           |  8 +--
+ project/tests/menu_flow_harness.lua            | 42 ++++++++++++
+ worklogs/001_2026-05-30_session.md             | 26 +++++++
+ 5 files changed, 215 insertions(+), 6 deletions(-)
+1ee0211 feat(levels): add lock-group partial unlock flow
+ project/src/03_game/breakout.lua     | 14 +++++++++++---
+ project/src/03_game/levels.lua       |  8 +++++---
+ project/tests/levels_set_harness.lua | 31 +++++++++++++++++++++++++++++++
+ worklogs/001_2026-05-30_session.md   | 36 ++++++++++++++++++++++++++++++++++++
+ 4 files changed, 83 insertions(+), 6 deletions(-)
+313ae06 feat(levels): pilot keyhole and risk-core bricks
+ project/src/03_game/breakout.lua     | 84 +++++++++++++++++++++++++++++++++++-
+ project/src/03_game/levels.lua       |  6 +++
+ project/src/03_game/riskLane.lua     | 19 ++++++--
+ project/tests/levels_set_harness.lua | 25 +++++++++++
+ project/tests/risk_lane_harness.lua  | 11 +++++
+ worklogs/001_2026-05-30_session.md   | 34 +++++++++++++++
+ 6 files changed, 174 insertions(+), 5 deletions(-)
+066b299 docs(worklog): add release-check snapshot
+ worklogs/001_2026-05-30_session.md | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+343df43 test(input): harden keyboard-touch conflict regressions
+ project/src/03_game/input/inputAdapter.lua | 15 +++++++++------
+ project/tests/input_adapter_harness.lua    | 20 ++++++++++++++++++++
+ project/tests/touch_follow_harness.lua     |  9 +++++++++
+ worklogs/001_2026-05-30_session.md         | 23 +++++++++++++++++++++++
+ 4 files changed, 61 insertions(+), 6 deletions(-)
+e07e410 test(risk_lane): add quantitative sequence regressions
+ project/tests/risk_lane_harness.lua | 54 +++++++++++++++++++++++++++++++++++++
+ worklogs/001_2026-05-30_session.md  | 20 ++++++++++++++
+ 2 files changed, 74 insertions(+)
+74ea279 test(combo_rush): strengthen level3 pressure regressions
+ project/tests/combo_rush_mode_harness.lua |  9 +++++++++
+ project/tests/mode_balance_harness.lua    | 10 ++++++++++
+ worklogs/001_2026-05-30_session.md        | 22 ++++++++++++++++++++++
+ 3 files changed, 41 insertions(+)
+33bc5dc docs(mobile): add one-pass real-device check card
+ ..._2026-05-30_mobile-real-device-check-routine.md | 33 ++++++++++++++++++++++
+ worklogs/001_2026-05-30_session.md                 | 30 ++++++++++++++++++++
+ 2 files changed, 63 insertions(+)
+1222819 feat(combo_rush): split risk consume pulse and sound
+ project/src/03_game/breakout.lua   | 39 +++++++++++++++++++++++++-------------
+ project/src/04_ui/hud.lua          |  4 ++--
+ worklogs/001_2026-05-30_session.md | 22 +++++++++++++++++++++
+ 3 files changed, 50 insertions(+), 15 deletions(-)
+c97c5dc feat(combo_rush): strengthen risk lane consume feedback
+ project/src/03_game/breakout.lua    | 33 +++++++++++++++++++++++++++++----
+ project/src/04_ui/hud.lua           | 10 +++++++++-
+ project/tests/risk_lane_harness.lua | 15 +++++++++++++++
+ worklogs/001_2026-05-30_session.md  | 35 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 88 insertions(+), 5 deletions(-)
+afebf10 balance: tune combo rush level3 late-game pressure
+ project/src/03_game/levels.lua            | 18 ++++++++--------
+ project/src/03_game/modes/modeBalance.lua |  4 ++--
+ project/tests/combo_rush_mode_harness.lua |  5 +++++
+ project/tests/levels_set_harness.lua      | 24 +++++++++++++++++++++
+ project/tests/mode_balance_harness.lua    |  3 ++-
+ worklogs/001_2026-05-30_session.md        | 35 +++++++++++++++++++++++++++++++
+ 6 files changed, 77 insertions(+), 12 deletions(-)
+5202e03 feat: add risk lane scoring for combo rush
+ project/src/03_game/breakout.lua          | 33 ++++++++++++++
+ project/src/03_game/modes/modeBalance.lua | 16 +++++++
+ project/src/03_game/riskLane.lua          | 72 +++++++++++++++++++++++++++++++
+ project/src/04_ui/hud.lua                 |  5 +++
+ project/tests/mode_balance_harness.lua    |  3 ++
+ project/tests/risk_lane_harness.lua       | 44 +++++++++++++++++++
+ worklogs/001_2026-05-30_session.md        | 39 +++++++++++++++++
+ 7 files changed, 212 insertions(+)
+2e9a693 feat: tune touch follow parameters and add mobile device check routine
+ ..._2026-05-30_mobile-real-device-check-routine.md | 122 +++++++++++++++++++++
+ project/src/03_game/breakout.lua                   |  15 ++-
+ project/src/03_game/input/touchFollow.lua          |  40 +++++++
+ project/src/03_game/modes/modeBalance.lua          |  10 ++
+ project/tests/mode_balance_harness.lua             |   2 +
+ project/tests/touch_follow_harness.lua             |  38 +++++++
+ worklogs/001_2026-05-30_session.md                 |  56 ++++++++++
+ 7 files changed, 282 insertions(+), 1 deletion(-)
+49df6ed feat: split mode-specific level sets
+ project/src/03_game/breakout.lua     |  13 ++-
+ project/src/03_game/levels.lua       | 179 ++++++++++++++++++++++++-----------
+ project/tests/levels_set_harness.lua |  29 ++++++
+ worklogs/001_2026-05-30_session.md   |  31 ++++++
+ 4 files changed, 194 insertions(+), 58 deletions(-)
+431f6c9 refactor: separate mode balance data and apply level rules
+ project/src/03_game/breakout.lua            |  3 ++
+ project/src/03_game/modes/classicMode.lua   | 11 ++++++--
+ project/src/03_game/modes/comboRushMode.lua | 24 +++++++++++++---
+ project/src/03_game/modes/modeBalance.lua   | 44 +++++++++++++++++++++++++++++
+ project/src/03_game/modes/modeRegistry.lua  | 12 ++++----
+ project/tests/combo_rush_mode_harness.lua   | 10 ++++++-
+ project/tests/mode_balance_harness.lua      | 21 ++++++++++++++
+ worklogs/001_2026-05-30_session.md          | 33 ++++++++++++++++++++++
+ 8 files changed, 146 insertions(+), 12 deletions(-)
+cb46684 feat: add runtime mode selection and touch drag control
+ project/src/03_game/breakout.lua           | 25 ++++++++--
+ project/src/03_game/breakoutScene.lua      | 16 +++++-
+ project/src/03_game/input/inputAdapter.lua |  6 +++
+ project/src/03_game/input/touchInput.lua   |  4 ++
+ project/src/03_game/modes/modeRegistry.lua | 24 +++++++++
+ project/src/04_ui/hud.lua                  |  2 +
+ project/src/main.lua                       |  5 +-
+ project/tests/input_adapter_harness.lua    |  9 ++++
+ project/tests/mode_registry_harness.lua    | 29 +++++++++++
+ project/tests/touch_input_harness.lua      |  4 ++
+ worklogs/001_2026-05-30_session.md         | 80 ++++++++++++++++++++++++++++++
+ 11 files changed, 198 insertions(+), 6 deletions(-)
+c983490 feat: add scene overlays, touch input, and mode scaffolds
+ project/src/01_core/sceneStack.lua                |  80 +++++++++++
+ project/src/03_game/breakout.lua                  |  16 ++-
+ project/src/03_game/breakoutScene.lua             |  57 ++++++++
+ project/src/03_game/input/inputAdapter.lua        |  15 ++-
+ project/src/03_game/input/touchInput.lua          |  71 ++++++++++
+ project/src/03_game/modes/classicMode.lua         |  43 ++++++
+ project/src/03_game/modes/comboRushMode.lua       |  45 +++++++
+ project/src/03_game/scenes/pauseOverlayScene.lua  |  34 +++++
+ project/src/03_game/scenes/resultOverlayScene.lua |  50 +++++++
+ project/src/04_ui/hud.lua                         |   6 -
+ project/src/main.lua                              |  26 ++--
+ project/tests/classic_mode_harness.lua            |  43 ++++++
+ project/tests/combo_rush_mode_harness.lua         |  38 ++++++
+ project/tests/input_adapter_harness.lua           |  28 ++++
+ project/tests/scene_stack_harness.lua             |  84 ++++++++++++
+ project/tests/touch_input_harness.lua             |  45 +++++++
+ worklogs/001_2026-05-30_session.md                | 153 ++++++++++++++++++++++
+ 17 files changed, 812 insertions(+), 22 deletions(-)
+ca46b60 docs: update governance and append daily worklog
+ docs/001_2026-05-30_game-architecture-direction.md | 11 +++++++++
+ docs/ai/conventions.md                             |  6 +++++
+ worklogs/001_2026-05-30_session.md                 | 28 ++++++++++++++++++++++
+ 3 files changed, 45 insertions(+)
+a2a0b2b chore: add game-director agent workflow set
+ .github/agents/game-director.agent.md           | 26 +++++++++++++++++
+ .github/prompts/game-director-session.prompt.md | 31 ++++++++++++++++++++
+ .github/skills/game-direction/SKILL.md          | 39 +++++++++++++++++++++++++
+ 3 files changed, 96 insertions(+)
+489f61a feat: add input adapter and harness validation
+ project/src/03_game/breakout.lua           | 42 +++++++++++++-----------
+ project/src/03_game/input/inputAdapter.lua | 49 ++++++++++++++++++++++++++++
+ project/src/main.lua                       |  9 +++---
+ project/tests/input_adapter_harness.lua    | 51 ++++++++++++++++++++++++++++++
+ 4 files changed, 128 insertions(+), 23 deletions(-)
+b0cd8a2 docs: enforce daily single worklog policy and append session
+ docs/001_2026-05-30_game-architecture-direction.md |  5 ++++
+ worklogs/001_2026-05-30_session.md                 | 29 ++++++++++++++++++++++
+ 2 files changed, 34 insertions(+)
+297dac1 docs: add breakout direction prompt and design draft
+ .../prompts/breakout-direction-expert.prompt.md    |  68 +++++++++++
+ ...-30_breakout-core-values-and-direction-draft.md | 136 +++++++++++++++++++++
+ 2 files changed, 204 insertions(+)
+bbd4ecb feat: add combo scoring MVP with harness test
+ project/src/03_game/breakout.lua | 15 ++++++++----
+ project/src/03_game/combo.lua    | 52 ++++++++++++++++++++++++++++++++++++++++
+ project/src/04_ui/hud.lua        |  7 ++++++
+ project/tests/combo_harness.lua  | 46 +++++++++++++++++++++++++++++++++++
+ 4 files changed, 116 insertions(+), 4 deletions(-)
+0c85e64 docs: sync test-harness-first policy across AI guides
+ docs/ai/ai-usage-guide.md         | 11 +++++++++--
+ docs/ai/antigravity-setup.md      |  6 ++++++
+ docs/ai/conventions.md            |  1 +
+ docs/ai/windsurf-copilot-setup.md |  6 ++++++
+ 4 files changed, 22 insertions(+), 2 deletions(-)
+2bcc667 docs: add test-harness-first policy to copilot instructions
+ .github/copilot-instructions.md | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+f0bfa24 docs: add architecture direction and session worklog
+ docs/001_2026-05-30_game-architecture-direction.md | 69 ++++++++++++++++++++++
+ worklogs/001_2026-05-30_session.md                 | 63 ++++++++++++++++++++
+ 2 files changed, 132 insertions(+)
+a63e801 refactor: portrait gameplay foundation and state cleanup
+ project/src/01_core/virtualResolution.lua | 46 ++++++++++++++++++
+ project/src/03_game/breakout.lua          | 79 +++++++++++++++++++++++--------
+ project/src/03_game/levels.lua            | 57 ++++++++++++----------
+ project/src/{config.lua => conf.lua}      |  8 ++--
+ project/src/main.lua                      | 16 +++++--
+ 5 files changed, 155 insertions(+), 51 deletions(-)
+168841a added love.app for mac
+ .DS_Store                                          |   Bin 0 -> 6148 bytes
+ .github/.DS_Store                                  |   Bin 0 -> 8196 bytes
+ .vscode/launch.json                                |    18 +-
+ love-11.5-mac/.DS_Store                            |   Bin 0 -> 6148 bytes
+ .../Contents/Frameworks/Lua.framework/Headers      |     1 +
+ .../love.app/Contents/Frameworks/Lua.framework/Lua |     1 +
+ .../Contents/Frameworks/Lua.framework/Resources    |     1 +
+ .../Lua.framework/Versions/A/Headers/lauxlib.h     |   161 +
+ .../Lua.framework/Versions/A/Headers/lua.h         |   402 +
+ .../Lua.framework/Versions/A/Headers/lua.hpp       |     9 +
+ .../Lua.framework/Versions/A/Headers/luaconf.h     |   152 +
+ .../Lua.framework/Versions/A/Headers/luajit.h      |    79 +
+ .../Lua.framework/Versions/A/Headers/lualib.h      |    44 +
+ .../Frameworks/Lua.framework/Versions/A/Lua        |   Bin 0 -> 1264480 bytes
+ .../Lua.framework/Versions/A/Resources/Info.plist  |    42 +
+ .../A/Resources/en.lproj/InfoPlist.strings         |   Bin 0 -> 92 bytes
+ .../Frameworks/Lua.framework/Versions/Current      |     1 +
+ .../Frameworks/OpenAL-Soft.framework/Headers       |     1 +
+ .../Frameworks/OpenAL-Soft.framework/OpenAL-Soft   |     1 +
+ .../Frameworks/OpenAL-Soft.framework/Resources     |     1 +
+ .../OpenAL-Soft.framework/Versions/A/Headers/al.h  |   655 +
+ .../OpenAL-Soft.framework/Versions/A/Headers/alc.h |   270 +
+ .../Versions/A/Headers/alext.h                     |   586 +
+ .../Versions/A/Headers/efx-creative.h              |     3 +
+ .../Versions/A/Headers/efx-presets.h               |   402 +
+ .../OpenAL-Soft.framework/Versions/A/Headers/efx.h |   762 ++
+ .../OpenAL-Soft.framework/Versions/A/OpenAL-Soft   |   Bin 0 -> 1795768 bytes
+ .../Versions/A/Resources/Info.plist                |    40 +
+ .../A/Resources/en.lproj/InfoPlist.strings         |   Bin 0 -> 92 bytes
+ .../OpenAL-Soft.framework/Versions/Current         |     1 +
+ .../Contents/Frameworks/SDL2.framework/Headers     |     1 +
+ .../Contents/Frameworks/SDL2.framework/Resources   |     1 +
+ .../Contents/Frameworks/SDL2.framework/SDL2        |     1 +
+ .../SDL2.framework/Versions/A/Headers/SDL.h        |   233 +
+ .../SDL2.framework/Versions/A/Headers/SDL_assert.h |   322 +
+ .../SDL2.framework/Versions/A/Headers/SDL_atomic.h |   414 +
+ .../SDL2.framework/Versions/A/Headers/SDL_audio.h  |  1500 +++
+ .../SDL2.framework/Versions/A/Headers/SDL_bits.h   |   126 +
+ .../Versions/A/Headers/SDL_blendmode.h             |   198 +
+ .../Versions/A/Headers/SDL_clipboard.h             |   141 +
+ .../SDL2.framework/Versions/A/Headers/SDL_config.h |    61 +
+ .../Versions/A/Headers/SDL_config_macosx.h         |   277 +
+ .../Versions/A/Headers/SDL_copying.h               |    20 +
+ .../Versions/A/Headers/SDL_cpuinfo.h               |   594 +
+ .../SDL2.framework/Versions/A/Headers/SDL_endian.h |   348 +
+ .../SDL2.framework/Versions/A/Headers/SDL_error.h  |   163 +
+ .../SDL2.framework/Versions/A/Headers/SDL_events.h |  1166 ++
+ .../Versions/A/Headers/SDL_filesystem.h            |   149 +
+ .../Versions/A/Headers/SDL_gamecontroller.h        |  1074 ++
+ .../Versions/A/Headers/SDL_gesture.h               |   117 +
+ .../SDL2.framework/Versions/A/Headers/SDL_guid.h   |   100 +
+ .../SDL2.framework/Versions/A/Headers/SDL_haptic.h |  1341 ++
+ .../SDL2.framework/Versions/A/Headers/SDL_hidapi.h |   451 +
+ .../SDL2.framework/Versions/A/Headers/SDL_hints.h  |  2642 ++++
+ .../Versions/A/Headers/SDL_joystick.h              |  1069 ++
+ .../Versions/A/Headers/SDL_keyboard.h              |   353 +
+ .../Versions/A/Headers/SDL_keycode.h               |   358 +
+ .../SDL2.framework/Versions/A/Headers/SDL_loadso.h |   115 +
+ .../SDL2.framework/Versions/A/Headers/SDL_locale.h |   103 +
+ .../SDL2.framework/Versions/A/Headers/SDL_log.h    |   404 +
+ .../SDL2.framework/Versions/A/Headers/SDL_main.h   |   282 +
+ .../Versions/A/Headers/SDL_messagebox.h            |   193 +
+ .../SDL2.framework/Versions/A/Headers/SDL_metal.h  |   113 +
+ .../SDL2.framework/Versions/A/Headers/SDL_misc.h   |    79 +
+ .../SDL2.framework/Versions/A/Headers/SDL_mouse.h  |   464 +
+ .../SDL2.framework/Versions/A/Headers/SDL_mutex.h  |   545 +
+ .../SDL2.framework/Versions/A/Headers/SDL_name.h   |    33 +
+ .../SDL2.framework/Versions/A/Headers/SDL_opengl.h |  2132 +++
+ .../Versions/A/Headers/SDL_opengl_glext.h          | 13213 +++++++++++++++++++
+ .../Versions/A/Headers/SDL_opengles.h              |    39 +
+ .../Versions/A/Headers/SDL_opengles2.h             |    52 +
+ .../Versions/A/Headers/SDL_opengles2_gl2.h         |   656 +
+ .../Versions/A/Headers/SDL_opengles2_gl2ext.h      |  4033 ++++++
+ .../Versions/A/Headers/SDL_opengles2_gl2platform.h |    27 +
+ .../Versions/A/Headers/SDL_opengles2_khrplatform.h |   311 +
+ .../SDL2.framework/Versions/A/Headers/SDL_pixels.h |   644 +
+ .../Versions/A/Headers/SDL_platform.h              |   261 +
+ .../SDL2.framework/Versions/A/Headers/SDL_power.h  |    87 +
+ .../SDL2.framework/Versions/A/Headers/SDL_quit.h   |    58 +
+ .../SDL2.framework/Versions/A/Headers/SDL_rect.h   |   376 +
+ .../SDL2.framework/Versions/A/Headers/SDL_render.h |  1924 +++
+ .../Versions/A/Headers/SDL_revision.h              |     6 +
+ .../SDL2.framework/Versions/A/Headers/SDL_rwops.h  |   841 ++
+ .../Versions/A/Headers/SDL_scancode.h              |   438 +
+ .../SDL2.framework/Versions/A/Headers/SDL_sensor.h |   322 +
+ .../SDL2.framework/Versions/A/Headers/SDL_shape.h  |   155 +
+ .../SDL2.framework/Versions/A/Headers/SDL_stdinc.h |   838 ++
+ .../Versions/A/Headers/SDL_surface.h               |   997 ++
+ .../SDL2.framework/Versions/A/Headers/SDL_system.h |   623 +
+ .../SDL2.framework/Versions/A/Headers/SDL_syswm.h  |   386 +
+ .../SDL2.framework/Versions/A/Headers/SDL_thread.h |   464 +
+ .../SDL2.framework/Versions/A/Headers/SDL_timer.h  |   222 +
+ .../SDL2.framework/Versions/A/Headers/SDL_touch.h  |   150 +
+ .../SDL2.framework/Versions/A/Headers/SDL_types.h  |    29 +
+ .../Versions/A/Headers/SDL_version.h               |   204 +
+ .../SDL2.framework/Versions/A/Headers/SDL_video.h  |  2178 +++
+ .../SDL2.framework/Versions/A/Headers/SDL_vulkan.h |   215 +
+ .../SDL2.framework/Versions/A/Headers/begin_code.h |   187 +
+ .../SDL2.framework/Versions/A/Headers/close_code.h |    40 +
+ .../A/Resources/CMake/sdl2-config-version.cmake    |    48 +
+ .../Versions/A/Resources/CMake/sdl2-config.cmake   |    71 +
+ .../SDL2.framework/Versions/A/Resources/Info.plist |    50 +
+ .../Versions/A/Resources/License.txt               |    19 +
+ .../SDL2.framework/Versions/A/Resources/ReadMe.txt |    44 +
+ .../Versions/A/Resources/default.metallib          |   Bin 0 -> 21968 bytes
+ .../Frameworks/SDL2.framework/Versions/A/SDL2      |   Bin 0 -> 3319280 bytes
+ .../Versions/A/_CodeSignature/CodeResources        |   933 ++
+ .../Frameworks/SDL2.framework/Versions/Current     |     1 +
+ .../Frameworks/freetype.framework/Resources        |     1 +
+ .../Versions/A/Resources/Info.plist                |    44 +
+ .../Versions/A/_CodeSignature/CodeResources        |   726 +
+ .../freetype.framework/Versions/A/freetype         |   Bin 0 -> 1635696 bytes
+ .../Frameworks/freetype.framework/Versions/Current |     1 +
+ .../Frameworks/freetype.framework/freetype         |     1 +
+ .../Frameworks/libmodplug.framework/Headers        |     1 +
+ .../Frameworks/libmodplug.framework/Resources      |     1 +
+ .../Versions/A/Headers/modplug.h                   |   185 +
+ .../Versions/A/Resources/Info.plist                |    38 +
+ .../libmodplug.framework/Versions/A/libmodplug     |   Bin 0 -> 830816 bytes
+ .../libmodplug.framework/Versions/Current          |     1 +
+ .../Frameworks/libmodplug.framework/libmodplug     |     1 +
+ .../Contents/Frameworks/love.framework/Resources   |     1 +
+ .../love.framework/Versions/A/Resources/Info.plist |    46 +
+ .../Versions/A/_CodeSignature/CodeResources        |   132 +
+ .../Frameworks/love.framework/Versions/A/love      |   Bin 0 -> 8298528 bytes
+ .../Frameworks/love.framework/Versions/Current     |     1 +
+ .../Contents/Frameworks/love.framework/love        |     1 +
+ .../Contents/Frameworks/mpg123.framework/Headers   |     1 +
+ .../Contents/Frameworks/mpg123.framework/Modules   |     1 +
+ .../Contents/Frameworks/mpg123.framework/Resources |     1 +
+ .../mpg123.framework/Versions/A/Headers/fmt123.h   |   135 +
+ .../mpg123.framework/Versions/A/Headers/mpg123.h   |  1441 ++
+ .../Versions/A/Modules/module.modulemap            |     6 +
+ .../Versions/A/Resources/Info.plist                |    46 +
+ .../Versions/A/_CodeSignature/CodeResources        |   165 +
+ .../Frameworks/mpg123.framework/Versions/A/mpg123  |   Bin 0 -> 558672 bytes
+ .../Frameworks/mpg123.framework/Versions/Current   |     1 +
+ .../Contents/Frameworks/mpg123.framework/mpg123    |     1 +
+ .../Contents/Frameworks/ogg.framework/Headers      |     1 +
+ .../Contents/Frameworks/ogg.framework/Resources    |     1 +
+ .../ogg.framework/Versions/A/Headers/ogg.h         |   209 +
+ .../ogg.framework/Versions/A/Headers/os_types.h    |   158 +
+ .../A/Resources/English.lproj/InfoPlist.strings    |   Bin 0 -> 136 bytes
+ .../ogg.framework/Versions/A/Resources/Info.plist  |    50 +
+ .../Versions/A/_CodeSignature/CodeResources        |   176 +
+ .../Frameworks/ogg.framework/Versions/A/ogg        |   Bin 0 -> 187472 bytes
+ .../Frameworks/ogg.framework/Versions/Current      |     1 +
+ .../love.app/Contents/Frameworks/ogg.framework/ogg |     1 +
+ .../Contents/Frameworks/theora.framework/Headers   |     1 +
+ .../Contents/Frameworks/theora.framework/Resources |     1 +
+ .../theora.framework/Versions/A/Headers/codec.h    |   591 +
+ .../theora.framework/Versions/A/Headers/theora.h   |   784 ++
+ .../Versions/A/Headers/theoradec.h                 |   325 +
+ .../Versions/A/Headers/theoraenc.h                 |   486 +
+ .../A/Resources/English.lproj/InfoPlist.strings    |   Bin 0 -> 142 bytes
+ .../Versions/A/Resources/Info.plist                |    52 +
+ .../Versions/A/_CodeSignature/CodeResources        |   198 +
+ .../Frameworks/theora.framework/Versions/A/theora  |   Bin 0 -> 610288 bytes
+ .../Frameworks/theora.framework/Versions/Current   |     1 +
+ .../Contents/Frameworks/theora.framework/theora    |     1 +
+ .../Contents/Frameworks/vorbis.framework/Headers   |     1 +
+ .../Contents/Frameworks/vorbis.framework/Resources |     1 +
+ .../vorbis.framework/Versions/A/Headers/codec.h    |   242 +
+ .../Versions/A/Headers/vorbisenc.h                 |   435 +
+ .../Versions/A/Headers/vorbisfile.h                |   205 +
+ .../Versions/A/Resources/Info.plist                |    48 +
+ .../Versions/A/_CodeSignature/CodeResources        |   165 +
+ .../Frameworks/vorbis.framework/Versions/A/vorbis  |   Bin 0 -> 1931200 bytes
+ .../Frameworks/vorbis.framework/Versions/Current   |     1 +
+ .../Contents/Frameworks/vorbis.framework/vorbis    |     1 +
+ love-11.5-mac/love.app/Contents/Info.plist         |   136 +
+ love-11.5-mac/love.app/Contents/MacOS/love         |   Bin 0 -> 119480 bytes
+ love-11.5-mac/love.app/Contents/PkgInfo            |     1 +
+ .../love.app/Contents/Resources/Assets.car         |   Bin 0 -> 770904 bytes
+ .../love.app/Contents/Resources/GameIcon.icns      |   Bin 0 -> 413347 bytes
+ .../love.app/Contents/Resources/OS X AppIcon.icns  |   Bin 0 -> 510174 bytes
+ .../love.app/Contents/Resources/license.txt        |  1355 ++
+ project/src/{ => 02_render}/camera.lua             |    13 +-
+ project/src/{ => 02_render}/worldAxis.lua          |    23 +-
+ run.sh                                             |    29 +-
+ 180 files changed, 61113 insertions(+), 17 deletions(-)
+e90f795 feat: implement breakout gameplay progression and juice
+ project/src/03_game/breakout.lua | 552 +++++++++++++++++++++++++++++++++++++++
+ project/src/03_game/levels.lua   |  58 ++++
+ project/src/04_ui/hud.lua        |  42 +++
+ project/src/config.lua           |   2 +-
+ project/src/main.lua             |  56 ++--
+ 5 files changed, 676 insertions(+), 34 deletions(-)
+5467104 Add multilingual AI usage guides
+ .antigravity/rules/lua-expert.md                   |  14 ++
+ .antigravity/rules/lua-love2d.md                   |   6 +-
+ .antigravity/skills/love2d-architect/SKILL.md      |  12 +-
+ .../skills/love2d-feature-scaffold/SKILL.md        |  14 +-
+ .antigravity/skills/lua-expert/SKILL.md            |  24 ++++
+ .antigravity/workflows/prompt-expert.md            |  20 +++
+ .antigravity/workflows/release-check.md            |   8 +-
+ .github/agents/love2d-architect.agent.md           |  23 ++++
+ .github/agents/love2d-feature-scaffold.agent.md    |  21 +++
+ .github/agents/lua-expert.agent.md                 |  24 ++++
+ .github/copilot-instructions.md                    |  27 ++++
+ .github/instructions/lua-expert.instructions.md    |  14 ++
+ .github/instructions/lua-love2d.instructions.md    |  13 ++
+ .github/prompts/prompt-expert.prompt.md            |  25 ++++
+ .github/skills/love2d-architect/SKILL.md           |  24 ++++
+ .github/skills/love2d-feature-scaffold/SKILL.md    |  21 +++
+ .github/skills/lua-expert/SKILL.md                 |  24 ++++
+ .github/skills/release-check/SKILL.md              |  22 ++++
+ .vscode/tasks.json                                 |  20 ++-
+ .windsurf/rules/lua-expert.md                      |  14 ++
+ .windsurf/rules/lua-love2d.md                      |  14 +-
+ .windsurf/skills/love2d-architect/SKILL.md         |  26 ++--
+ .windsurf/skills/love2d-feature-scaffold/SKILL.md  |  12 +-
+ .windsurf/skills/lua-expert/SKILL.md               |  24 ++++
+ .windsurf/workflows/prompt-expert.md               |  17 +++
+ .windsurf/workflows/release-check.md               |  10 +-
+ AGENTS.md                                          |   4 +
+ docs/ai/ai-usage-guide.md                          | 144 +++++++++++++++++++++
+ docs/ai/antigravity-setup.md                       |  29 +++--
+ docs/ai/conventions.md                             |   2 +
+ docs/ai/windsurf-copilot-setup.md                  |  11 +-
+ run.sh                                             |  13 ++
+ 32 files changed, 611 insertions(+), 65 deletions(-)
+fa45e42 added camera & worldAxis
+ project/src/camera.lua    | 114 ++++++++++++++++++++++++++++++++++++++++++++++
+ project/src/main.lua      |  47 ++++++++++++++++++-
+ project/src/worldAxis.lua |  79 ++++++++++++++++++++++++++++++++
+ 3 files changed, 238 insertions(+), 2 deletions(-)
+1e083bc f5 실행 환경
+ .vscode/launch.json          | 10 ++++++----
+ .vscode/tasks.json           | 25 +++++++++++++++++++++++--
+ docs/ai/antigravity-setup.md |  4 +++-
+ 3 files changed, 32 insertions(+), 7 deletions(-)
+04c1c6a antigravity 개발환경
+ .antigravity/rules/lua-love2d.md                   | 27 +++++++
+ .antigravity/skills/love2d-architect/SKILL.md      | 29 ++++++++
+ .../skills/love2d-feature-scaffold/SKILL.md        | 23 ++++++
+ .antigravity/workflows/release-check.md            | 16 +++++
+ .antigravityrules.md                               | 47 +++++++++++++
+ docs/ai/antigravity-setup.md                       | 82 ++++++++++++++++++++++
+ 6 files changed, 224 insertions(+)
+5cec518 love2d-architect
+ .windsurf/skills/love2d-architect/SKILL.md | 32 ++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+8795d99 Merge branch 'main' of https://github.com/MunGyeongsam/WithAi
+9d464ee Add Lua built-in/library index with priority and examples
+ lua_tuto/README.md            |   1 +
+ lua_tuto/lua_builtin_index.md | 406 ++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 407 insertions(+)
+7ae074d code runner 설정
+ .vscode/settings.json | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+98a50b0 Add model answers across Lua tutorial chapters 01-22
+ lua_tuto/01_intro.md                | 34 ++++++++++++++++++++
+ lua_tuto/02_types_and_variables.md  | 35 +++++++++++++++++++++
+ lua_tuto/03_control_flow.md         | 33 ++++++++++++++++++++
+ lua_tuto/04_strings.md              | 30 ++++++++++++++++++
+ lua_tuto/05_functions.md            | 48 ++++++++++++++++++++++++++++
+ lua_tuto/06_tables_basics.md        | 46 +++++++++++++++++++++++++++
+ lua_tuto/07_tables_advanced.md      | 54 ++++++++++++++++++++++++++++++++
+ lua_tuto/08_metatables.md           | 45 +++++++++++++++++++++++++++
+ lua_tuto/09_oop_patterns.md         | 62 ++++++++++++++++++++++++++++++++-----
+ lua_tuto/10_modules.md              | 34 ++++++++++++++++++++
+ lua_tuto/11_love2d_lifecycle.md     | 32 +++++++++++++++++++
+ lua_tuto/12_drawing.md              | 24 ++++++++++++++
+ lua_tuto/13_input.md                | 20 ++++++++++++
+ lua_tuto/14_audio_and_assets.md     | 17 ++++++++++
+ lua_tuto/15_game_loop_pattern.md    | 16 ++++++++++
+ lua_tuto/16_entity_management.md    | 21 +++++++++++++
+ lua_tuto/17_collision.md            | 19 ++++++++++++
+ lua_tuto/18_coroutines_for_games.md | 23 ++++++++++++++
+ lua_tuto/19_ecs_intro.md            | 20 ++++++++++++
+ lua_tuto/20_error_handling.md       | 28 +++++++++++++++++
+ lua_tuto/21_performance.md          | 22 +++++++++++++
+ lua_tuto/22_c_api_overview.md       | 26 ++++++++++++++++
+ 22 files changed, 681 insertions(+), 8 deletions(-)
+b194c18 개발환경 구축
+ .windsurfrules.md            |   11 +
+ love-11.5-win64/OpenAL32.dll |  Bin 0 -> 898560 bytes
+ love-11.5-win64/SDL2.dll     |  Bin 0 -> 1634816 bytes
+ love-11.5-win64/changes.txt  | 1440 ++++++++++++++++++++++++++++++++++++++++++
+ love-11.5-win64/game.ico     |  Bin 0 -> 370070 bytes
+ love-11.5-win64/license.txt  | 1355 +++++++++++++++++++++++++++++++++++++++
+ love-11.5-win64/love.dll     |  Bin 0 -> 4790272 bytes
+ love-11.5-win64/love.exe     |  Bin 0 -> 387072 bytes
+ love-11.5-win64/love.ico     |  Bin 0 -> 370070 bytes
+ love-11.5-win64/lovec.exe    |  Bin 0 -> 386560 bytes
+ love-11.5-win64/lua51.dll    |  Bin 0 -> 567296 bytes
+ love-11.5-win64/mpg123.dll   |  Bin 0 -> 217088 bytes
+ love-11.5-win64/msvcp120.dll |  Bin 0 -> 660128 bytes
+ love-11.5-win64/msvcr120.dll |  Bin 0 -> 963232 bytes
+ love-11.5-win64/readme.txt   |  111 ++++
+ project/src/config.lua       |   78 +++
+ project/src/main.lua         |    5 +
+ run.bat                      |    2 +
+ tst.lua                      |   36 +-
+ 19 files changed, 3021 insertions(+), 17 deletions(-)
+66ebdda setup Windsurf/Lua/Love2D workspace and localize docs to Korean
+ .codeiumignore                                    |  7 ++
+ .vscode/launch.json                               | 14 ++++
+ .vscode/settings.json                             | 17 +++++
+ .vscode/tasks.json                                | 21 ++++++
+ .windsurf/rules/lua-love2d.md                     | 12 ++++
+ .windsurf/skills/love2d-feature-scaffold/SKILL.md | 21 ++++++
+ .windsurf/workflows/release-check.md              |  8 +++
+ AGENTS.md                                         | 15 ++++
+ docs/ai/conventions.md                            | 21 ++++++
+ docs/ai/windsurf-copilot-setup.md                 | 83 +++++++++++++++++++++++
+ 10 files changed, 219 insertions(+)
+bfbdc1c updated tuto
+ lua_tuto/03_control_flow.md    | 102 ++++++++++++++++++++++++++++++++++++++++
+ lua_tuto/04_strings.md         | 104 ++++++++++++++++++++++++++++++++++++++---
+ lua_tuto/07_tables_advanced.md |  97 ++++++++++++++++++++++++++++++++++++++
+ tst.lua                        |  21 ++++++++-
+ 4 files changed, 316 insertions(+), 8 deletions(-)
+22e9936 added kutil
+ kutil.lua | 337 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tst.lua   |   4 +
+ 2 files changed, 341 insertions(+)
+ef9beae added tuto
+ lua_tuto/01_intro.md                | 174 +++++++++
+ lua_tuto/02_types_and_variables.md  | 251 ++++++++++++
+ lua_tuto/03_control_flow.md         | 300 +++++++++++++++
+ lua_tuto/04_strings.md              | 255 +++++++++++++
+ lua_tuto/05_functions.md            | 301 +++++++++++++++
+ lua_tuto/06_tables_basics.md        | 295 ++++++++++++++
+ lua_tuto/07_tables_advanced.md      | 323 ++++++++++++++++
+ lua_tuto/08_metatables.md           | 286 ++++++++++++++
+ lua_tuto/09_oop_patterns.md         | 330 ++++++++++++++++
+ lua_tuto/10_modules.md              | 304 +++++++++++++++
+ lua_tuto/11_love2d_lifecycle.md     | 306 +++++++++++++++
+ lua_tuto/12_drawing.md              | 301 +++++++++++++++
+ lua_tuto/13_input.md                | 297 +++++++++++++++
+ lua_tuto/14_audio_and_assets.md     | 322 ++++++++++++++++
+ lua_tuto/15_game_loop_pattern.md    | 345 +++++++++++++++++
+ lua_tuto/16_entity_management.md    | 363 ++++++++++++++++++
+ lua_tuto/17_collision.md            | 298 +++++++++++++++
+ lua_tuto/18_coroutines_for_games.md | 399 +++++++++++++++++++
+ lua_tuto/19_ecs_intro.md            | 371 ++++++++++++++++++
+ lua_tuto/20_error_handling.md       | 296 ++++++++++++++
+ lua_tuto/21_performance.md          | 340 +++++++++++++++++
+ lua_tuto/22_c_api_overview.md       | 276 ++++++++++++++
+ lua_tuto/23_mini_project.md         | 741 ++++++++++++++++++++++++++++++++++++
+ lua_tuto/README.md                  |  96 +++++
+ lua_tuto/cheatsheet.md              | 142 +++++++
+ lua_tuto/exercises/README.md        |  19 +
+ lua_tuto/exercises/ex02.lua         |  21 +
+ lua_tuto/exercises/ex03.lua         |  33 ++
+ lua_tuto/exercises/ex04.lua         |  30 ++
+ lua_tuto/exercises/ex05.lua         |  66 ++++
+ lua_tuto/exercises/ex06.lua         |  89 +++++
+ lua_tuto/exercises/ex07.lua         |  97 +++++
+ lua_tuto/exercises/ex08.lua         |  74 ++++
+ 33 files changed, 8141 insertions(+)
+366ac4d Revert "lua tutorial"
+ lua_tuto/01_intro.md                | 174 ---------
+ lua_tuto/02_types_and_variables.md  | 251 ------------
+ lua_tuto/03_control_flow.md         | 300 ---------------
+ lua_tuto/04_strings.md              | 255 -------------
+ lua_tuto/05_functions.md            | 301 ---------------
+ lua_tuto/06_tables_basics.md        | 295 --------------
+ lua_tuto/07_tables_advanced.md      | 323 ----------------
+ lua_tuto/08_metatables.md           | 286 --------------
+ lua_tuto/09_oop_patterns.md         | 330 ----------------
+ lua_tuto/10_modules.md              | 304 ---------------
+ lua_tuto/11_love2d_lifecycle.md     | 306 ---------------
+ lua_tuto/12_drawing.md              | 301 ---------------
+ lua_tuto/13_input.md                | 297 ---------------
+ lua_tuto/14_audio_and_assets.md     | 322 ----------------
+ lua_tuto/15_game_loop_pattern.md    | 345 -----------------
+ lua_tuto/16_entity_management.md    | 363 ------------------
+ lua_tuto/17_collision.md            | 298 ---------------
+ lua_tuto/18_coroutines_for_games.md | 399 -------------------
+ lua_tuto/19_ecs_intro.md            | 371 ------------------
+ lua_tuto/20_error_handling.md       | 296 --------------
+ lua_tuto/21_performance.md          | 340 -----------------
+ lua_tuto/22_c_api_overview.md       | 276 --------------
+ lua_tuto/23_mini_project.md         | 741 ------------------------------------
+ lua_tuto/README.md                  |  96 -----
+ lua_tuto/cheatsheet.md              | 142 -------
+ lua_tuto/exercises/README.md        |  19 -
+ lua_tuto/exercises/ex02.lua         |  21 -
+ lua_tuto/exercises/ex03.lua         |  33 --
+ lua_tuto/exercises/ex04.lua         |  30 --
+ lua_tuto/exercises/ex05.lua         |  66 ----
+ lua_tuto/exercises/ex06.lua         |  89 -----
+ lua_tuto/exercises/ex07.lua         |  97 -----
+ lua_tuto/exercises/ex08.lua         |  74 ----
+ tst.lua                             |   6 -
+ 34 files changed, 8147 deletions(-)
+630b202 lua tutorial
+ lua_tuto/01_intro.md                | 174 +++++++++
+ lua_tuto/02_types_and_variables.md  | 251 ++++++++++++
+ lua_tuto/03_control_flow.md         | 300 +++++++++++++++
+ lua_tuto/04_strings.md              | 255 +++++++++++++
+ lua_tuto/05_functions.md            | 301 +++++++++++++++
+ lua_tuto/06_tables_basics.md        | 295 ++++++++++++++
+ lua_tuto/07_tables_advanced.md      | 323 ++++++++++++++++
+ lua_tuto/08_metatables.md           | 286 ++++++++++++++
+ lua_tuto/09_oop_patterns.md         | 330 ++++++++++++++++
+ lua_tuto/10_modules.md              | 304 +++++++++++++++
+ lua_tuto/11_love2d_lifecycle.md     | 306 +++++++++++++++
+ lua_tuto/12_drawing.md              | 301 +++++++++++++++
+ lua_tuto/13_input.md                | 297 +++++++++++++++
+ lua_tuto/14_audio_and_assets.md     | 322 ++++++++++++++++
+ lua_tuto/15_game_loop_pattern.md    | 345 +++++++++++++++++
+ lua_tuto/16_entity_management.md    | 363 ++++++++++++++++++
+ lua_tuto/17_collision.md            | 298 +++++++++++++++
+ lua_tuto/18_coroutines_for_games.md | 399 +++++++++++++++++++
+ lua_tuto/19_ecs_intro.md            | 371 ++++++++++++++++++
+ lua_tuto/20_error_handling.md       | 296 ++++++++++++++
+ lua_tuto/21_performance.md          | 340 +++++++++++++++++
+ lua_tuto/22_c_api_overview.md       | 276 ++++++++++++++
+ lua_tuto/23_mini_project.md         | 741 ++++++++++++++++++++++++++++++++++++
+ lua_tuto/README.md                  |  96 +++++
+ lua_tuto/cheatsheet.md              | 142 +++++++
+ lua_tuto/exercises/README.md        |  19 +
+ lua_tuto/exercises/ex02.lua         |  21 +
+ lua_tuto/exercises/ex03.lua         |  33 ++
+ lua_tuto/exercises/ex04.lua         |  30 ++
+ lua_tuto/exercises/ex05.lua         |  66 ++++
+ lua_tuto/exercises/ex06.lua         |  89 +++++
+ lua_tuto/exercises/ex07.lua         |  97 +++++
+ lua_tuto/exercises/ex08.lua         |  74 ++++
+ tst.lua                             |   6 +
+ 34 files changed, 8147 insertions(+)
