@@ -9,6 +9,7 @@ local BulletView = require("BulletView")
 local HudView = require("HudView")
 local EffectsView = require("EffectsView")
 local BossView = require("BossView")
+local ItemView = require("ItemView")
 
 local GameView = class()
 
@@ -41,6 +42,7 @@ function GameView:draw(gfx, game, highScore)
   EnemyView.draw(gfx, game.enemies)
   BossView.draw(gfx, game.boss, self.width)
   BulletView.draw(gfx, game.bullets, game.enemyBullets)
+  ItemView.draw(gfx, game.items)
   fx:drawParticles(gfx)
   gfx.pop()
 
