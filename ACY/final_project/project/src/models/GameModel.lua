@@ -8,6 +8,7 @@ local Rng = require("rng")
 local PlayerModel = require("PlayerModel")
 local EnemyModel = require("EnemyModel")
 local BulletModel = require("BulletModel")
+local ItemModel = require("ItemModel")
 local homing = require("homing")
 local FormationPhase = require("FormationPhase")
 local WaveParser = require("WaveParser")
@@ -22,9 +23,12 @@ local FIRE_COOLDOWN = 0.25
 local ENEMY_FIRE_INTERVAL = 0.6
 local FORMATION_SPEED = 40
 local FORMATION_DESCEND = 16
-local MISSILE_SPEED = 440
-local MISSILE_TURN = 0.08
+local MISSILE_SPEED = 520
+local MISSILE_TURN = 0.16
 local MISSILE_COOLDOWN = 0.6
+local MAX_MISSILES = 3
+local MISSILE_RECHARGE_SCORE = 500
+local ITEM_DROP_CHANCE = 0.05
 
 -- AABB 겹침
 local function overlaps(a, b)
@@ -36,6 +40,7 @@ function GameModel:init(opts)
   opts = opts or {}
   self.width = opts.width or 600
   self.height = opts.height or 800
+  self.maxLives = opts.maxLives or 3
   self.rng = Rng(opts.seed or 1)
   self.waves = opts.wavesText and WaveParser.parse(opts.wavesText) or nil
   self:reset()
@@ -46,12 +51,16 @@ function GameModel:reset()
   self.bullets = {}
   self.enemyBullets = {}
   self.enemies = {}
+  self.items = {}
   self.score = 0
-  self.lives = 3
+  self.lives = self.maxLives
   self.state = "playing" -- 결과: "playing" | "gameover" | "won"
   self.formationDir = 1
   self.enemyFireTimer = ENEMY_FIRE_INTERVAL
   self.missileCooldown = 0
+  self.maxMissiles = MAX_MISSILES
+  self.missiles = MAX_MISSILES
+  self.nextMissileScore = MISSILE_RECHARGE_SCORE
   self.boss = nil -- BossPhase 가 채운다 (View 가 읽는다)
   self.events = {} -- 스텝마다 쌓이고, 소비자(View)가 drainEvents() 로 비운다
   self.wave = 0
@@ -130,12 +139,13 @@ function GameModel:update(dt, input)
     self:_emit({ type = "fire" })
   end
 
-  -- 유도 미사일 발사(별도 쿨다운). 기존 BulletModel 을 kind="missile" 로 재사용한다.
+  -- 유도 미사일 발사(별도 쿨다운 + 탄수 제한). 기존 BulletModel 을 kind="missile" 로 재사용한다.
   self.missileCooldown = self.missileCooldown - dt
-  if input.missile and self.missileCooldown <= 0 then
+  if input.missile and self.missileCooldown <= 0 and self.missiles > 0 then
     local p = self.player
     self.bullets[#self.bullets + 1] =
       BulletModel(p.x + p.w * 0.5 - 3, p.y, 0, -MISSILE_SPEED, 6, 14, "missile")
+    self.missiles = self.missiles - 1
     self.missileCooldown = MISSILE_COOLDOWN
     self:_emit({ type = "fire" })
   end
@@ -186,6 +196,7 @@ function GameModel:update(dt, input)
   end
 
   self:_resolveCollisions()
+  self:_updateItems(dt)
   self.phase:resolveCollisions(self)
   self.phase:afterStep(self)
 end
@@ -254,8 +265,9 @@ function GameModel:_resolveCollisions()
       if e.alive and overlaps(b, e) then
         local stillAlive = e:takeDamage(1)
         if not stillAlive then
-          self.score = self.score + (e.score or 100)
+          self:addScore(e.score or 100)
           self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+          self:_tryDropItem(e:centerX(), e:centerY())
         end
         table.remove(self.bullets, bi)
         break
@@ -293,6 +305,46 @@ function GameModel:_resolveCollisions()
         self.state = "gameover"
         self:_emit({ type = "game_over" })
       end
+    end
+  end
+end
+
+--- 점수를 더하고 500점 단위를 넘길 때마다 유도탄을 1발 충전한다(상한 maxMissiles).
+function GameModel:addScore(points)
+  self.score = self.score + (points or 0)
+  while self.score >= self.nextMissileScore do
+    if self.missiles < self.maxMissiles then
+      self.missiles = self.missiles + 1
+    end
+    self.nextMissileScore = self.nextMissileScore + MISSILE_RECHARGE_SCORE
+  end
+end
+
+-- 적 처치 시 5% 확률로 아이템을 드랍한다.
+function GameModel:_tryDropItem(cx, cy)
+  if self.rng:nextFloat() < ITEM_DROP_CHANCE then
+    local item = ItemModel.create("life", cx, cy)
+    self.items[#self.items + 1] = item
+    self:_emit({ type = "item_spawned", kind = item.kind, x = cx, y = cy })
+  end
+end
+
+-- 아이템 수직 이동, 화면 밖 이탈 제거, 플레이어 획득 처리
+function GameModel:_updateItems(dt)
+  for i = #self.items, 1, -1 do
+    local item = self.items[i]
+    item:update(dt)
+    if item:isOffscreen(self.width, self.height) then
+      table.remove(self.items, i)
+    elseif overlaps(item, self.player) and item:canCollect(self) then
+      item:apply(self)
+      self:_emit({
+        type = "item_collected",
+        kind = item.kind,
+        x = item.x + item.w * 0.5,
+        y = item.y + item.h * 0.5,
+      })
+      table.remove(self.items, i)
     end
   end
 end

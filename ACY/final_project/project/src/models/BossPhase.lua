@@ -45,7 +45,7 @@ function BossPhase:resolveCollisions(game)
         game:_emit({ type = "boss_enraged", x = boss:centerX(), y = boss:centerY() })
       end
       if killed then
-        game.score = game.score + BOSS_REWARD
+        game:addScore(BOSS_REWARD)
         game.state = "won"
         game:_emit({ type = "boss_destroyed", x = boss:centerX(), y = boss:centerY() })
         break
