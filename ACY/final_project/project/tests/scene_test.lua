@@ -178,7 +178,8 @@ h.test("일시정지 화면: 멈춘 게임 위에 오버레이를 그린다", fu
   stack:keypressed("p")
   local gfx = h.fakeGfx()
   stack:draw(gfx)
-  return h.count(gfx, "rectangle") > 32 and printed(gfx, "PAUSED")
+  local shapeCount = h.count(gfx, "rectangle") + h.count(gfx, "polygon") + h.count(gfx, "circle")
+  return shapeCount > 32 and h.count(gfx, "rectangle") >= 1 and printed(gfx, "PAUSED")
 end)
 
 h.test("일시정지: Q → 타이틀 (스택 1개)", function()

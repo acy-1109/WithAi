@@ -9,8 +9,10 @@ love.filesystem.setRequirePath("?.lua;?/init.lua;models/?.lua;views/?.lua;contro
 local SceneStack = require("SceneStack")
 local HighScoreModel = require("HighScoreModel")
 local AchievementModel = require("AchievementModel")
+local SpaceBackgroundView = require("SpaceBackgroundView")
 
 local stack
+local background
 local games = 0
 
 -- os.time 은 초 단위라 1초 안에 재도전하면 같은 시드(= 똑같은 판)가 나온다. 판 번호를 섞는다.
@@ -55,15 +57,22 @@ function love.load()
     },
   }
 
+  background = SpaceBackgroundView(ctx.width, ctx.height)
   stack = SceneStack()
   stack:push(ctx.scenes.Title(ctx))
 end
 
 function love.update(dt)
+  if background then
+    background:update(dt)
+  end
   stack:update(dt)
 end
 
 function love.draw()
+  if background then
+    background:draw(love.graphics)
+  end
   stack:draw(love.graphics)
 end
 
