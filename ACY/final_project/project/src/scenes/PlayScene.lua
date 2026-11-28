@@ -22,7 +22,10 @@ function PlayScene:init(ctx)
     seed = ctx.seed(),
     wavesText = ctx.wavesText,
   })
-  self.achievements = AchievementModel()
+  self.achievements = ctx.achievements or AchievementModel()
+  if self.achievements.resetRun then
+    self.achievements:resetRun()
+  end
   self.view = GameView({ width = ctx.width, height = ctx.height, rand = ctx.rand })
   self.controller = InputController(ctx.isDown)
 end
@@ -44,8 +47,13 @@ function PlayScene:update(dt)
     local ev = events[i]
     self.view:onEvent(ev)
     local newly = self.achievements:onEvent(ev)
-    for j = 1, #newly do
-      self.view:onEvent({ type = "achievement_unlocked", id = newly[j].id, title = newly[j].title })
+    if #newly > 0 then
+      if self.ctx.saveAchievements then
+        self.ctx.saveAchievements()
+      end
+      for j = 1, #newly do
+        self.view:onEvent({ type = "achievement_unlocked", id = newly[j].id, title = newly[j].title })
+      end
     end
   end
   self.view:update(dt)
@@ -63,6 +71,12 @@ end
 function PlayScene:keypressed(key)
   if key == "p" or key == "escape" then
     self.stack:push(self.ctx.scenes.Pause(self.ctx))
+  end
+end
+
+function PlayScene:exit()
+  if self.ctx.saveAchievements then
+    self.ctx.saveAchievements()
   end
 end
 

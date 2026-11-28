@@ -7,9 +7,14 @@ local TitleView = require("TitleView")
 
 local TitleScene = class()
 
+local function pointInRect(px, py, r)
+  return px >= r.x and px <= r.x + r.w and py >= r.y and py <= r.y + r.h
+end
+
 --- @param ctx table  { width, height, scenes, quit, ... } (main 이 만든 공용 문맥)
 function TitleScene:init(ctx)
   self.ctx = ctx
+  self.hovered = false
 end
 
 function TitleScene:keypressed(key)
@@ -22,9 +27,24 @@ function TitleScene:keypressed(key)
   end
 end
 
+function TitleScene:mousemoved(x, y)
+  local btn = TitleView.getAchievementButtonRect(self.ctx.width, self.ctx.height)
+  self.hovered = pointInRect(x, y, btn)
+end
+
+function TitleScene:mousepressed(x, y, button)
+  if button ~= 1 then
+    return
+  end
+  local btn = TitleView.getAchievementButtonRect(self.ctx.width, self.ctx.height)
+  if pointInRect(x, y, btn) and self.ctx.scenes.Achievements then
+    self.stack:push(self.ctx.scenes.Achievements(self.ctx))
+  end
+end
+
 function TitleScene:draw(gfx)
   local best = self.ctx.highScore and self.ctx.highScore.best or 0
-  TitleView.draw(gfx, self.ctx.width, self.ctx.height, best)
+  TitleView.draw(gfx, self.ctx.width, self.ctx.height, best, self.hovered)
 end
 
 return TitleScene

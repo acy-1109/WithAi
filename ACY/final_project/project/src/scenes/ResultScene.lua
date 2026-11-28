@@ -23,6 +23,9 @@ function ResultScene:init(ctx, game)
       ctx.saveHighScore()
     end
   end
+  if ctx.saveAchievements then
+    ctx.saveAchievements()
+  end
 end
 
 function ResultScene:keypressed(key)

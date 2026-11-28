@@ -72,18 +72,35 @@ function SceneStack:reset(scene)
   self:push(scene)
 end
 
-function SceneStack:update(dt)
+local function forwardTop(self, method, ...)
   local top = self:top()
-  if top and top.update then
-    top:update(dt)
+  if top and top[method] then
+    top[method](top, ...)
   end
 end
 
+function SceneStack:update(dt)
+  forwardTop(self, "update", dt)
+end
+
 function SceneStack:keypressed(key)
-  local top = self:top()
-  if top and top.keypressed then
-    top:keypressed(key)
-  end
+  forwardTop(self, "keypressed", key)
+end
+
+function SceneStack:mousepressed(x, y, button)
+  forwardTop(self, "mousepressed", x, y, button)
+end
+
+function SceneStack:mousereleased(x, y, button)
+  forwardTop(self, "mousereleased", x, y, button)
+end
+
+function SceneStack:mousemoved(x, y, dx, dy)
+  forwardTop(self, "mousemoved", x, y, dx, dy)
+end
+
+function SceneStack:wheelmoved(x, y)
+  forwardTop(self, "wheelmoved", x, y)
 end
 
 --- 맨 위부터 내려가며 투명하지 않은 씬을 찾고, 그 씬부터 위로 차례대로 그린다.

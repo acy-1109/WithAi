@@ -1,4 +1,13 @@
-0ff7272 (HEAD -> main, origin/main, origin/HEAD) wave 종류 증가
+9d648ad (HEAD -> main, origin/main, origin/HEAD) 스프린터 대시 속도 증가
+ ACY/final_project/project/src/models/EnemyModel.lua | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+4f48dd3 버그 수정
+ ACY/final_project/git_log.txt                      |  15 ++-
+ ACY/final_project/project/src/models/GameModel.lua |  14 ++-
+ .../project/tests/r7_weaver_enemy_test.lua         |  18 ++++
+ .../worklogs/006_2026-11-28_session.md             | 113 +++++++++++++++++++++
+ 4 files changed, 155 insertions(+), 5 deletions(-)
+0ff7272 wave 종류 증가
  .../project/src/models/EnemyModel.lua              |  3 +-
  .../project/src/models/FormationPhase.lua          | 14 ++--
  ACY/final_project/project/src/models/GameModel.lua | 15 +++-

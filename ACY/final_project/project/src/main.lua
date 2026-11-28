@@ -8,6 +8,7 @@ love.filesystem.setRequirePath("?.lua;?/init.lua;models/?.lua;views/?.lua;contro
 
 local SceneStack = require("SceneStack")
 local HighScoreModel = require("HighScoreModel")
+local AchievementModel = require("AchievementModel")
 
 local stack
 local games = 0
@@ -24,6 +25,8 @@ function love.load()
   local wavesText = love.filesystem.read("waves.txt")
   local rawHighScore = love.filesystem.read("highscore.txt")
   local highScore = HighScoreModel.deserialize(rawHighScore)
+  local rawAchievements = love.filesystem.read("achievements.txt")
+  local achievements = AchievementModel.deserialize(rawAchievements)
 
   -- 씬끼리 서로 require 하면 순환이 생긴다(Title→Play→Result→Title). 목록을 여기서 한 번 주입한다.
   local ctx = {
@@ -38,9 +41,14 @@ function love.load()
     saveHighScore = function()
       love.filesystem.write("highscore.txt", highScore:serialize())
     end,
+    achievements = achievements,
+    saveAchievements = function()
+      love.filesystem.write("achievements.txt", achievements:serialize())
+    end,
     scenes = {
       Title = require("TitleScene"),
       Difficulty = require("DifficultyScene"),
+      Achievements = require("AchievementScene"),
       Play = require("PlayScene"),
       Pause = require("PauseScene"),
       Result = require("ResultScene"),
@@ -61,4 +69,20 @@ end
 
 function love.keypressed(key)
   stack:keypressed(key)
+end
+
+function love.mousepressed(x, y, button)
+  stack:mousepressed(x, y, button)
+end
+
+function love.mousereleased(x, y, button)
+  stack:mousereleased(x, y, button)
+end
+
+function love.mousemoved(x, y, dx, dy)
+  stack:mousemoved(x, y, dx, dy)
+end
+
+function love.wheelmoved(x, y)
+  stack:wheelmoved(x, y)
 end

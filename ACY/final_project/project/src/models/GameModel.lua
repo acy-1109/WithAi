@@ -124,6 +124,8 @@ end
 --
 -- 이벤트 계약 (GameModel → View):
 --   { type = "fire" }
+--   { type = "missile_fired" }
+--   { type = "score_changed", score = number, delta = number }
 --   { type = "enemy_destroyed", x = number, y = number }
 --   { type = "bullet_split", x = number, y = number }
 --   { type = "player_hit" }
@@ -161,6 +163,7 @@ function GameModel:update(dt, input)
     self.missiles = self.missiles - 1
     self.missileCooldown = MISSILE_COOLDOWN
     self:_emit({ type = "fire" })
+    self:_emit({ type = "missile_fired" })
   end
   self:_steerMissiles()
 
@@ -330,13 +333,15 @@ end
 
 --- 점수를 더하고 500점 단위를 넘길 때마다 유도탄을 1발 충전한다(상한 maxMissiles).
 function GameModel:addScore(points)
-  self.score = self.score + (points or 0)
+  local delta = points or 0
+  self.score = self.score + delta
   while self.score >= self.nextMissileScore do
     if self.missiles < self.maxMissiles then
       self.missiles = self.missiles + 1
     end
     self.nextMissileScore = self.nextMissileScore + MISSILE_RECHARGE_SCORE
   end
+  self:_emit({ type = "score_changed", score = self.score, delta = delta })
 end
 
 -- 적 처치 시 5% 확률로 아이템을 드랍한다.
