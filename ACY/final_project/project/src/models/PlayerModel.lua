@@ -15,6 +15,10 @@ function PlayerModel:init(x, y)
   self.w = 40
   self.h = 24
   self.cooldown = 0
+  self.hasShield = false
+  self.invincibleTimer = 0
+  self.maxBombs = 3
+  self.bombs = 1
 end
 
 -- move: -1(왼) | 0 | 1(오). 화면 경계는 바깥(GameModel)이 width 로 클램프.
@@ -42,6 +46,45 @@ end
 
 function PlayerModel:resetCooldown(seconds)
   self.cooldown = seconds
+end
+
+function PlayerModel:activateShield()
+  self.hasShield = true
+end
+
+function PlayerModel:consumeShield(invincibleSeconds)
+  self.hasShield = false
+  self.invincibleTimer = invincibleSeconds or 0
+end
+
+function PlayerModel:isInvincible()
+  return self.invincibleTimer > 0
+end
+
+function PlayerModel:tickInvincibility(dt)
+  if self.invincibleTimer > 0 then
+    self.invincibleTimer = math.max(0, self.invincibleTimer - dt)
+  end
+end
+
+function PlayerModel:addBomb()
+  if self.bombs < self.maxBombs then
+    self.bombs = self.bombs + 1
+    return true
+  end
+  return false
+end
+
+function PlayerModel:canUseBomb()
+  return self.bombs > 0
+end
+
+function PlayerModel:useBomb()
+  if self.bombs <= 0 then
+    return false
+  end
+  self.bombs = self.bombs - 1
+  return true
 end
 
 return PlayerModel

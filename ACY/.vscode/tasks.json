@@ -1,0 +1,45 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Love2D: Run current project",
+            "type": "shell",
+            "command": "d='${fileDirname}'; while [ \"$d\" != '/' ] && [ ! -f \"$d/main.lua\" ]; do d=$(dirname \"$d\"); done; love \"$d\"",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "windows": {
+                "command": "powershell",
+                "args": [
+                    "-NoProfile",
+                    "-Command",
+                    "$d = '${fileDirname}'; while ($d -and -not (Test-Path (Join-Path $d 'main.lua'))) { $d = Split-Path $d -Parent }; if (-not $d) { Write-Error 'main.lua를 찾을 수 없습니다.'; exit 1 }; $love = '${workspaceFolder}/../love-11.5-win64/lovec.exe'; if (-not (Test-Path $love)) { $love = 'love' }; & $love $d"
+                ]
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Love2D: Run Galaga (final_project)",
+            "type": "shell",
+            "command": "love",
+            "args": [
+                "${workspaceFolder}/final_project/project/src"
+            ],
+            "windows": {
+                "command": "${workspaceFolder}/../love-11.5-win64/lovec.exe"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Lua: Run current file",
+            "type": "shell",
+            "command": "lua",
+            "args": [
+                "${file}"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
+

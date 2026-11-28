@@ -10,9 +10,18 @@ local CANOPY_COLOR = { 0.75, 0.98, 1.0 }
 local CORE_COLOR = { 1.0, 1.0, 1.0 }
 local WINGTIP_COLOR = { 0.55, 1.0, 1.0 }
 local THRUSTER_COLOR = { 1.0, 0.92, 0.55 }
+local SHIELD_INNER_COLOR = { 0.20, 0.75, 1.0, 0.18 }
+local SHIELD_OUTER_COLOR = { 0.35, 0.92, 1.0, 0.85 }
+local INVINCIBLE_RING_COLOR = { 1.0, 1.0, 1.0, 0.60 }
+
+local max = math.max
 
 local function setColor(gfx, color)
-  gfx.setColor(color[1], color[2], color[3])
+  if color[4] then
+    gfx.setColor(color[1], color[2], color[3], color[4])
+  else
+    gfx.setColor(color[1], color[2], color[3])
+  end
 end
 
 local function drawHullPolygon(gfx, mode, x, y, w, h, cx)
@@ -72,6 +81,22 @@ local function drawDetails(gfx, x, y, w, h, cx)
   )
 end
 
+local function drawShieldAura(gfx, x, y, w, h, cx)
+  local cy = y + h * 0.5
+  local r = max(w, h) * 0.65
+  setColor(gfx, SHIELD_INNER_COLOR)
+  gfx.circle("fill", cx, cy, r)
+  setColor(gfx, SHIELD_OUTER_COLOR)
+  gfx.circle("line", cx, cy, r)
+end
+
+local function drawInvincibleRing(gfx, x, y, w, h, cx)
+  local cy = y + h * 0.5
+  local r = max(w, h) * 0.58
+  setColor(gfx, INVINCIBLE_RING_COLOR)
+  gfx.circle("line", cx, cy, r)
+end
+
 --- @param gfx    table      love.graphics 또는 같은 함수를 가진 가짜(테스트용)
 --- @param player table|nil  PlayerModel (읽기 전용)
 function PlayerView.draw(gfx, player)
@@ -84,6 +109,12 @@ function PlayerView.draw(gfx, player)
 
   drawHull(gfx, x, y, w, h, cx)
   drawDetails(gfx, x, y, w, h, cx)
+
+  if player.hasShield then
+    drawShieldAura(gfx, x, y, w, h, cx)
+  elseif player.invincibleTimer and player.invincibleTimer > 0 then
+    drawInvincibleRing(gfx, x, y, w, h, cx)
+  end
 end
 
 return PlayerView

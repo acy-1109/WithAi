@@ -44,6 +44,32 @@ function BossPhase:update(game, dt)
   end
 end
 
+function BossPhase:damageBoss(game, amount, hitX, hitY)
+  local boss = game.boss
+  if not (boss and boss.alive) then
+    return false
+  end
+  game:_emit({ type = "boss_hit", x = hitX or boss:centerX(), y = hitY or boss:centerY() })
+  local killed = boss:takeDamage(amount)
+  if boss.justEnraged then
+    boss.justEnraged = false
+    game:_emit({ type = "boss_enraged", x = boss:centerX(), y = boss:centerY() })
+  end
+  if killed then
+    local bx, by = boss:centerX(), boss:centerY()
+    game:addScore(self.reward or BASE_BOSS_REWARD)
+    game.boss = nil
+    game:_emit({ type = "boss_destroyed", x = bx, y = by })
+    if game.onBossDefeated then
+      game:onBossDefeated(bx, by)
+    end
+    game:spawnFormation()
+    local FormationPhase = require("FormationPhase")
+    game:changePhase(FormationPhase())
+  end
+  return killed
+end
+
 function BossPhase:resolveCollisions(game)
   local boss = game.boss
   if not (boss and boss.alive) then
@@ -53,23 +79,7 @@ function BossPhase:resolveCollisions(game)
     local b = game.bullets[bi]
     if overlaps(b, boss) then
       table.remove(game.bullets, bi)
-      game:_emit({ type = "boss_hit", x = b.x, y = b.y })
-      local killed = boss:takeDamage(b.damage or 1)
-      if boss.justEnraged then
-        boss.justEnraged = false
-        game:_emit({ type = "boss_enraged", x = boss:centerX(), y = boss:centerY() })
-      end
-      if killed then
-        local bx, by = boss:centerX(), boss:centerY()
-        game:addScore(self.reward or BASE_BOSS_REWARD)
-        game.boss = nil
-        game:_emit({ type = "boss_destroyed", x = bx, y = by })
-        if game.onBossDefeated then
-          game:onBossDefeated(bx, by)
-        end
-        game:spawnFormation()
-        local FormationPhase = require("FormationPhase")
-        game:changePhase(FormationPhase())
+      if self:damageBoss(game, b.damage or 1, b.x, b.y) then
         break
       end
     end

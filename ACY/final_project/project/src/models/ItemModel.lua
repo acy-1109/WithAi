@@ -77,6 +77,36 @@ function ItemModel.registerType(kind, spec)
   TYPES[kind] = spec
 end
 
+ItemModel.registerType("shield", {
+  w = DEFAULT_SIZE,
+  h = DEFAULT_SIZE,
+  speed = DEFAULT_SPEED,
+  canCollect = function(game)
+    return game.player ~= nil and not game.player.hasShield
+  end,
+  apply = function(game)
+    if game.player and game.player.activateShield then
+      game.player:activateShield()
+    elseif game.player then
+      game.player.hasShield = true
+    end
+  end,
+})
+
+ItemModel.registerType("bomb", {
+  w = DEFAULT_SIZE,
+  h = DEFAULT_SIZE,
+  speed = DEFAULT_SPEED,
+  canCollect = function(game)
+    return game.player ~= nil and (game.player.bombs or 0) < (game.player.maxBombs or 3)
+  end,
+  apply = function(game)
+    if game.player and game.player.addBomb then
+      game.player:addBomb()
+    end
+  end,
+})
+
 --- 중심 좌표(cx, cy) 기준으로 아이템을 생성한다.
 function ItemModel.create(kind, cx, cy, opts)
   local spec = assert(TYPES[kind], "unknown item kind: " .. tostring(kind))

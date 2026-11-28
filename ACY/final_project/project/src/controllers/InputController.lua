@@ -12,6 +12,7 @@ local DEFAULT_KEYS = {
   right = { "right", "d" },
   fire = { "space" },
   missile = { "x" },
+  bomb = { "q" },
 }
 
 --- @param isDown function(key) -> boolean   보통 love.keyboard.isDown
@@ -20,7 +21,8 @@ function InputController:init(isDown, keys)
   self.isDown = isDown
   self.keys = keys or DEFAULT_KEYS
   -- 프레임마다 새 테이블을 만들지 않고 재사용한다(GC 부담 감소).
-  self.input = { move = 0, fire = false, missile = false }
+  self.input = { move = 0, fire = false, missile = false, bomb = false }
+  self.prevBomb = false
 end
 
 local function anyDown(isDown, list)
@@ -45,6 +47,9 @@ function InputController:read()
   self.input.move = move
   self.input.fire = anyDown(self.isDown, self.keys.fire)
   self.input.missile = anyDown(self.isDown, self.keys.missile)
+  local bombDown = self.keys.bomb and anyDown(self.isDown, self.keys.bomb) or false
+  self.input.bomb = bombDown and not self.prevBomb
+  self.prevBomb = bombDown
   return self.input
 end
 

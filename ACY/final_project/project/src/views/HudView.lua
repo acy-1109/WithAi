@@ -31,6 +31,15 @@ function HudView.draw(gfx, game, width, height, highScore)
     gfx.print(string.format("TRIPLE %.1fs", game.tripleShotTimer), 10, 64)
   end
 
+  local bombs = game.player and game.player.bombs or 0
+  local maxBombs = game.player and game.player.maxBombs or 3
+  if bombs > 0 then
+    gfx.setColor(0.55, 0.78, 1.0)
+  else
+    gfx.setColor(0.5, 0.5, 0.55)
+  end
+  gfx.print(string.format("EMP %d/%d [Q]", bombs, maxBombs), 10, 82)
+
   gfx.setColor(1, 1, 1)
   gfx.printf("WAVE " .. (game.wave or 1), 0, 10, width, "center")
   gfx.print("LIVES " .. game.lives, width - 100, 10)

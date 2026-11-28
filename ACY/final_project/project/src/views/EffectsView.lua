@@ -68,6 +68,10 @@ function EffectsView:onEvent(ev)
     self:_burst(ev.x, ev.y, 12, 0.4, 60, 140, { 1.0, 0.25, 0.25 }, 4)
   elseif ev.type == "player_hit" then
     self.shake = SHAKE_TIME
+  elseif ev.type == "emp_detonated" then
+    self.shake = SHAKE_TIME
+    self.flash = FLASH_TIME
+    self:_burst(ev.x, ev.y, 18, 0.45, 90, 220, { 0.45, 0.85, 1.0 }, 3.5)
   elseif ev.type == "formation_cleared" then
     self.banner = BANNER_TIME
   elseif ev.type == "achievement_unlocked" then

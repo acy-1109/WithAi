@@ -35,7 +35,11 @@ local MISSILE_COOLDOWN = 0.6
 local MAX_MISSILES = 3
 local MISSILE_RECHARGE_SCORE = 500
 local ITEM_DROP_CHANCE = 0.08
-local DROP_KINDS = { "life", "speed_up", "triple_shot" }
+local DROP_KINDS = { "life", "speed_up", "triple_shot", "shield", "bomb" }
+local SHIELD_INVINCIBLE_DURATION = 1.5
+local SHIELD_CLEAR_RADIUS = 120
+local EMP_DAMAGE = 5
+local EMP_COOLDOWN = 0.3
 
 -- AABB 겹침
 local function overlaps(a, b)
@@ -76,6 +80,7 @@ function GameModel:reset()
   self.playerDamage = BASE_PLAYER_DAMAGE
   self.fireCooldown = FIRE_COOLDOWN
   self.tripleShotTimer = 0
+  self.bombCooldown = 0
   self:spawnFormation()
   self.phase = nil
   self:changePhase(FormationPhase())
@@ -190,6 +195,11 @@ function GameModel:update(dt, input)
   self.player:move(dt, move, PLAYER_SPEED)
   self.player:clamp(0, self.width)
   self.player:tickCooldown(dt)
+  self.player:tickInvincibility(dt)
+  self.bombCooldown = math.max(0, self.bombCooldown - dt)
+  if input.bomb and self.bombCooldown <= 0 and self.player:useBomb() then
+    self:_detonateEmpBomb()
+  end
   if fire and self.player:canFire() then
     local p = self.player
     local bulletOpts = { damage = self.playerDamage }
@@ -308,6 +318,41 @@ function GameModel:_updateEnemyFire(dt)
     BulletModel(e:centerX() - 2, e.y + e.h, 0, bulletSpeed, 4, 12, "enemy")
 end
 
+function GameModel:_damageEnemy(e, amount)
+  local stillAlive = e:takeDamage(amount)
+  if not stillAlive then
+    self:addScore(e.score or 100)
+    self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
+    self:_tryDropItem(e:centerX(), e:centerY())
+  end
+  return stillAlive
+end
+
+function GameModel:_detonateEmpBomb()
+  self.bombCooldown = EMP_COOLDOWN
+  local cleared = #self.enemyBullets
+  self.enemyBullets = {}
+
+  for i = 1, #self.enemies do
+    local e = self.enemies[i]
+    if e.alive then
+      self:_damageEnemy(e, EMP_DAMAGE)
+    end
+  end
+
+  if self.boss and self.boss.alive and self.phase and self.phase.damageBoss then
+    self.phase:damageBoss(self, EMP_DAMAGE)
+  end
+
+  local p = self.player
+  self:_emit({
+    type = "emp_detonated",
+    x = p.x + p.w * 0.5,
+    y = p.y + p.h * 0.5,
+    clearedBullets = cleared,
+  })
+end
+
 -- 모든 단계에 공통인 충돌. 단계 고유 충돌(보스)은 phase:resolveCollisions 가 맡는다.
 function GameModel:_resolveCollisions()
   -- 플레이어 총알 × 적
@@ -315,17 +360,55 @@ function GameModel:_resolveCollisions()
     local b = self.bullets[bi]
     for _, e in ipairs(self.enemies) do
       if e.alive and overlaps(b, e) then
-        local stillAlive = e:takeDamage(b.damage or 1)
-        if not stillAlive then
-          self:addScore(e.score or 100)
-          self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
-          self:_tryDropItem(e:centerX(), e:centerY())
-        end
+        self:_damageEnemy(e, b.damage or 1)
         table.remove(self.bullets, bi)
         break
       end
     end
   end
+
+function GameModel:_clearBulletsAroundPlayer(radius)
+  local p = self.player
+  local px = p.x + p.w * 0.5
+  local py = p.y + p.h * 0.5
+  local r2 = radius * radius
+  for i = #self.enemyBullets, 1, -1 do
+    local b = self.enemyBullets[i]
+    local bx = b.x + b.w * 0.5
+    local by = b.y + b.h * 0.5
+    local dx, dy = bx - px, by - py
+    if dx * dx + dy * dy <= r2 then
+      table.remove(self.enemyBullets, i)
+    end
+  end
+end
+
+function GameModel:_damagePlayer()
+  if self.player:isInvincible() then
+    return false
+  end
+  if self.player.hasShield then
+    local p = self.player
+    local cx = p.x + p.w * 0.5
+    local cy = p.y + p.h * 0.5
+    p:consumeShield(SHIELD_INVINCIBLE_DURATION)
+    self:_clearBulletsAroundPlayer(SHIELD_CLEAR_RADIUS)
+    self:_emit({
+      type = "shield_broken",
+      x = cx,
+      y = cy,
+      radius = SHIELD_CLEAR_RADIUS,
+    })
+    return true
+  end
+  self.lives = self.lives - 1
+  self:_emit({ type = "player_hit" })
+  if self.lives <= 0 then
+    self.state = "gameover"
+    self:_emit({ type = "game_over" })
+  end
+  return true
+end
 
   -- 적(돌진 중) × 플레이어 몸통 충돌: 플레이어 피격 후 적은 소멸하지 않고 복귀
   local aiCtx = {
@@ -336,12 +419,9 @@ function GameModel:_resolveCollisions()
   }
   for _, e in ipairs(self.enemies) do
     if e.alive and e.aiState == "charge" and overlaps(e, self.player) then
-      self.lives = self.lives - 1
-      self:_emit({ type = "player_hit" })
+      self:_damagePlayer()
       e:onPlayerCollision(aiCtx)
       if self.lives <= 0 then
-        self.state = "gameover"
-        self:_emit({ type = "game_over" })
         break
       end
     end
@@ -351,12 +431,7 @@ function GameModel:_resolveCollisions()
   for i = #self.enemyBullets, 1, -1 do
     if overlaps(self.enemyBullets[i], self.player) then
       table.remove(self.enemyBullets, i)
-      self.lives = self.lives - 1
-      self:_emit({ type = "player_hit" })
-      if self.lives <= 0 then
-        self.state = "gameover"
-        self:_emit({ type = "game_over" })
-      end
+      self:_damagePlayer()
     end
   end
 
@@ -372,12 +447,7 @@ function GameModel:_resolveCollisions()
       }
       if overlaps(laserBox, self.player) then
         e.laserHit = true
-        self.lives = self.lives - 1
-        self:_emit({ type = "player_hit" })
-        if self.lives <= 0 then
-          self.state = "gameover"
-          self:_emit({ type = "game_over" })
-        end
+        self:_damagePlayer()
       end
     end
   end

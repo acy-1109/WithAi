@@ -190,9 +190,9 @@ h.test("triple_shot: 6초 활성화, 재획득 시 6초 초기화, Sniper식 3�
   return #g.bullets == 1
 end)
 
-h.test("일반 드랍: 8% 확률로 life, speed_up, triple_shot 만 드랍하고 attack_up 은 나오지 않는다", function()
-  local expected = { "life", "speed_up", "triple_shot" }
-  for idx = 1, 3 do
+h.test("일반 드랍: 8% 확률로 life, speed_up, triple_shot, shield, bomb 만 드랍하고 attack_up 은 나오지 않는다", function()
+  local expected = { "life", "speed_up", "triple_shot", "shield", "bomb" }
+  for idx = 1, #expected do
     local g = GameModel({ width = 600, height = 800, seed = 1 })
     local target = g.enemies[1]
     target.hp = 1
@@ -206,7 +206,7 @@ h.test("일반 드랍: 8% 확률로 life, speed_up, triple_shot 만 드랍하고
     end
     g.bullets[1] = BulletModel(target.x + 2, target.y + 2, 0, 0, 4, 12, "player")
     g:update(1 / 60, { move = 0, fire = false })
-    if passedMax ~= 3 or #g.items ~= 1 or g.items[1].kind ~= expected[idx] or g.items[1].kind == "attack_up" then
+    if passedMax ~= #expected or #g.items ~= 1 or g.items[1].kind ~= expected[idx] or g.items[1].kind == "attack_up" then
       return false
     end
   end
