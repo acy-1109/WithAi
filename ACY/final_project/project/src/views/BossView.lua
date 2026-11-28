@@ -22,6 +22,7 @@ local ENRAGED_PALETTE = {
 
 local HP_BG_COLOR = { 0.2, 0.2, 0.2 }
 local HP_FILL_COLOR = { 1, 0.2, 0.2 }
+local TURRET_HP_FILL_COLOR = { 0.35, 0.95, 1.0 }
 local LASER_CHARGE_COLOR = { 1.0, 0.35, 0.75 }
 local LASER_OUTER_COLOR = { 1.0, 0.20, 0.45 }
 local LASER_CORE_COLOR = { 1.0, 0.95, 1.0 }
@@ -45,6 +46,40 @@ local function drawTurret(gfx, pal, tx, ty)
   gfx.circle("line", tx, ty, 5)
   setColor(gfx, pal.core)
   gfx.circle("fill", tx, ty, 2)
+end
+
+local function drawDestructibleTurret(gfx, pal, boss, turret)
+  if not turret.alive then
+    return
+  end
+  local tx, ty, tw, th = boss:getTurretRect(turret)
+  local cx = tx + tw * 0.5
+  local cy = ty + th * 0.5
+
+  -- 보스 본체와 분리된 독립 서브 포탑 기체
+  drawOutlinedPoly(
+    gfx,
+    pal.fill,
+    pal.edge,
+    cx, ty,
+    tx + tw, cy,
+    tx + tw * 0.78, ty + th,
+    tx + tw * 0.22, ty + th,
+    tx, cy
+  )
+  setColor(gfx, pal.panel)
+  gfx.circle("fill", cx, cy, 5)
+  setColor(gfx, pal.core)
+  gfx.circle("fill", cx, cy, 2.5)
+
+  local barW = tw
+  local barX = tx
+  local barY = ty - 6
+  local ratio = (turret.maxHp and turret.maxHp > 0) and (turret.hp / turret.maxHp) or 0
+  setColor(gfx, HP_BG_COLOR)
+  gfx.rectangle("fill", barX, barY, barW, 3)
+  setColor(gfx, TURRET_HP_FILL_COLOR)
+  gfx.rectangle("fill", barX, barY, barW * ratio, 3)
 end
 
 local function drawHull(gfx, pal, x, y, w, h, cx)
@@ -82,6 +117,12 @@ local function drawReactorAndCore(gfx, pal, boss, x, y, w, h, cx)
 
   drawTurret(gfx, pal, x + w * 0.20, y + h * 0.50)
   drawTurret(gfx, pal, x + w * 0.80, y + h * 0.50)
+
+  if boss.turrets and #boss.turrets > 0 then
+    for i = 1, #boss.turrets do
+      drawDestructibleTurret(gfx, pal, boss, boss.turrets[i])
+    end
+  end
 
   local coreY = y + h * 0.48
   setColor(gfx, pal.edge)

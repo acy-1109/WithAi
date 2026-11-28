@@ -13,6 +13,7 @@ local BASE_BOSS_HP = 40
 local BOSS_HP_STEP = 20
 local BASE_BOSS_REWARD = 2000
 local BOSS_REWARD_STEP = 1000
+local TURRET_DESTROY_REWARD = 500
 local ESCORT_KINDS = { "grunt", "tank", "sprinter", "sniper", "weaver" }
 
 BossPhase.name = "boss"
@@ -28,6 +29,10 @@ end
 -- AABB 겹침
 local function overlaps(a, b)
   return a.x < b.x + b.w and b.x < a.x + a.w and a.y < b.y + b.h and b.y < a.y + a.h
+end
+
+local function overlapsRect(a, rx, ry, rw, rh)
+  return a.x < rx + rw and rx < a.x + a.w and a.y < ry + rh and ry < a.y + a.h
 end
 
 local function clamp(v, lo, hi)
@@ -103,14 +108,51 @@ function BossPhase:damageBoss(game, amount, hitX, hitY)
   return killed
 end
 
+function BossPhase:damageTurret(game, boss, turret, amount, hitX, hitY)
+  if not (boss and boss.alive and turret and turret.alive) then
+    return false
+  end
+  local tx, ty, tw, th = boss:getTurretRect(turret)
+  local cx = hitX or (tx + tw * 0.5)
+  local cy = hitY or (ty + th * 0.5)
+  game:_emit({ type = "boss_turret_hit", side = turret.id, x = cx, y = cy })
+  local destroyed = boss:damageTurret(turret, amount)
+  if destroyed then
+    game:addScore(TURRET_DESTROY_REWARD)
+    game:_emit({
+      type = "boss_turret_destroyed",
+      side = turret.id,
+      x = tx + tw * 0.5,
+      y = ty + th * 0.5,
+    })
+  end
+  return destroyed
+end
+
 function BossPhase:resolveCollisions(game)
   local boss = game.boss
   if not (boss and boss.alive) then
     return
   end
+  local turrets = boss.turrets
   for bi = #game.bullets, 1, -1 do
     local b = game.bullets[bi]
-    if overlaps(b, boss) then
+    local hitTurret = false
+    if turrets and #turrets > 0 then
+      for ti = 1, #turrets do
+        local t = turrets[ti]
+        if t.alive then
+          local tx, ty, tw, th = boss:getTurretRect(t)
+          if overlapsRect(b, tx, ty, tw, th) then
+            table.remove(game.bullets, bi)
+            self:damageTurret(game, boss, t, b.damage or 1, b.x, b.y)
+            hitTurret = true
+            break
+          end
+        end
+      end
+    end
+    if not hitTurret and overlaps(b, boss) then
       table.remove(game.bullets, bi)
       if self:damageBoss(game, b.damage or 1, b.x, b.y) then
         break

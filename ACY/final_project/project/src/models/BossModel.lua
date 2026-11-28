@@ -16,6 +16,13 @@ local LASER_FIRE_TIME = 0.8
 local LASER_WIDTH = 24
 local LASER_CHARGE_SPEED_MUL = 0.35
 local LASER_FIRE_SPEED_MUL = 0.25
+local TURRET_TIER = 4
+local TURRET_HP = 10
+local TURRET_SIZE = 24
+local TURRET_GAP = 14
+local TURRET_FIRE_INTERVAL = 1.6
+local ENRAGED_TURRET_FIRE_INTERVAL = 1.1
+local TURRET_BULLET_SPEED = 200
 
 local PatrolState, AimedState, SpiralState, LaserChargeState, LaserFireState
 
@@ -27,11 +34,12 @@ LaserFireState = { name = "laser" }
 
 local function moveHorizontal(boss, dt, width, speedMul)
   local spd = SPEED * (speedMul or 1) * (boss.enraged and ENRAGED_SPEED_MUL or 1)
+  local margin = (boss.turrets and #boss.turrets > 0) and (10 + TURRET_SIZE + TURRET_GAP) or 10
   boss.x = boss.x + boss.dir * spd * dt
-  if boss.x < 10 then
-    boss.x, boss.dir = 10, 1
-  elseif boss.x > width - 10 - boss.w then
-    boss.x, boss.dir = width - 10 - boss.w, -1
+  if boss.x < margin then
+    boss.x, boss.dir = margin, 1
+  elseif boss.x > width - margin - boss.w then
+    boss.x, boss.dir = width - margin - boss.w, -1
   end
 end
 
@@ -45,7 +53,12 @@ function PatrolState.update(boss, dt, width, out)
   boss.fireTimer = boss.fireTimer - dt
   if boss.fireTimer <= 0 then
     boss.fireTimer = boss.enraged and 0.9 or 1.2
-    local count = boss.enraged and 24 or 18
+    local count
+    if boss:isTurretAlive("left") then
+      count = boss.enraged and 24 or 18
+    else
+      count = boss.enraged and 14 or 10
+    end
     local spd = BULLET_SPEED * (boss.enraged and ENRAGED_BULLET_MUL or 1)
     local cx, cy = boss:centerX(), boss:centerY()
     for k = 0, count - 1 do
@@ -72,7 +85,12 @@ function AimedState.update(boss, dt, width, out, player)
     local tx = player and (player.x + (player.w or 0) * 0.5) or (width * 0.5)
     local ty = player and (player.y + (player.h or 0) * 0.5) or 740
     local baseAngle = math.atan2(ty - cy, tx - cx)
-    local ways = boss.enraged and 7 or 5
+    local ways
+    if boss:isTurretAlive("right") then
+      ways = boss.enraged and 7 or 5
+    else
+      ways = boss.enraged and 5 or 3
+    end
     local half = math.floor(ways * 0.5)
     local step = 0.16
     local spd = BULLET_SPEED * 1.35 * (boss.enraged and ENRAGED_BULLET_MUL or 1)
@@ -165,6 +183,33 @@ function BossModel:init(x, y, hp, tier)
   self.chargeTimer = 0
   self.laserTimer = 0
   self.laserHit = false
+  self.turrets = {}
+  if self.tier >= TURRET_TIER then
+    local halfT = TURRET_SIZE * 0.5
+    local cyOff = self.h * 0.50 - halfT
+    self.turrets[1] = {
+      id = "left",
+      ox = -TURRET_SIZE - TURRET_GAP,
+      oy = cyOff,
+      w = TURRET_SIZE,
+      h = TURRET_SIZE,
+      hp = TURRET_HP,
+      maxHp = TURRET_HP,
+      alive = true,
+      fireTimer = TURRET_FIRE_INTERVAL * 0.75,
+    }
+    self.turrets[2] = {
+      id = "right",
+      ox = self.w + TURRET_GAP,
+      oy = cyOff,
+      w = TURRET_SIZE,
+      h = TURRET_SIZE,
+      hp = TURRET_HP,
+      maxHp = TURRET_HP,
+      alive = true,
+      fireTimer = TURRET_FIRE_INTERVAL,
+    }
+  end
   self.stateObj = nil
   self.aiState = PatrolState.name
   self:changeState(PatrolState)
@@ -186,12 +231,79 @@ function BossModel:centerY()
   return self.y + self.h * 0.5
 end
 
+--- 서브 포탑의 현재 월드 AABB(x, y, w, h)를 반환한다.
+function BossModel:getTurretRect(turret)
+  return self.x + turret.ox, self.y + turret.oy, turret.w, turret.h
+end
+
+--- 지정 id("left" | "right") 포탑이 살아있는지 반환한다. 포탑이 없는 티어는 true 를 반환한다.
+function BossModel:isTurretAlive(id)
+  if not self.turrets or #self.turrets == 0 then
+    return true
+  end
+  for i = 1, #self.turrets do
+    if self.turrets[i].id == id then
+      return self.turrets[i].alive
+    end
+  end
+  return true
+end
+
+--- 서브 포탑에 피해를 입힌다. @return boolean 이번 피해로 파괴되었는가
+function BossModel:damageTurret(target, amount)
+  local t = target
+  if type(target) == "string" then
+    for i = 1, #self.turrets do
+      if self.turrets[i].id == target then
+        t = self.turrets[i]
+        break
+      end
+    end
+  elseif type(target) == "number" then
+    t = self.turrets[target]
+  end
+  if not (t and t.alive) then
+    return false
+  end
+  t.hp = t.hp - (amount or 1)
+  if t.hp <= 0 then
+    t.hp = 0
+    t.alive = false
+    return true
+  end
+  return false
+end
+
+local function updateTurrets(boss, dt, width, out, player)
+  if not (boss.turrets and #boss.turrets > 0 and out) then
+    return
+  end
+  local ptx = player and (player.x + (player.w or 0) * 0.5) or (width * 0.5)
+  local pty = player and (player.y + (player.h or 0) * 0.5) or 740
+  local interval = boss.enraged and ENRAGED_TURRET_FIRE_INTERVAL or TURRET_FIRE_INTERVAL
+  local spd = TURRET_BULLET_SPEED * (boss.enraged and ENRAGED_BULLET_MUL or 1)
+  for i = 1, #boss.turrets do
+    local t = boss.turrets[i]
+    if t.alive then
+      t.fireTimer = (t.fireTimer or interval) - dt
+      if t.fireTimer <= 0 then
+        t.fireTimer = interval
+        local tx, ty, tw, th = boss:getTurretRect(t)
+        local cx, cy = tx + tw * 0.5, ty + th * 0.5
+        local a = math.atan2(pty - cy, ptx - cx)
+        out[#out + 1] = BulletModel(cx - 3, cy - 3, math.cos(a) * spd, math.sin(a) * spd, 6, 6, "enemy")
+      end
+    end
+  end
+end
+
 --- 상태 패턴 FSM 기반 이동 + 탄막 발사. 새 총알은 out 배열에 추가한다.
 function BossModel:update(dt, width, out, player)
   if not self.alive then
     return
   end
   self.stateObj.update(self, dt, width, out, player)
+  updateTurrets(self, dt, width, out, player)
 end
 
 --- 피해를 받는다. @return boolean  이번 피해로 쓰러졌는가
