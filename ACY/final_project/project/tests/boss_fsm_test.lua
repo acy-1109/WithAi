@@ -109,4 +109,86 @@ h.test("보스 FSM: 동일 시드 2회 실행 시 상태·위치·탄막 수가 
     and #g1.enemyBullets == #g2.enemyBullets
 end)
 
+h.test("보스 주기 및 무한 진행: 5웨이브 보스 격파 → 6웨이브 복귀 → 15웨이브 2차 보스(HP·보상 증가)", function()
+  local g = GameModel({ width = 600, height = 800, seed = 1 })
+  g.enemies = {}
+  g.wave = 5
+  g:update(1 / 60, { move = 0, fire = false })
+  g:drainEvents()
+
+  if g.phase.name ~= "boss" or not g.boss or g.boss.maxHp ~= 40 then
+    return false
+  end
+
+  local function killCurrentBoss()
+    local hits = 0
+    while g.boss and g.boss.alive and hits < 200 do
+      g.bullets[#g.bullets + 1] = BulletModel(g.boss:centerX(), g.boss:centerY(), 0, 0, 4, 12, "player")
+      g:update(1 / 60, { move = 0, fire = false })
+      hits = hits + 1
+    end
+    return hits
+  end
+
+  -- 1차 보스 격파 → 게임 유지, 6웨이브 편대전 복귀, 보상 2000점
+  local scoreBefore1 = g.score
+  killCurrentBoss()
+  local evts1 = g:drainEvents()
+  local sawDestroyed1 = false
+  for i = 1, #evts1 do
+    if evts1[i].type == "boss_destroyed" then
+      sawDestroyed1 = true
+      break
+    end
+  end
+  if g.state ~= "playing"
+    or g.phase.name ~= "formation"
+    or g.boss ~= nil
+    or g.wave ~= 6
+    or #g.enemies == 0
+    or (g.score - scoreBefore1) ~= 2000
+    or not sawDestroyed1 then
+    return false
+  end
+
+  -- 6~14웨이브 클리어 동안은 계속 편대전 유지 (보스 미등장)
+  for expectedWave = 7, 15 do
+    for _, e in ipairs(g.enemies) do
+      e.alive = false
+    end
+    g:update(1 / 60, { move = 0, fire = false })
+    if g.wave ~= expectedWave or g.phase.name ~= "formation" or g.boss ~= nil then
+      return false
+    end
+  end
+
+  -- 15웨이브 전멸 시 2차 보스 등장 (HP 60)
+  for _, e in ipairs(g.enemies) do
+    e.alive = false
+  end
+  g:update(1 / 60, { move = 0, fire = false })
+  if g.phase.name ~= "boss" or not g.boss or g.boss.maxHp ~= 60 then
+    return false
+  end
+
+  -- 2차 보스 격파 → 16웨이브 복귀, 보상 3000점
+  local scoreBefore2 = g.score
+  killCurrentBoss()
+  if g.state ~= "playing"
+    or g.phase.name ~= "formation"
+    or g.boss ~= nil
+    or g.wave ~= 16
+    or #g.enemies == 0
+    or (g.score - scoreBefore2) ~= 3000 then
+    return false
+  end
+
+  -- 16웨이브 전멸 시 보스가 아닌 17웨이브 편대전으로 진행
+  for _, e in ipairs(g.enemies) do
+    e.alive = false
+  end
+  g:update(1 / 60, { move = 0, fire = false })
+  return g.wave == 17 and g.phase.name == "formation" and g.boss == nil
+end)
+
 h.finish()

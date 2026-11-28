@@ -210,5 +210,84 @@ h.test("웨이브 진행: wave 1~4 클리어 후 wave 5 도달, wave 5 전멸 �
   return g.phase.name == "boss" and g.boss ~= nil
 end)
 
+h.test("waves.txt 확장: 총 12종 파싱, 단일 적 한 줄 웨이브(6~9) 및 혼합 편성(10~12) 스폰 검증", function()
+  local f = assert(io.open(app .. "/waves.txt", "r"))
+  local text = f:read("*a")
+  f:close()
+
+  local waves = WaveParser.parse(text)
+  if #waves ~= 12 then
+    return false
+  end
+
+  local expectedSingle = {
+    [6] = { kind = "sniper", count = 6 },
+    [7] = { kind = "sprinter", count = 6 },
+    [8] = { kind = "weaver", count = 6 },
+    [9] = { kind = "tank", count = 5 },
+  }
+  for idx, spec in pairs(expectedSingle) do
+    local list = waves[idx].enemies
+    if #list ~= spec.count then
+      return false
+    end
+    local y0 = list[1].y
+    for i = 1, #list do
+      if list[i].kind ~= spec.kind or list[i].y ~= y0 then
+        return false
+      end
+      if list[i].x < 10 or list[i].x > 554 then
+        return false
+      end
+    end
+  end
+
+  -- 혼합 웨이브(2~5, 10~12)는 1웨이브당 tank 최대 2기 제한 준수 및 적 생성 검증
+  for idx = 1, #waves do
+    local g = GameModel({
+      width = 600,
+      height = 800,
+      seed = 1,
+      wavesText = string.format("wave 1\nenemy %s %d %d\n", waves[idx].enemies[1].kind, waves[idx].enemies[1].x, waves[idx].enemies[1].y),
+    })
+    if #g.enemies ~= 1 then
+      return false
+    end
+    if idx ~= 9 then
+      local tankCount = 0
+      for i = 1, #waves[idx].enemies do
+        local e = waves[idx].enemies[i]
+        if e.kind == "tank" then
+          tankCount = tankCount + 1
+        end
+        if e.x < 10 or e.x > 554 then
+          return false
+        end
+      end
+      if tankCount > 2 then
+        return false
+      end
+    end
+  end
+
+  -- 실제 waves.txt로 2~12웨이브 범위에서 랜덤 스폰되는지 확인
+  local gFull = GameModel({ width = 600, height = 800, seed = 17, wavesText = text })
+  if gFull.waveIndex ~= 1 then
+    return false
+  end
+  local seenHighWave = false
+  for _ = 1, 30 do
+    gFull:spawnFormation()
+    if gFull.waveIndex < 2 or gFull.waveIndex > 12 or #gFull.enemies == 0 then
+      return false
+    end
+    if gFull.waveIndex >= 6 then
+      seenHighWave = true
+    end
+  end
+
+  return seenHighWave
+end)
+
 h.finish()
 

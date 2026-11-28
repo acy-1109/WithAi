@@ -66,3 +66,61 @@ enemy sprinter 240 115
 enemy sprinter 315 115
 enemy tank 390 115
 enemy sprinter 465 115
+
+wave 6
+enemy sniper 90 70
+enemy sniper 165 70
+enemy sniper 240 70
+enemy sniper 315 70
+enemy sniper 390 70
+enemy sniper 465 70
+
+wave 7
+enemy sprinter 90 80
+enemy sprinter 165 80
+enemy sprinter 240 80
+enemy sprinter 315 80
+enemy sprinter 390 80
+enemy sprinter 465 80
+
+wave 8
+enemy weaver 90 70
+enemy weaver 165 70
+enemy weaver 240 70
+enemy weaver 315 70
+enemy weaver 390 70
+enemy weaver 465 70
+
+wave 9
+enemy tank 110 105
+enemy tank 195 105
+enemy tank 280 105
+enemy tank 365 105
+enemy tank 450 105
+
+wave 10
+enemy sniper 90 60
+enemy weaver 150 60
+enemy weaver 390 60
+enemy sniper 450 60
+enemy sprinter 120 115
+enemy tank 180 115
+enemy tank 360 115
+enemy sprinter 420 115
+
+wave 11
+enemy sniper 90 85
+enemy tank 185 85
+enemy weaver 280 85
+enemy tank 375 85
+enemy sniper 470 85
+
+wave 12
+enemy weaver 120 60
+enemy sprinter 200 60
+enemy sniper 280 60
+enemy sprinter 360 60
+enemy weaver 440 60
+enemy tank 200 115
+enemy grunt 280 115
+enemy tank 360 115

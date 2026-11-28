@@ -17,12 +17,14 @@ run.bat
 ```sh
 lua tests/layer_check.lua src
 lua tests/scene_test.lua src
+lua tests/title_buttons_test.lua src
+lua tests/r1_difficulty_scene_test.lua src
 lua tests/achievement_overlay_test.lua src
 lua tests/achievement_catalog_test.lua src
 ```
 
 ## 조작법
-- 타이틀: `Enter` / `Space` 시작, `D` 난이도 선택, `ACHIEVEMENTS` 버튼 클릭 업적 조회, `Esc` 종료
+- 타이틀: 마우스 클릭 — `START`(난이도 선택 이동), `ACHIEVEMENTS`(업적 조회), `QUIT`(종료)
 - 업적 창: 마우스 휠 / 스크롤바 드래그 스크롤, `CLOSE` 버튼 클릭 또는 `Esc` 닫기
 - 난이도 선택: `↑`/`↓` 또는 `1`~`3` 선택, `Enter`/`Space` 시작, `Esc` 타이틀
 - 플레이: `←`/`→` (`A`/`D`) 이동, `Space` 발사, `X` 유도 미사일, `P`/`Esc` 일시정지
