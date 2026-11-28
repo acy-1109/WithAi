@@ -107,8 +107,8 @@ function TankEnemy:takeDamage(amount)
   return alive
 end
 
-local CHARGE_SPEED = 320
-local RETURN_SPEED = 220
+local CHARGE_SPEED = 440
+local RETURN_SPEED = 280
 local CHARGE_MAX_TIME = 5.0
 local CHARGE_CHANCE = 0.7
 
