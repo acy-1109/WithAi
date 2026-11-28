@@ -3,31 +3,25 @@
 
 local DifficultyView = {}
 
-local LABELS = {
-  easy = "1. EASY   (Slow bullets / Relaxed enemies)",
-  normal = "2. NORMAL (Standard balance)",
-  hard = "3. HARD   (Fast bullets / Aggressive enemies)",
-}
-
 function DifficultyView.draw(gfx, width, height, options, selected)
   gfx.setColor(0.4, 0.9, 1)
-  gfx.printf("SELECT DIFFICULTY", 0, height * 0.28, width, "center")
+  gfx.printf("SELECT SHIP", 0, height * 0.25, width, "center")
 
   for i = 1, #options do
-    local key = options[i]
-    local text = LABELS[key] or key
-    local y = height * 0.40 + (i - 1) * 36
+    local ship = options[i]
+    local label = string.format("%d. %s [%s] - %s", i, ship.name, ship.role, ship.desc)
+    local y = height * 0.38 + (i - 1) * 40
     if i == selected then
       gfx.setColor(1, 0.9, 0.3)
-      gfx.printf("> " .. text .. " <", 0, y, width, "center")
+      gfx.printf("> " .. label .. " <", 0, y, width, "center")
     else
       gfx.setColor(0.8, 0.8, 0.85)
-      gfx.printf(text, 0, y, width, "center")
+      gfx.printf(label, 0, y, width, "center")
     end
   end
 
   gfx.setColor(0.7, 0.7, 0.8)
-  gfx.printf("Up/Down or 1-3 : Select\nEnter/Space : Start   |   Esc : Back", 0, height * 0.65, width, "center")
+  gfx.printf("Arrow / WASD / 1-3 : Select   |   Enter/Space : Start   |   Esc : Back", 0, height * 0.68, width, "center")
 end
 
 return DifficultyView

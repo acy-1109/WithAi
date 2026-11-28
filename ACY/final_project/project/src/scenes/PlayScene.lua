@@ -21,6 +21,7 @@ function PlayScene:init(ctx)
     height = ctx.height,
     seed = ctx.seed(),
     wavesText = ctx.wavesText,
+    shipId = ctx.shipId,
   })
   self.achievements = ctx.achievements or AchievementModel()
   if self.achievements.resetRun then

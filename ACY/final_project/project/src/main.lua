@@ -40,6 +40,7 @@ function love.load()
     seed = newSeed,
     quit = love.event.quit,
     difficulty = "normal",
+    shipId = "balanced",
     wavesText = wavesText,
     highScore = highScore,
     saveHighScore = function()

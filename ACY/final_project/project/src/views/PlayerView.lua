@@ -3,8 +3,20 @@
 
 local PlayerView = {}
 
-local BODY_FILL_COLOR = { 0.08, 0.36, 0.62 }
-local BODY_EDGE_COLOR = { 0.35, 0.95, 1.0 }
+local PALETTES = {
+  balanced = {
+    fill = { 0.08, 0.36, 0.62 },
+    edge = { 0.35, 0.95, 1.0 },
+  },
+  rapid = {
+    fill = { 0.58, 0.14, 0.16 },
+    edge = { 1.0, 0.42, 0.28 },
+  },
+  emp = {
+    fill = { 0.10, 0.44, 0.34 },
+    edge = { 0.32, 1.0, 0.72 },
+  },
+}
 local FRAME_COLOR = { 0.18, 0.68, 0.90 }
 local CANOPY_COLOR = { 0.75, 0.98, 1.0 }
 local CORE_COLOR = { 1.0, 1.0, 1.0 }
@@ -39,10 +51,10 @@ local function drawHullPolygon(gfx, mode, x, y, w, h, cx)
   )
 end
 
-local function drawHull(gfx, x, y, w, h, cx)
-  setColor(gfx, BODY_FILL_COLOR)
+local function drawHull(gfx, x, y, w, h, cx, pal)
+  setColor(gfx, pal.fill)
   drawHullPolygon(gfx, "fill", x, y, w, h, cx)
-  setColor(gfx, BODY_EDGE_COLOR)
+  setColor(gfx, pal.edge)
   drawHullPolygon(gfx, "line", x, y, w, h, cx)
 end
 
@@ -107,7 +119,8 @@ function PlayerView.draw(gfx, player)
   local x, y, w, h = player.x, player.y, player.w, player.h
   local cx = x + w * 0.5
 
-  drawHull(gfx, x, y, w, h, cx)
+  local pal = PALETTES[player.shipId] or PALETTES.balanced
+  drawHull(gfx, x, y, w, h, cx, pal)
   drawDetails(gfx, x, y, w, h, cx)
 
   if player.hasShield then

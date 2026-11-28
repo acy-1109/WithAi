@@ -40,11 +40,11 @@ h.test("R1: 방향키 위/아래 및 숫자 1~3 으로 난이도 선택 후 Ente
   clickStartButton(stack, ctx)
   stack:keypressed("down")
   local diff = stack:top()
-  local okDown = (diff.selected == 3) -- normal(2) -> hard(3)
+  local okDown = (diff.selected == 2) -- balanced(1) -> rapid(2)
   stack:keypressed("1")
   local okNum = (diff.selected == 1)
   stack:keypressed("return")
-  return okDown and okNum and ctx.difficulty == "easy" and stack:size() == 1 and stack:top().game ~= nil
+  return okDown and okNum and ctx.shipId == "balanced" and stack:size() == 1 and stack:top().game ~= nil
 end)
 
 h.test("R1: 난이도 화면에서 Esc 입력 시 TitleScene 으로 복귀", function()

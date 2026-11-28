@@ -6,6 +6,7 @@
 local class = require("class")
 local Rng = require("rng")
 local PlayerModel = require("PlayerModel")
+local ShipCatalog = require("ShipCatalog")
 local EnemyModel = require("EnemyModel")
 local BulletModel = require("BulletModel")
 local ItemModel = require("ItemModel")
@@ -51,14 +52,27 @@ function GameModel:init(opts)
   opts = opts or {}
   self.width = opts.width or 600
   self.height = opts.height or 800
-  self.maxLives = opts.maxLives or 3
+  local ship = ShipCatalog.get(opts.shipId)
+  self.ship = ship
+  self.shipId = ship.id
+  self.shipName = ship.name
+  self.playerSpeed = ship.speed
+  self.minFireCooldown = ship.minFireCooldown
+  self.empDamage = ship.empDamage
+  self.maxLives = opts.maxLives or ship.lives
   self.rng = Rng(opts.seed or 1)
   self.waves = opts.wavesText and WaveParser.parse(opts.wavesText) or nil
   self:reset()
 end
 
 function GameModel:reset()
-  self.player = PlayerModel(self.width * 0.5 - 20, self.height - 60)
+  local ship = self.ship or ShipCatalog.get(nil)
+  self.player = PlayerModel(self.width * 0.5 - 20, self.height - 60, {
+    shipId = ship.id,
+    hasShield = ship.hasShield,
+    bombs = ship.bombs,
+    maxBombs = ship.maxBombs,
+  })
   self.bullets = {}
   self.enemyBullets = {}
   self.enemies = {}
@@ -78,7 +92,8 @@ function GameModel:reset()
   self.waveIndex = 0
   self.bossDefeatedCount = 0
   self.playerDamage = BASE_PLAYER_DAMAGE
-  self.fireCooldown = FIRE_COOLDOWN
+  local ship = self.ship or ShipCatalog.get(nil)
+  self.fireCooldown = ship.fireCooldown
   self.tripleShotTimer = 0
   self.bombCooldown = 0
   self:spawnFormation()
@@ -192,7 +207,7 @@ function GameModel:update(dt, input)
   local fire = input.fire or false
 
   -- 플레이어
-  self.player:move(dt, move, PLAYER_SPEED)
+  self.player:move(dt, move, self.playerSpeed)
   self.player:clamp(0, self.width)
   self.player:tickCooldown(dt)
   self.player:tickInvincibility(dt)
@@ -336,12 +351,12 @@ function GameModel:_detonateEmpBomb()
   for i = 1, #self.enemies do
     local e = self.enemies[i]
     if e.alive then
-      self:_damageEnemy(e, EMP_DAMAGE)
+      self:_damageEnemy(e, self.empDamage)
     end
   end
 
   if self.boss and self.boss.alive and self.phase and self.phase.damageBoss then
-    self.phase:damageBoss(self, EMP_DAMAGE)
+    self.phase:damageBoss(self, self.empDamage)
   end
 
   local p = self.player
@@ -467,7 +482,7 @@ function GameModel:addScore(points)
 end
 
 function GameModel:applySpeedUp()
-  self.fireCooldown = math.max(MIN_FIRE_COOLDOWN, self.fireCooldown * SPEED_UP_COOLDOWN_MUL)
+  self.fireCooldown = math.max(self.minFireCooldown, self.fireCooldown * SPEED_UP_COOLDOWN_MUL)
 end
 
 function GameModel:activateTripleShot(duration)

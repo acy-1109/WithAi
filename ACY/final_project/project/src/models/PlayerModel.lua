@@ -9,16 +9,18 @@ local PlayerModel = class()
 -- @field x,y    number  좌상단 좌표
 -- @field w,h    number  크기
 -- @field cooldown number 다음 발사까지 남은 시간(초)
-function PlayerModel:init(x, y)
+function PlayerModel:init(x, y, opts)
+  opts = opts or {}
   self.x = x
   self.y = y
   self.w = 40
   self.h = 24
+  self.shipId = opts.shipId or "balanced"
   self.cooldown = 0
-  self.hasShield = false
+  self.hasShield = opts.hasShield == true
   self.invincibleTimer = 0
-  self.maxBombs = 3
-  self.bombs = 1
+  self.maxBombs = opts.maxBombs or 3
+  self.bombs = opts.bombs or 1
 end
 
 -- move: -1(왼) | 0 | 1(오). 화면 경계는 바깥(GameModel)이 width 로 클램프.
