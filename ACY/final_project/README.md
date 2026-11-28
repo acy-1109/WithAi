@@ -26,6 +26,9 @@ lua tests/bullet_view_test.lua src
 lua tests/enemy_view_test.lua src
 lua tests/boss_view_test.lua src
 lua tests/space_background_test.lua src
+lua tests/item_growth_test.lua src
+lua tests/r4_enemy_ai_test.lua src
+lua tests/r7_weaver_enemy_test.lua src
 ```
 
 ## 조작법
