@@ -77,6 +77,8 @@ h.test("보스 광폭화: HP 50% 이하 시 enraged 전환, boss_enraged 이벤�
   local lastColor
   local fakeGfx = {
     setColor = function(r, gCol, b) lastColor = { r, gCol, b } end,
+    polygon = function() end,
+    circle = function() end,
     rectangle = function() end,
   }
   boss.enraged = false
