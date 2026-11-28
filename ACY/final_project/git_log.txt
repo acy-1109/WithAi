@@ -1,4 +1,20 @@
-9d648ad (HEAD -> main, origin/main, origin/HEAD) 스프린터 대시 속도 증가
+29d7eb1 (HEAD -> main, origin/main, origin/HEAD) 업적 추가
+ ACY/final_project/git_log.txt                      |  11 +-
+ ACY/final_project/project/src/main.lua             |  24 ++
+ .../project/src/models/AchievementModel.lua        | 273 ++++++++++++++++++++-
+ ACY/final_project/project/src/models/GameModel.lua |   7 +-
+ .../project/src/scenes/AchievementScene.lua        | 124 ++++++++++
+ ACY/final_project/project/src/scenes/PlayScene.lua |  20 +-
+ .../project/src/scenes/ResultScene.lua             |   3 +
+ .../project/src/scenes/SceneStack.lua              |  31 ++-
+ .../project/src/scenes/TitleScene.lua              |  22 +-
+ .../project/src/views/AchievementView.lua          | 184 ++++++++++++++
+ ACY/final_project/project/src/views/TitleView.lua  |  48 +++-
+ .../project/tests/achievement_catalog_test.lua     | 247 +++++++++++++++++++
+ .../project/tests/achievement_overlay_test.lua     | 208 ++++++++++++++++
+ .../worklogs/006_2026-11-28_session.md             |  34 ++-
+ 14 files changed, 1207 insertions(+), 29 deletions(-)
+9d648ad 스프린터 대시 속도 증가
  ACY/final_project/project/src/models/EnemyModel.lua | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 4f48dd3 버그 수정

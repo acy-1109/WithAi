@@ -8,6 +8,7 @@ local app = arg[1] or "src"
 h.setup(app)
 
 local SceneStack = require("SceneStack")
+local TitleView = require("TitleView")
 
 local DT = 1 / 60
 
@@ -19,9 +20,21 @@ local function newApp()
   return stack, ctx
 end
 
+local function clickTitleButton(stack, ctx, id)
+  local buttons = TitleView.getButtons(ctx.width, ctx.height)
+  for i = 1, #buttons do
+    if buttons[i].id == id then
+      local b = buttons[i]
+      stack:mousepressed(b.x + b.w * 0.5, b.y + b.h * 0.5, 1)
+      return true
+    end
+  end
+  return false
+end
+
 local function startPlay()
   local stack, ctx = newApp()
-  stack:keypressed("return")
+  clickTitleButton(stack, ctx, "start")
   return stack, ctx, stack:top()
 end
 
@@ -108,14 +121,14 @@ h.test("SceneStack: 맨 위 씬만 update·keypressed 를 받는다", function()
 end)
 
 -- ── 타이틀 ───────────────────────────────────────────────────────────────
-h.test("타이틀: Enter → 플레이 (스택 1개, 새 게임 1번 생성)", function()
+h.test("타이틀: START 버튼 클릭 → 플레이 (스택 1개, 새 게임 1번 생성)", function()
   local stack, ctx, play = startPlay()
   return stack:size() == 1 and play.game ~= nil and ctx.seeds == 1
 end)
 
-h.test("타이틀: Esc → 종료 요청(ctx.quit) — 씬은 love.event 를 모른다", function()
+h.test("타이틀: QUIT 버튼 클릭 → 종료 요청(ctx.quit) — 씬은 love.event 를 모른다", function()
   local stack, ctx = newApp()
-  stack:keypressed("escape")
+  clickTitleButton(stack, ctx, "quit")
   return ctx.quitCalled
 end)
 
@@ -221,7 +234,7 @@ h.test("전체 경로: 타이틀 → 플레이 → 일시정지 → 재개 → �
     path[#path + 1] = (top.game and "Play") or (top.transparent and (top.won ~= nil and "Result" or "Pause")) or "Title"
   end
   note()
-  stack:keypressed("return"); note()
+  clickTitleButton(stack, ctx, "start"); note()
   stack:keypressed("p"); note()
   stack:keypressed("p"); note()
   stack:top().game.state = "gameover"
