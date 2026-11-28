@@ -33,17 +33,22 @@ h.test("R7: GameModel 웨이브 파싱으로 weaver 스폰 및 EnemyView 렌더�
   })
   local w = g.enemies[1]
 
-  local drawnColor
+  local sawWeaverEdge = false
   local fakeGfx = {
-    setColor = function(r, gCol, b) drawnColor = { r, gCol, b } end,
+    setColor = function(r, gCol, b)
+      if r == 0.3 and gCol == 1.0 and b == 0.75 then
+        sawWeaverEdge = true
+      end
+    end,
+    polygon = function() end,
+    circle = function() end,
     rectangle = function() end,
   }
   EnemyView.draw(fakeGfx, g.enemies)
 
   return #g.enemies == 1
     and w:isA(EnemyModel.Weaver)
-    and drawnColor ~= nil
-    and drawnColor[1] == 0.3 and drawnColor[2] == 1.0 and drawnColor[3] == 0.75
+    and sawWeaverEdge
 end)
 
 h.test("R7: weaver 경계 접촉 시 편대가 연속 하강(낙하)하지 않고 반전 이동한다", function()

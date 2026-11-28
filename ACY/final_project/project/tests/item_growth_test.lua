@@ -218,19 +218,19 @@ h.test("EnemyView: Tank 는 처음부터 흰색 계열 3칸 분리 바, 일반 �
   grunt.hp = 2
   grunt.maxHp = 2
 
-  -- Tank: 본체(1) + 3칸(3) = rectangle 4회, 3칸은 서로 간격(gap)이 있고 흰색 계열 사용
+  -- Tank: 본체는 벡터 도형, HP 바 3칸 = rectangle 3회, 3칸은 서로 간격(gap)이 있고 흰색 계열 사용
   local gfxTank = h.fakeGfx()
   EnemyView.draw(gfxTank, { tank })
-  if h.count(gfxTank, "rectangle") ~= 4 then
+  if h.count(gfxTank, "rectangle") ~= 3 then
     return false
   end
   local segXs = {}
   local sawWhiteSeg = false
-  for idx, c in ipairs(gfxTank.calls) do
+  for _, c in ipairs(gfxTank.calls) do
     if c.name == "setColor" and c.args[1] >= 0.9 and c.args[2] >= 0.9 and c.args[3] >= 0.9 then
       sawWhiteSeg = true
     end
-    if c.name == "rectangle" and idx > 2 then
+    if c.name == "rectangle" then
       segXs[#segXs + 1] = { x = c.args[2], w = c.args[4] }
     end
   end
@@ -242,10 +242,10 @@ h.test("EnemyView: Tank 는 처음부터 흰색 계열 3칸 분리 바, 일반 �
     return false
   end
 
-  -- 일반 적 (HP 2): 본체(1) + 배경(1) + 녹색바(1) = rectangle 3회, 녹색 계열 사용
+  -- 일반 적 (HP 2): 본체는 벡터 도형, HP 바 배경(1) + 녹색바(1) = rectangle 2회, 녹색 계열 사용
   local gfxGrunt = h.fakeGfx()
   EnemyView.draw(gfxGrunt, { grunt })
-  if h.count(gfxGrunt, "rectangle") ~= 3 then
+  if h.count(gfxGrunt, "rectangle") ~= 2 then
     return false
   end
   local sawGreenBar = false
