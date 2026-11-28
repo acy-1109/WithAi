@@ -35,6 +35,9 @@ h.test("GameModel: 적 처치 시 8% 확률(< 0.08)일 때만 아이템 드랍",
   g.rng.nextFloat = function()
     return 0.08
   end
+  target.entering = false
+  target.x = target.entryTargetX
+  target.y = target.entryTargetY
   g.bullets[#g.bullets + 1] = { x = target.x + 2, y = target.y + 2, w = 4, h = 12, update = function() end, isOffscreen = function() return false end }
   g:update(0.016, {})
   if #g.items ~= 0 then
@@ -43,6 +46,9 @@ h.test("GameModel: 적 처치 시 8% 확률(< 0.08)일 때만 아이템 드랍",
 
   -- 0.08 미만이면 4종 중 선택해 드랍됨
   local target2 = g.enemies[2]
+  target2.entering = false
+  target2.x = target2.entryTargetX
+  target2.y = target2.entryTargetY
   target2.hp = 1
   g.rng.nextFloat = function()
     return 0.079

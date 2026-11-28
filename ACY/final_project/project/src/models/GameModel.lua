@@ -30,6 +30,10 @@ local TRIPLE_SHOT_SPLIT_SPREAD = 0.32
 local ENEMY_FIRE_INTERVAL = 0.6
 local FORMATION_SPEED = 40
 local FORMATION_DESCEND = 16
+local FORMATION_DESCEND_DURATION = 0.30
+local ENTRY_DURATION = 0.55
+local ENTRY_STAGGER = 0.03
+local ENTRY_START_OFFSET = 20
 local MISSILE_SPEED = 520
 local MISSILE_TURN = 0.16
 local MISSILE_COOLDOWN = 0.6
@@ -81,6 +85,9 @@ function GameModel:reset()
   self.lives = self.maxLives
   self.state = "playing" -- 결과: "playing" | "gameover" | "won"
   self.formationDir = 1
+  self.descendTotal = 0
+  self.descendApplied = 0
+  self.descendElapsed = 0
   self.enemyFireTimer = ENEMY_FIRE_INTERVAL
   self.missileCooldown = 0
   self.maxMissiles = MAX_MISSILES
@@ -92,7 +99,6 @@ function GameModel:reset()
   self.waveIndex = 0
   self.bossDefeatedCount = 0
   self.playerDamage = BASE_PLAYER_DAMAGE
-  local ship = self.ship or ShipCatalog.get(nil)
   self.fireCooldown = ship.fireCooldown
   self.tripleShotTimer = 0
   self.bombCooldown = 0
@@ -120,6 +126,7 @@ end
 
 function GameModel:spawnFormation()
   self.wave = (self.wave or 0) + 1
+  local startIdx = #self.enemies + 1
   if self.waves and #self.waves > 0 then
     local nWaves = #self.waves
     if self.wave == 1 or nWaves == 1 then
@@ -140,13 +147,18 @@ function GameModel:spawnFormation()
       local spec = wave.enemies[i]
       self:_spawnEnemy(spec.kind, spec.x, spec.y)
     end
-    return
+  else
+    for row = 0, 3 do
+      for col = 0, 7 do
+        self:_spawnEnemy("grunt", 60 + col * 60, 60 + row * 50)
+      end
+    end
   end
 
-  for row = 0, 3 do
-    for col = 0, 7 do
-      self:_spawnEnemy("grunt", 60 + col * 60, 60 + row * 50)
-    end
+  for idx = startIdx, #self.enemies do
+    local e = self.enemies[idx]
+    local delay = (idx - startIdx) * ENTRY_STAGGER
+    e:startEntry(e.x, -e.h - ENTRY_START_OFFSET, e.x, e.y, ENTRY_DURATION, delay)
   end
 end
 
@@ -257,7 +269,11 @@ function GameModel:update(dt, input)
   }
   for _, e in ipairs(self.enemies) do
     if e.alive then
-      e:updateAI(dt, aiCtx)
+      if e.entering then
+        e:updateEntry(dt)
+      else
+        e:updateAI(dt, aiCtx)
+      end
     end
   end
   self:_updateEnemyFire(dt)
@@ -273,6 +289,35 @@ function GameModel:update(dt, input)
 end
 
 function GameModel:_updateFormation(dt)
+  if self.descendTotal > 0 then
+    self.descendElapsed = self.descendElapsed + dt
+    local t = FORMATION_DESCEND_DURATION > 0 and (self.descendElapsed / FORMATION_DESCEND_DURATION) or 1
+    local nextOffset
+    if t >= 1 then
+      nextOffset = self.descendTotal
+    else
+      local inv = 1 - t
+      nextOffset = self.descendTotal * (1 - inv * inv * inv)
+    end
+    local dy = nextOffset - self.descendApplied
+    self.descendApplied = nextOffset
+    if dy ~= 0 then
+      for _, e in ipairs(self.enemies) do
+        if e:inFormation() then
+          e.y = e.y + dy
+        else
+          e:shiftHome(0, dy)
+        end
+      end
+    end
+    if t >= 1 then
+      self.descendTotal = 0
+      self.descendApplied = 0
+      self.descendElapsed = 0
+    end
+    return
+  end
+
   local minx, maxx = math.huge, -math.huge
   for _, e in ipairs(self.enemies) do
     if e.alive and e:inFormation() then
@@ -291,13 +336,10 @@ function GameModel:_updateFormation(dt)
     self.formationDir = 1
   end
   if self.formationDir ~= prevDir then
-    for _, e in ipairs(self.enemies) do
-      if e:inFormation() then
-        e.y = e.y + FORMATION_DESCEND
-      else
-        e:shiftHome(0, FORMATION_DESCEND)
-      end
-    end
+    self.descendTotal = FORMATION_DESCEND
+    self.descendApplied = 0
+    self.descendElapsed = 0
+    self:_updateFormation(dt)
   else
     local moveDx = self.formationDir * FORMATION_SPEED * dt
     for _, e in ipairs(self.enemies) do
@@ -318,7 +360,7 @@ function GameModel:_updateEnemyFire(dt)
 
   local alive = {}
   for _, e in ipairs(self.enemies) do
-    if e.alive and e.kind ~= "sniper" and e.kind ~= "weaver" then
+    if e.alive and not e.entering and e.kind ~= "sniper" and e.kind ~= "weaver" then
       alive[#alive + 1] = e
     end
   end
@@ -350,7 +392,7 @@ function GameModel:_detonateEmpBomb()
 
   for i = 1, #self.enemies do
     local e = self.enemies[i]
-    if e.alive then
+    if e.alive and not e.entering then
       self:_damageEnemy(e, self.empDamage)
     end
   end
@@ -367,20 +409,6 @@ function GameModel:_detonateEmpBomb()
     clearedBullets = cleared,
   })
 end
-
--- 모든 단계에 공통인 충돌. 단계 고유 충돌(보스)은 phase:resolveCollisions 가 맡는다.
-function GameModel:_resolveCollisions()
-  -- 플레이어 총알 × 적
-  for bi = #self.bullets, 1, -1 do
-    local b = self.bullets[bi]
-    for _, e in ipairs(self.enemies) do
-      if e.alive and overlaps(b, e) then
-        self:_damageEnemy(e, b.damage or 1)
-        table.remove(self.bullets, bi)
-        break
-      end
-    end
-  end
 
 function GameModel:_clearBulletsAroundPlayer(radius)
   local p = self.player
@@ -425,6 +453,20 @@ function GameModel:_damagePlayer()
   return true
 end
 
+-- 모든 단계에 공통인 충돌. 단계 고유 충돌(보스)은 phase:resolveCollisions 가 맡는다.
+function GameModel:_resolveCollisions()
+  -- 플레이어 총알 × 적
+  for bi = #self.bullets, 1, -1 do
+    local b = self.bullets[bi]
+    for _, e in ipairs(self.enemies) do
+      if e.alive and not e.entering and overlaps(b, e) then
+        self:_damageEnemy(e, b.damage or 1)
+        table.remove(self.bullets, bi)
+        break
+      end
+    end
+  end
+
   -- 적(돌진 중) × 플레이어 몸통 충돌: 플레이어 피격 후 적은 소멸하지 않고 복귀
   local aiCtx = {
     rng = self.rng,
@@ -444,9 +486,13 @@ end
 
   -- 적 총알 × 플레이어
   for i = #self.enemyBullets, 1, -1 do
-    if overlaps(self.enemyBullets[i], self.player) then
+    local eb = self.enemyBullets[i]
+    if eb and overlaps(eb, self.player) then
       table.remove(self.enemyBullets, i)
       self:_damagePlayer()
+      if self.player:isInvincible() or self.lives <= 0 then
+        break
+      end
     end
   end
 
@@ -539,7 +585,7 @@ function GameModel:_steerMissiles()
       if not targets then
         targets = {}
         for _, e in ipairs(self.enemies) do
-          if e.alive then
+          if e.alive and not e.entering then
             targets[#targets + 1] = { x = e:centerX(), y = e:centerY() }
           end
         end

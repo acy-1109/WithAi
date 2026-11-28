@@ -70,6 +70,9 @@ h.test("R3: GameModel 이 Factory 로 적을 스폰하고 Tank 다단 히트·�
   local text = "wave 1\nenemy tank 100 100\nenemy sprinter 200 100\nenemy sniper 300 100\n"
   local g = GameModel({ width = 600, height = 800, seed = 1, wavesText = text })
   local tank = g.enemies[1]
+  tank.entering = false
+  tank.x = tank.entryTargetX
+  tank.y = tank.entryTargetY
   local okSpawn = (#g.enemies == 3
     and tank:isA(EnemyModel.Tank)
     and g.enemies[2]:isA(EnemyModel.Sprinter)

@@ -103,6 +103,9 @@ h.test("R5: PlayScene drainEvents 구독으로 GameModel 수정 없이 업적 �
     g.enemies[i].alive = false
   end
   local target = g.enemies[1]
+  target.entering = false
+  target.x = target.entryTargetX
+  target.y = target.entryTargetY
   target.hp = 1
   g.bullets[#g.bullets + 1] = BulletModel(target.x + 2, target.y + 2, 0, 0, 4, 12, "player")
 

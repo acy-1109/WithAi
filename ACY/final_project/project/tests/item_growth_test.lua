@@ -29,6 +29,9 @@ h.test("TANK: 공격력 3 상태에서도 1타격당 1씩 감소해 3번 맞아�
   end
 
   local tank = g.enemies[1]
+  tank.entering = false
+  tank.x = tank.entryTargetX
+  tank.y = tank.entryTargetY
   -- 1발째 (damage=3) -> hp 2로 생존
   g.bullets[1] = BulletModel(tank.x + 4, tank.y + 4, 0, 0, 4, 12, "player", { damage = g.playerDamage })
   g:_resolveCollisions()
@@ -123,6 +126,9 @@ h.test("attack_up: 공격력이 영구 +1 증가하고 일반 적·보스 피해
 
   -- 발사된 총알이 damage=2를 가지며 HP 2인 적을 1발에 처치
   local target = g.enemies[1]
+  target.entering = false
+  target.x = target.entryTargetX
+  target.y = target.entryTargetY
   target.hp = 2
   g:update(1 / 60, { move = 0, fire = true })
   local firedBullet = g.bullets[#g.bullets]
@@ -195,6 +201,9 @@ h.test("일반 드랍: 8% 확률로 life, speed_up, triple_shot, shield, bomb �
   for idx = 1, #expected do
     local g = GameModel({ width = 600, height = 800, seed = 1 })
     local target = g.enemies[1]
+    target.entering = false
+    target.x = target.entryTargetX
+    target.y = target.entryTargetY
     target.hp = 1
     g.rng.nextFloat = function()
       return 0.05

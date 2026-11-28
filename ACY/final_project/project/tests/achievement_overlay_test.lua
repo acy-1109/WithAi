@@ -197,6 +197,9 @@ h.test("PlayScene 에서 업적 해금 시 ctx.saveAchievements 가 호출되어
 
   local g = play.game
   local target = g.enemies[1]
+  target.entering = false
+  target.x = target.entryTargetX
+  target.y = target.entryTargetY
   target.hp = 1
   g.bullets[#g.bullets + 1] = BulletModel(target.x + 2, target.y + 2, 0, 0, 4, 12, "player")
   play:update(1 / 60)

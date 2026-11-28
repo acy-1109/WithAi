@@ -61,6 +61,12 @@ h.test("bomb: Q 발동 시 적 탄환 전량 소거, 일반 적 광역 피해, �
   g.enemyBullets[1] = BulletModel(50, 50, 0, 100, 4, 12, "enemy")
   g.enemyBullets[2] = BulletModel(500, 700, 0, 100, 4, 12, "enemy")
 
+  for _, e in ipairs(g.enemies) do
+    e.entering = false
+    e.x = e.entryTargetX
+    e.y = e.entryTargetY
+  end
+
   local e1 = g.enemies[1]
   e1.hp = 2
   local e2 = g.enemies[2]

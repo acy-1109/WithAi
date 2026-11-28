@@ -104,6 +104,9 @@ h.test("R4: 돌진 중 플레이어와 충돌 시 플레이어 피격 후 적은
     wavesText = "wave 1\nenemy sprinter 280 60\n",
   })
   local e = g.enemies[1]
+  e.entering = false
+  e.x = e.entryTargetX
+  e.y = e.entryTargetY
   local startLives = g.lives
 
   -- sprinter 가 charge 상태가 될 때까지 진행
@@ -264,6 +267,9 @@ h.test("Tank: HP 3->2->1 감소 시 탄속·발사딜레이가 빨라져 HP 1에
 
   -- GameModel:_updateEnemyFire 에서 fireCooldownMul 과 bulletSpeedMul 반영 확인
   local g = GameModel({ width = 600, height = 800, seed = 1, wavesText = "wave 1\nenemy tank 100 100\n" })
+  g.enemies[1].entering = false
+  g.enemies[1].x = g.enemies[1].entryTargetX
+  g.enemies[1].y = g.enemies[1].entryTargetY
   g.enemyFireTimer = 0
   g:_updateEnemyFire(0)
   local slowTimer = g.enemyFireTimer

@@ -59,6 +59,9 @@ h.test("R7: weaver 경계 접촉 시 편대가 연속 하강(낙하)하지 않�
     wavesText = "wave 1\nenemy weaver 545 60\n",
   })
   local w = g.enemies[1]
+  while w.entering do
+    g:update(1 / 60, { move = 0, fire = false })
+  end
   local startY = w.y
 
   for _ = 1, 180 do

@@ -22,6 +22,14 @@ function EnemyModel:init(x, y)
   self.speedMul = 1.0
   self.fireCooldownMul = 1.0
   self.bulletSpeedMul = 1.0
+  self.entering = false
+  self.entryDelay = 0
+  self.entryElapsed = 0
+  self.entryDuration = 0
+  self.entryStartX = x
+  self.entryStartY = y
+  self.entryTargetX = x
+  self.entryTargetY = y
 end
 
 function EnemyModel:centerX()
@@ -55,10 +63,64 @@ function EnemyModel:isA(targetClass)
 end
 
 function EnemyModel:inFormation()
-  return true
+  return not self.entering
 end
 
 function EnemyModel:shiftHome(dx, dy)
+  if self.entering then
+    self.entryStartX = self.entryStartX + dx
+    self.entryTargetX = self.entryTargetX + dx
+    self.entryTargetY = self.entryTargetY + dy
+  end
+end
+
+function EnemyModel:startEntry(startX, startY, targetX, targetY, duration, delay)
+  self.entering = true
+  self.entryStartX = startX
+  self.entryStartY = startY
+  self.entryTargetX = targetX
+  self.entryTargetY = targetY
+  self.entryDuration = duration or 0.55
+  self.entryDelay = delay or 0
+  self.entryElapsed = 0
+  self.x = startX
+  self.y = startY
+  if self.homeX ~= nil then
+    self.homeX = targetX
+    self.homeY = targetY
+  end
+end
+
+function EnemyModel:updateEntry(dt)
+  if not self.entering then
+    return true
+  end
+  if self.entryDelay > 0 then
+    self.entryDelay = self.entryDelay - dt
+    if self.entryDelay > 0 then
+      return false
+    end
+    dt = -self.entryDelay
+    self.entryDelay = 0
+  end
+  self.entryElapsed = self.entryElapsed + dt
+  local dur = self.entryDuration
+  local t = dur > 0 and (self.entryElapsed / dur) or 1
+  if t >= 1 then
+    self.entering = false
+    self.x = self.entryTargetX
+    self.y = self.entryTargetY
+    if self.homeX ~= nil then
+      self.homeX = self.entryTargetX
+      self.homeY = self.entryTargetY
+    end
+    return true
+  end
+  local inv = 1 - t
+  local ease = 1 - inv * inv * inv
+  self.x = self.entryStartX + (self.entryTargetX - self.entryStartX) * ease
+  self.y = self.entryStartY + (self.entryTargetY - self.entryStartY) * ease
+  return false
 end
 
 function EnemyModel:updateAI(dt, ctx)
@@ -213,10 +275,11 @@ function SprinterEnemy:init(x, y)
 end
 
 function SprinterEnemy:inFormation()
-  return self.aiState == "wait"
+  return (not self.entering) and self.aiState == "wait"
 end
 
 function SprinterEnemy:shiftHome(dx, dy)
+  EnemyModel.shiftHome(self, dx, dy)
   self.homeX = self.homeX + dx
   self.homeY = self.homeY + dy
 end
@@ -438,7 +501,7 @@ function WeaverEnemy:init(x, y)
 end
 
 function WeaverEnemy:inFormation()
-  return self.aiState ~= "laser"
+  return (not self.entering) and self.aiState ~= "laser"
 end
 
 function WeaverEnemy:changeAIState(nextState, ctx)

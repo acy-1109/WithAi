@@ -62,10 +62,10 @@ end)
 h.test("R2: GameModel 이 wavesText 를 파싱해 웨이브별 적을 생성한다", function()
   local text = "wave 1\nenemy grunt 60 60\nwave 2\nenemy grunt 200 90\n"
   local g = GameModel({ width = 600, height = 800, seed = 1, wavesText = text })
-  local ok1 = (#g.enemies == 1 and g.enemies[1].x == 60 and g.enemies[1].y == 60)
+  local ok1 = (#g.enemies == 1 and g.enemies[1].entryTargetX == 60 and g.enemies[1].entryTargetY == 60)
   g.enemies[1].alive = false
   g.phase:afterStep(g)
-  local ok2 = (#g.enemies == 1 and g.enemies[1].x == 200 and g.enemies[1].y == 90)
+  local ok2 = (#g.enemies == 1 and g.enemies[1].entryTargetX == 200 and g.enemies[1].entryTargetY == 90)
   return ok1 and ok2
 end)
 
