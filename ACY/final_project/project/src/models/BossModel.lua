@@ -158,6 +158,7 @@ function BossModel:init(x, y, hp, tier)
   self.dir = 1
   self.enraged = false
   self.justEnraged = false
+  self.escortSummoned = false
   self.spiralAngle = 0
   self.laserWidth = LASER_WIDTH
   self.chargeDuration = LASER_CHARGE_TIME
