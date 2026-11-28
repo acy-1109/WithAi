@@ -71,6 +71,8 @@ end
 function PlayScene:keypressed(key)
   if key == "p" or key == "escape" then
     self.stack:push(self.ctx.scenes.Pause(self.ctx))
+  elseif key == "f1" then
+    self.game:debugClearPhase()
   end
 end
 

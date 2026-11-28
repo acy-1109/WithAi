@@ -540,4 +540,22 @@ function GameModel:_steerMissiles()
   end
 end
 
+--- 디버그용 치트: 현재 페이즈(편대전 또는 보스전)를 즉시 클리어하고 다음 단계로 넘긴다.
+function GameModel:debugClearPhase()
+  if self.state ~= "playing" then
+    return
+  end
+  self.enemyBullets = {}
+  if self.phase and self.phase.name == "boss" and self.boss and self.boss.alive then
+    self.phase:damageBoss(self, self.boss.hp)
+    return
+  end
+  for _, e in ipairs(self.enemies) do
+    e.alive = false
+  end
+  if self.phase and self.phase.afterStep then
+    self.phase:afterStep(self)
+  end
+end
+
 return GameModel

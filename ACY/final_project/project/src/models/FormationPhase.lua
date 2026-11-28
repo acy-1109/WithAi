@@ -1,5 +1,5 @@
 -- FormationPhase.lua
--- 진행 단계(State) ①: 편대전. 편대를 전멸시키면 새 편대가 나오고, 보스 등장 웨이브(5, 15, 25...)를 전멸시키면 보스전으로 넘어간다.
+-- 진행 단계(State) ①: 편대전. 편대를 전멸시키면 새 편대가 나오고, 보스 등장 웨이브(5, 10, 15, 20...)를 전멸시키면 보스전으로 넘어간다.
 -- 단계마다 다른 규칙만 여기 둔다. 모든 단계에 공통인 규칙(이동·발사·충돌)은 GameModel 에 남는다.
 --
 -- 단계 인터페이스 (GameModel 이 호출):
@@ -14,7 +14,7 @@ local BossPhase = require("BossPhase")
 local FormationPhase = class()
 
 local FIRST_BOSS_WAVE = 5
-local BOSS_WAVE_INTERVAL = 10
+local BOSS_WAVE_INTERVAL = 5
 
 local function isBossWave(wave)
   return wave >= FIRST_BOSS_WAVE and (wave - FIRST_BOSS_WAVE) % BOSS_WAVE_INTERVAL == 0

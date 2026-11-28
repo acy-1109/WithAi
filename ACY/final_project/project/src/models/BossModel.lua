@@ -11,12 +11,19 @@ local SPEED = 70
 local ENRAGED_SPEED_MUL = 1.45
 local BULLET_SPEED = 180
 local ENRAGED_BULLET_MUL = 1.25
+local LASER_CHARGE_TIME = 1.0
+local LASER_FIRE_TIME = 0.8
+local LASER_WIDTH = 24
+local LASER_CHARGE_SPEED_MUL = 0.35
+local LASER_FIRE_SPEED_MUL = 0.25
 
-local PatrolState, AimedState, SpiralState
+local PatrolState, AimedState, SpiralState, LaserChargeState, LaserFireState
 
 PatrolState = { name = "patrol" }
 AimedState = { name = "aimed" }
 SpiralState = { name = "spiral" }
+LaserChargeState = { name = "laser_charge" }
+LaserFireState = { name = "laser" }
 
 local function moveHorizontal(boss, dt, width, speedMul)
   local spd = SPEED * (speedMul or 1) * (boss.enraged and ENRAGED_SPEED_MUL or 1)
@@ -101,6 +108,35 @@ function SpiralState.update(boss, dt, width, out)
   end
   boss.stateTimer = boss.stateTimer - dt
   if boss.stateTimer <= 0 then
+    if (boss.tier or 1) >= 2 then
+      boss:changeState(LaserChargeState)
+    else
+      boss:changeState(PatrolState)
+    end
+  end
+end
+
+function LaserChargeState.enter(boss)
+  boss.chargeTimer = boss.chargeDuration or LASER_CHARGE_TIME
+end
+
+function LaserChargeState.update(boss, dt, width)
+  moveHorizontal(boss, dt, width, LASER_CHARGE_SPEED_MUL)
+  boss.chargeTimer = boss.chargeTimer - dt
+  if boss.chargeTimer <= 0 then
+    boss:changeState(LaserFireState)
+  end
+end
+
+function LaserFireState.enter(boss)
+  boss.laserTimer = LASER_FIRE_TIME
+  boss.laserHit = false
+end
+
+function LaserFireState.update(boss, dt, width)
+  moveHorizontal(boss, dt, width, LASER_FIRE_SPEED_MUL)
+  boss.laserTimer = boss.laserTimer - dt
+  if boss.laserTimer <= 0 then
     boss:changeState(PatrolState)
   end
 end
@@ -110,17 +146,24 @@ end
 -- @field hp,maxHp    number
 -- @field alive       boolean
 -- @field dir         number  -1 | 1
--- @field aiState     string  "patrol" | "aimed" | "spiral"
+-- @field tier        number  보스 티어 (1: 5웨이브, 2: 15웨이브+)
+-- @field aiState     string  "patrol" | "aimed" | "spiral" | "laser_charge" | "laser"
 -- @field enraged     boolean HP 50% 이하 광폭화 여부
-function BossModel:init(x, y, hp)
+function BossModel:init(x, y, hp, tier)
   self.x, self.y = x, y
   self.w, self.h = 120, 60
   self.hp, self.maxHp = hp, hp
+  self.tier = tier or 1
   self.alive = true
   self.dir = 1
   self.enraged = false
   self.justEnraged = false
   self.spiralAngle = 0
+  self.laserWidth = LASER_WIDTH
+  self.chargeDuration = LASER_CHARGE_TIME
+  self.chargeTimer = 0
+  self.laserTimer = 0
+  self.laserHit = false
   self.stateObj = nil
   self.aiState = PatrolState.name
   self:changeState(PatrolState)

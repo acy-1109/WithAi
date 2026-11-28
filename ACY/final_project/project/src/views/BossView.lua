@@ -22,6 +22,10 @@ local ENRAGED_PALETTE = {
 
 local HP_BG_COLOR = { 0.2, 0.2, 0.2 }
 local HP_FILL_COLOR = { 1, 0.2, 0.2 }
+local LASER_CHARGE_COLOR = { 1.0, 0.35, 0.75 }
+local LASER_OUTER_COLOR = { 1.0, 0.20, 0.45 }
+local LASER_CORE_COLOR = { 1.0, 0.95, 1.0 }
+local LASER_LENGTH = 800
 
 local function setColor(gfx, c)
   gfx.setColor(c[1], c[2], c[3])
@@ -96,6 +100,34 @@ local function drawReactorAndCore(gfx, pal, boss, x, y, w, h, cx)
   end
 end
 
+local function drawLaser(gfx, boss, cx, y, h)
+  local muzzleY = y + h
+  if boss.aiState == "laser_charge" then
+    local dur = boss.chargeDuration or 1.0
+    local progress = 1 - ((boss.chargeTimer or 0) / dur)
+    if progress < 0 then
+      progress = 0
+    elseif progress > 1 then
+      progress = 1
+    end
+    setColor(gfx, LASER_CHARGE_COLOR)
+    if gfx.line then
+      gfx.line(cx, muzzleY, cx, muzzleY + LASER_LENGTH)
+    end
+    gfx.circle("line", cx, muzzleY, 16 * (1 - progress * 0.65))
+    setColor(gfx, LASER_CORE_COLOR)
+    gfx.circle("fill", cx, muzzleY, 3 + progress * 5)
+  elseif boss.aiState == "laser" then
+    local lw = boss.laserWidth or 24
+    local coreW = lw * 0.4
+    setColor(gfx, LASER_OUTER_COLOR)
+    gfx.rectangle("fill", cx - lw * 0.5, muzzleY, lw, LASER_LENGTH)
+    setColor(gfx, LASER_CORE_COLOR)
+    gfx.rectangle("fill", cx - coreW * 0.5, muzzleY, coreW, LASER_LENGTH)
+    gfx.circle("fill", cx, muzzleY, lw * 0.6)
+  end
+end
+
 local function drawHpBar(gfx, boss, width)
   local barW = (width or 600) - 200
   if barW <= 0 then
@@ -122,6 +154,7 @@ function BossView.draw(gfx, boss, width)
 
   drawHull(gfx, pal, x, y, w, h, cx)
   drawReactorAndCore(gfx, pal, boss, x, y, w, h, cx)
+  drawLaser(gfx, boss, cx, y, h)
   drawHpBar(gfx, boss, width)
 end
 

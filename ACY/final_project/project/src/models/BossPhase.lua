@@ -8,7 +8,7 @@ local BossModel = require("BossModel")
 local BossPhase = class()
 
 local FIRST_BOSS_WAVE = 5
-local BOSS_WAVE_INTERVAL = 10
+local BOSS_WAVE_INTERVAL = 5
 local BASE_BOSS_HP = 40
 local BOSS_HP_STEP = 20
 local BASE_BOSS_REWARD = 2000
@@ -33,7 +33,7 @@ function BossPhase:enter(game)
   local tier = bossTier(game.wave)
   local hp = BASE_BOSS_HP + (tier - 1) * BOSS_HP_STEP
   self.reward = BASE_BOSS_REWARD + (tier - 1) * BOSS_REWARD_STEP
-  game.boss = BossModel(game.width * 0.5 - 60, 70, hp)
+  game.boss = BossModel(game.width * 0.5 - 60, 70, hp, tier)
   game:_emit({ type = "boss_appeared" })
 end
 
@@ -82,6 +82,21 @@ function BossPhase:resolveCollisions(game)
       if self:damageBoss(game, b.damage or 1, b.x, b.y) then
         break
       end
+    end
+  end
+
+  if boss.alive and boss.aiState == "laser" and not boss.laserHit and game.player then
+    local lw = boss.laserWidth or 24
+    local muzzleY = boss.y + boss.h
+    local laserBox = {
+      x = boss:centerX() - lw * 0.5,
+      y = muzzleY,
+      w = lw,
+      h = (game.height or 800) - muzzleY,
+    }
+    if overlaps(laserBox, game.player) then
+      boss.laserHit = true
+      game:_damagePlayer()
     end
   end
 end

@@ -153,8 +153,8 @@ h.test("보스 주기 및 무한 진행: 5웨이브 보스 격파 → 6웨이브
     return false
   end
 
-  -- 6~14웨이브 클리어 동안은 계속 편대전 유지 (보스 미등장)
-  for expectedWave = 7, 15 do
+  -- 6~9웨이브 클리어 동안은 계속 편대전 유지 (보스 미등장)
+  for expectedWave = 7, 10 do
     for _, e in ipairs(g.enemies) do
       e.alive = false
     end
@@ -164,7 +164,7 @@ h.test("보스 주기 및 무한 진행: 5웨이브 보스 격파 → 6웨이브
     end
   end
 
-  -- 15웨이브 전멸 시 2차 보스 등장 (HP 60)
+  -- 10웨이브 전멸 시 2차 보스 등장 (HP 60)
   for _, e in ipairs(g.enemies) do
     e.alive = false
   end
@@ -173,24 +173,24 @@ h.test("보스 주기 및 무한 진행: 5웨이브 보스 격파 → 6웨이브
     return false
   end
 
-  -- 2차 보스 격파 → 16웨이브 복귀, 보상 3000점
+  -- 2차 보스 격파 → 11웨이브 복귀, 보상 3000점
   local scoreBefore2 = g.score
   killCurrentBoss()
   if g.state ~= "playing"
     or g.phase.name ~= "formation"
     or g.boss ~= nil
-    or g.wave ~= 16
+    or g.wave ~= 11
     or #g.enemies == 0
     or (g.score - scoreBefore2) ~= 3000 then
     return false
   end
 
-  -- 16웨이브 전멸 시 보스가 아닌 17웨이브 편대전으로 진행
+  -- 11웨이브 전멸 시 보스가 아닌 12웨이브 편대전으로 진행
   for _, e in ipairs(g.enemies) do
     e.alive = false
   end
   g:update(1 / 60, { move = 0, fire = false })
-  return g.wave == 17 and g.phase.name == "formation" and g.boss == nil
+  return g.wave == 12 and g.phase.name == "formation" and g.boss == nil
 end)
 
 h.finish()
