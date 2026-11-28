@@ -1,4 +1,17 @@
-﻿a45ac48 (HEAD -> main) feat: 유도탄 추격 개선·탄수 제한(3발)·500점 충전 및 HUD 표시
+0ff7272 (HEAD -> main, origin/main, origin/HEAD) wave 종류 증가
+ .../project/src/models/EnemyModel.lua              |  3 +-
+ .../project/src/models/FormationPhase.lua          | 14 ++--
+ ACY/final_project/project/src/models/GameModel.lua | 15 +++-
+ ACY/final_project/project/src/waves.txt            | 94 +++++++++++++--------
+ ACY/final_project/project/tests/boss_fsm_test.lua  |  1 +
+ .../project/tests/r2_wave_parser_test.lua          | 95 +++++++++++++++++++++-
+ .../project/tests/r4_enemy_ai_test.lua             | 34 ++++++++
+ 7 files changed, 211 insertions(+), 45 deletions(-)
+e73148c docs: 005 작업 로그 및 git_log.txt 업데이트
+ ACY/final_project/git_log.txt                      | 1841 +++++++++++++++++++-
+ .../worklogs/005_2026-11-25_session.md             |   91 +
+ 2 files changed, 1931 insertions(+), 1 deletion(-)
+a45ac48 (HEAD -> main) feat: 유도탄 추격 개선·탄수 제한(3발)·500점 충전 및 HUD 표시
  ACY/final_project/project/src/models/BossPhase.lua |  2 +-
  ACY/final_project/project/src/models/GameModel.lua | 64 ++++++++++++++++++++--
  ACY/final_project/project/src/views/HudView.lua    | 16 +++++-

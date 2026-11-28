@@ -46,4 +46,22 @@ h.test("R7: GameModel 웨이브 파싱으로 weaver 스폰 및 EnemyView 렌더�
     and drawnColor[1] == 0.3 and drawnColor[2] == 1.0 and drawnColor[3] == 0.75
 end)
 
+h.test("R7: weaver 경계 접촉 시 편대가 연속 하강(낙하)하지 않고 반전 이동한다", function()
+  local g = GameModel({
+    width = 600,
+    height = 800,
+    seed = 1,
+    wavesText = "wave 1\nenemy weaver 545 60\n",
+  })
+  local w = g.enemies[1]
+  local startY = w.y
+
+  for _ = 1, 180 do
+    g:update(1 / 60, { move = 0, fire = false })
+  end
+
+  -- 3초(180프레임) 동안 오른쪽 벽 1회 반전 수준(16~32px)만 하강해야 하며 화면 아래로 낙하하지 않아야 함
+  return w.y >= startY and (w.y - startY) <= 32
+end)
+
 h.finish()

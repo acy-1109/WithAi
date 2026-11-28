@@ -226,8 +226,13 @@ function GameModel:_updateFormation(dt)
     return
   end
   local dx = self.formationDir * FORMATION_SPEED * dt
-  if maxx + dx > self.width - 10 or minx + dx < 10 then
-    self.formationDir = -self.formationDir
+  local prevDir = self.formationDir
+  if maxx + dx > self.width - 10 then
+    self.formationDir = -1
+  elseif minx + dx < 10 then
+    self.formationDir = 1
+  end
+  if self.formationDir ~= prevDir then
     for _, e in ipairs(self.enemies) do
       if e:inFormation() then
         e.y = e.y + FORMATION_DESCEND
@@ -236,11 +241,12 @@ function GameModel:_updateFormation(dt)
       end
     end
   else
+    local moveDx = self.formationDir * FORMATION_SPEED * dt
     for _, e in ipairs(self.enemies) do
       if e:inFormation() then
-        e.x = e.x + dx
+        e.x = e.x + moveDx
       else
-        e:shiftHome(dx, 0)
+        e:shiftHome(moveDx, 0)
       end
     end
   end
