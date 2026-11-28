@@ -165,8 +165,9 @@ function ChargeState.update(e, dt, ctx)
   e.chargeTimer = e.chargeTimer + dt
   e.x = e.x + e.vx * dt
   e.y = e.y + e.vy * dt
+  local limitX = ctx.width or 600
   local limitY = ctx.height or 800
-  if e.y > limitY or e.chargeTimer >= CHARGE_MAX_TIME then
+  if e.y > limitY or e.x + e.w < 0 or e.x > limitX or e.chargeTimer >= CHARGE_MAX_TIME then
     e:changeAIState(ReturnState, ctx)
   end
 end

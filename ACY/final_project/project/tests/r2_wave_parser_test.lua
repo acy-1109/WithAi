@@ -94,7 +94,14 @@ h.test("웨이브: 1~4웨이브 동안 편대전 유지 후 5웨이브부터 보
     end
   end
 
-  -- 5웨이브 업데이트 시 BossPhase 전환 확인
+  -- 5웨이브 적이 살아있는 동안은 편대전 유지, 전멸 후 BossPhase 전환 확인
+  g:update(1 / 60, { move = 0, fire = false })
+  if g.phase.name ~= "formation" or g.boss ~= nil then
+    return false
+  end
+  for _, e in ipairs(g.enemies) do
+    e.alive = false
+  end
   g:update(1 / 60, { move = 0, fire = false })
   local okBoss = (g.phase.name == "boss" and g.boss ~= nil)
 
@@ -115,6 +122,92 @@ h.test("웨이브: 1~4웨이브 동안 편대전 유지 후 5웨이브부터 보
   end
 
   return okBoss and sawWaveHud
+end)
+
+h.test("웨이브 랜덤 선택: 1웨이브 고정, 2웨이브 이후 랜덤(직전 제외), 동일 시드 재현성", function()
+  local text = table.concat({
+    "wave 1",
+    "enemy grunt 60 60",
+    "wave 2",
+    "enemy tank 100 60",
+    "wave 3",
+    "enemy sniper 140 60",
+    "wave 4",
+    "enemy sprinter 180 60",
+    "wave 5",
+    "enemy weaver 220 60",
+  }, "\n") .. "\n"
+
+  local function runSeq(seed)
+    local g = GameModel({ width = 600, height = 800, seed = seed, wavesText = text })
+    local seq = { g.waveIndex }
+    for _ = 2, 10 do
+      g:spawnFormation()
+      seq[#seq + 1] = g.waveIndex
+    end
+    return seq
+  end
+
+  local seq1 = runSeq(42)
+  local seq2 = runSeq(42)
+
+  -- (1) 1웨이브는 항상 wave 1 고정
+  if seq1[1] ~= 1 then
+    return false
+  end
+
+  -- (2) 2웨이브 이후 wave 2~5 중 선택되며 직전 웨이브와 연속 중복 없음
+  local seen = {}
+  for i = 2, #seq1 do
+    if seq1[i] < 2 or seq1[i] > 5 then
+      return false
+    end
+    if seq1[i] == seq1[i - 1] then
+      return false
+    end
+    seen[seq1[i]] = true
+  end
+
+  -- 10회 진행 동안 2개 이상의 서로 다른 웨이브가 선택되었는지 확인
+  local distinct = 0
+  for _ in pairs(seen) do
+    distinct = distinct + 1
+  end
+  if distinct < 2 then
+    return false
+  end
+
+  -- (3) 동일 시드 재현성 확인
+  for i = 1, #seq1 do
+    if seq1[i] ~= seq2[i] then
+      return false
+    end
+  end
+
+  return true
+end)
+
+h.test("웨이브 진행: wave 1~4 클리어 후 wave 5 도달, wave 5 전멸 후 보스전 전환", function()
+  local f = assert(io.open(app .. "/waves.txt", "r"))
+  local text = f:read("*a")
+  f:close()
+
+  local g = GameModel({ width = 600, height = 800, seed = 7, wavesText = text })
+  for expectedWave = 2, 5 do
+    for _, e in ipairs(g.enemies) do
+      e.alive = false
+    end
+    g:update(1 / 60, { move = 0, fire = false })
+    if g.wave ~= expectedWave or g.phase.name ~= "formation" or #g.enemies == 0 then
+      return false
+    end
+  end
+
+  for _, e in ipairs(g.enemies) do
+    e.alive = false
+  end
+  g:update(1 / 60, { move = 0, fire = false })
+  return g.phase.name == "boss" and g.boss ~= nil
 end)
 
 h.finish()

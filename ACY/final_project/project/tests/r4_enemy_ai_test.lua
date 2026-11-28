@@ -138,6 +138,40 @@ h.test("R4: 돌진 중 플레이어와 충돌 시 플레이어 피격 후 적은
     and e.y == -e.h
 end)
 
+h.test("R4: 돌진 중 가로 화면 이탈(좌/우) 시 5초 대기 없이 즉시 return 전이", function()
+  local function checkSide(startX, playerX)
+    local e = EnemyModel.create("sprinter", startX, 100)
+    local ctx = {
+      rng = Rng(7),
+      player = {
+        centerX = function() return playerX end,
+        centerY = function() return 200 end,
+      },
+      width = 600,
+      height = 800,
+    }
+    for _ = 1, 400 do
+      e:updateAI(1 / 60, ctx)
+      if e.aiState == "charge" then
+        break
+      end
+    end
+    if e.aiState ~= "charge" then
+      return false
+    end
+
+    for _ = 1, 120 do
+      e:updateAI(1 / 60, ctx)
+      if e.aiState == "return" then
+        return e.y == -e.h
+      end
+    end
+    return false
+  end
+
+  return checkSide(40, -300) and checkSide(520, 900)
+end)
+
 h.test("R4: SniperEnemy wait -> aim -> fire -> wait 전이 및 조준 3갈래 분열탄", function()
   local g = GameModel({
     width = 600,

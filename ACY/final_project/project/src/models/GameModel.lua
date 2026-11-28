@@ -79,7 +79,20 @@ end
 function GameModel:spawnFormation()
   self.wave = (self.wave or 0) + 1
   if self.waves and #self.waves > 0 then
-    self.waveIndex = (self.waveIndex % #self.waves) + 1
+    local nWaves = #self.waves
+    if self.wave == 1 or nWaves == 1 then
+      self.waveIndex = 1
+    elseif nWaves == 2 then
+      self.waveIndex = 2
+    else
+      local candidates = {}
+      for i = 2, nWaves do
+        if i ~= self.waveIndex then
+          candidates[#candidates + 1] = i
+        end
+      end
+      self.waveIndex = candidates[self.rng:range(#candidates)]
+    end
     local wave = self.waves[self.waveIndex]
     for i = 1, #wave.enemies do
       local spec = wave.enemies[i]

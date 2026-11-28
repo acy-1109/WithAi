@@ -1,42 +1,68 @@
 # MVC Galaga 웨이브 데이터 (문법: docs/waves_format.md)
 
 wave 1
-enemy tank 60 60
-enemy sniper 120 60
-enemy tank 180 60
-enemy sniper 240 60
-enemy sniper 300 60
-enemy tank 360 60
-enemy sniper 420 60
-enemy tank 480 60
-enemy sprinter 60 110
-enemy grunt 120 110
-enemy sprinter 180 110
-enemy grunt 240 110
-enemy grunt 300 110
-enemy sprinter 360 110
-enemy grunt 420 110
-enemy sprinter 480 110
-enemy grunt 60 160
-enemy grunt 120 160
-enemy grunt 180 160
-enemy grunt 240 160
-enemy grunt 300 160
-enemy grunt 360 160
-enemy grunt 420 160
-enemy grunt 480 160
+enemy grunt 60 60
+enemy grunt 120 60
+enemy grunt 180 60
+enemy grunt 240 60
+enemy grunt 300 60
+enemy grunt 360 60
+enemy grunt 420 60
+enemy grunt 480 60
 
 wave 2
-enemy tank 90 60
+enemy weaver 90 60
 enemy sniper 150 60
-enemy tank 210 60
+enemy sprinter 210 60
 enemy sniper 270 60
-enemy tank 330 60
+enemy sprinter 330 60
 enemy sniper 390 60
-enemy tank 450 60
-enemy sprinter 120 115
-enemy weaver 180 115
-enemy grunt 240 115
-enemy grunt 300 115
-enemy weaver 360 115
-enemy sprinter 420 115
+enemy weaver 450 60
+enemy grunt 120 115
+enemy grunt 180 115
+enemy tank 240 115
+enemy tank 300 115
+enemy grunt 360 115
+enemy grunt 420 115
+
+wave 3
+enemy sniper 90 60
+enemy weaver 165 60
+enemy sniper 240 60
+enemy sniper 315 60
+enemy weaver 390 60
+enemy sniper 465 60
+enemy grunt 90 115
+enemy sprinter 165 115
+enemy tank 240 115
+enemy tank 315 115
+enemy sprinter 390 115
+enemy grunt 465 115
+
+wave 4
+enemy sniper 90 60
+enemy weaver 150 60
+enemy sniper 210 60
+enemy weaver 270 60
+enemy sniper 330 60
+enemy weaver 390 60
+enemy sniper 450 60
+enemy grunt 120 115
+enemy tank 200 115
+enemy grunt 280 115
+enemy tank 360 115
+enemy grunt 440 115
+
+wave 5
+enemy weaver 90 60
+enemy sniper 165 60
+enemy weaver 240 60
+enemy weaver 315 60
+enemy sniper 390 60
+enemy weaver 465 60
+enemy sprinter 90 115
+enemy tank 165 115
+enemy sprinter 240 115
+enemy sprinter 315 115
+enemy tank 390 115
+enemy sprinter 465 115

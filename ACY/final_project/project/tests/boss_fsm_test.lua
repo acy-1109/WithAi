@@ -95,6 +95,7 @@ end)
 h.test("보스 FSM: 동일 시드 2회 실행 시 상태·위치·탄막 수가 완전히 동일하다", function()
   local function sim()
     local g = GameModel({ width = 600, height = 800, seed = 99 })
+    g.enemies = {}
     g.wave = 5
     for _ = 1, 300 do
       g:update(1 / 60, { move = 0, fire = false })
