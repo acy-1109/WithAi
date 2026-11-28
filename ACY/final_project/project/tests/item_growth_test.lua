@@ -12,6 +12,7 @@ local ItemModel = require("ItemModel")
 local BulletModel = require("BulletModel")
 local EnemyModel = require("EnemyModel")
 local EnemyView = require("EnemyView")
+local EffectsView = require("EffectsView")
 
 local function collectItem(game, kind)
   game.items[#game.items + 1] = ItemModel(kind, game.player.x + 4, game.player.y)
@@ -255,6 +256,44 @@ h.test("EnemyView: Tank 는 처음부터 흰색 계열 3칸 분리 바, 일반 �
     end
   end
   return sawGreenBar
+end)
+
+h.test("triple_shot 분열 파티클: 플레이어 탄 분열 시 플레이어 탄환 색(노랑)을, 적 탄 분열 시 보라색을 사용한다", function()
+  local g = GameModel({ width = 600, height = 800, seed = 1 })
+  g.enemies = { g.enemies[1] }
+  g.enemies[1].x = g.width - 50
+  g.enemies[1].y = 20
+  g.enemyFireTimer = 999
+
+  collectItem(g, "triple_shot")
+  g:drainEvents()
+  g:update(1 / 60, { move = 0, fire = true })
+
+  local fx = EffectsView(function() return 0.5 end)
+  local splitEv
+  for _ = 1, 30 do
+    g:update(1 / 60, { move = 0, fire = false })
+    local evts = g:drainEvents()
+    for i = 1, #evts do
+      if evts[i].type == "bullet_split" then
+        splitEv = evts[i]
+        fx:onEvent(evts[i])
+      end
+    end
+  end
+
+  if not splitEv or splitEv.kind ~= "player" or #fx.particles ~= 4 then
+    return false
+  end
+  local pc = fx.particles[1].color
+  local isPlayerColor = (math.abs(pc[1] - 1.0) < 1e-6 and math.abs(pc[2] - 0.92) < 1e-6 and math.abs(pc[3] - 0.25) < 1e-6)
+
+  local fxEnemy = EffectsView(function() return 0.5 end)
+  fxEnemy:onEvent({ type = "bullet_split", x = 100, y = 100, kind = "enemy_sniper" })
+  local ec = fxEnemy.particles[1].color
+  local isEnemyColor = (math.abs(ec[1] - 0.85) < 1e-6 and math.abs(ec[2] - 0.5) < 1e-6 and math.abs(ec[3] - 1.0) < 1e-6)
+
+  return isPlayerColor and isEnemyColor
 end)
 
 h.finish()

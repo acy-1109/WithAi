@@ -149,7 +149,7 @@ end
 --   { type = "missile_fired" }
 --   { type = "score_changed", score = number, delta = number }
 --   { type = "enemy_destroyed", x = number, y = number }
---   { type = "bullet_split", x = number, y = number }
+--   { type = "bullet_split", x = number, y = number, kind = string }
 --   { type = "player_hit" }
 --   { type = "game_over" }
 --   { type = "formation_cleared" }
@@ -162,7 +162,7 @@ local function updateBulletList(list, dt, width, height, game)
     local b = list[i]
     b:update(dt)
     if b.shouldSplit and b:shouldSplit() then
-      game:_emit({ type = "bullet_split", x = b.x + b.w * 0.5, y = b.y + b.h * 0.5 })
+      game:_emit({ type = "bullet_split", x = b.x + b.w * 0.5, y = b.y + b.h * 0.5, kind = b.kind })
       local children = b:spawnSplitBullets()
       table.remove(list, i)
       for j = 1, #children do
@@ -293,7 +293,7 @@ function GameModel:_updateEnemyFire(dt)
 
   local alive = {}
   for _, e in ipairs(self.enemies) do
-    if e.alive and e.kind ~= "sniper" then
+    if e.alive and e.kind ~= "sniper" and e.kind ~= "weaver" then
       alive[#alive + 1] = e
     end
   end
@@ -356,6 +356,28 @@ function GameModel:_resolveCollisions()
       if self.lives <= 0 then
         self.state = "gameover"
         self:_emit({ type = "game_over" })
+      end
+    end
+  end
+
+  -- Weaver 레이저 × 플레이어 (발사 1회당 최대 1회 피격)
+  for _, e in ipairs(self.enemies) do
+    if e.alive and e.kind == "weaver" and e.aiState == "laser" and not e.laserHit then
+      local lw = e.laserWidth or 8
+      local laserBox = {
+        x = e:centerX() - lw * 0.5,
+        y = e.y + e.h,
+        w = lw,
+        h = self.height - (e.y + e.h),
+      }
+      if overlaps(laserBox, self.player) then
+        e.laserHit = true
+        self.lives = self.lives - 1
+        self:_emit({ type = "player_hit" })
+        if self.lives <= 0 then
+          self.state = "gameover"
+          self:_emit({ type = "game_over" })
+        end
       end
     end
   end

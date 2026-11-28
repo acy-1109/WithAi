@@ -363,7 +363,61 @@ function SniperEnemy:updateAI(dt, ctx)
   self.stateObj.update(self, dt, ctx)
 end
 
---- 지그재그로 흔들리며 이동하는 적 ("weaver")
+local WEAVER_COOLDOWN = 3.5
+local WEAVER_CHARGE_TIME = 1.0
+local WEAVER_LASER_TIME = 0.6
+local WEAVER_LASER_WIDTH = 8
+
+local function updateWeave(e, dt)
+  local prevOffset = math.sin(e.weavePhase) * e.weaveAmp
+  e.weavePhase = e.weavePhase + dt * e.weaveFreq
+  local nextOffset = math.sin(e.weavePhase) * e.weaveAmp
+  e.x = e.x + (nextOffset - prevOffset)
+end
+
+local WeaverWaitState, WeaverChargeState, WeaverLaserState
+
+WeaverWaitState = { name = "wait" }
+WeaverChargeState = { name = "charge" }
+WeaverLaserState = { name = "laser" }
+
+function WeaverWaitState.enter(e)
+  e.waitTimer = WEAVER_COOLDOWN
+end
+
+function WeaverWaitState.update(e, dt, ctx)
+  updateWeave(e, dt)
+  e.waitTimer = e.waitTimer - dt
+  if e.waitTimer <= 0 then
+    e:changeAIState(WeaverChargeState, ctx)
+  end
+end
+
+function WeaverChargeState.enter(e)
+  e.chargeTimer = WEAVER_CHARGE_TIME
+end
+
+function WeaverChargeState.update(e, dt, ctx)
+  updateWeave(e, dt)
+  e.chargeTimer = e.chargeTimer - dt
+  if e.chargeTimer <= 0 then
+    e:changeAIState(WeaverLaserState, ctx)
+  end
+end
+
+function WeaverLaserState.enter(e)
+  e.laserTimer = WEAVER_LASER_TIME
+  e.laserHit = false
+end
+
+function WeaverLaserState.update(e, dt, ctx)
+  e.laserTimer = e.laserTimer - dt
+  if e.laserTimer <= 0 then
+    e:changeAIState(WeaverWaitState, ctx)
+  end
+end
+
+--- 지그재그로 흔들리며 이동하고 차징 후 수직 레이저를 쏘는 적 ("weaver")
 local WeaverEnemy = class(EnemyModel)
 
 function WeaverEnemy:init(x, y)
@@ -373,16 +427,36 @@ function WeaverEnemy:init(x, y)
   self.weavePhase = 0
   self.weaveAmp = 24
   self.weaveFreq = 3.2
+  self.aiState = WeaverWaitState.name
+  self.stateObj = WeaverWaitState
+  self.waitTimer = WEAVER_COOLDOWN
+  self.chargeTimer = 0
+  self.chargeDuration = WEAVER_CHARGE_TIME
+  self.laserTimer = 0
+  self.laserWidth = WEAVER_LASER_WIDTH
+  self.laserHit = false
 end
 
-function WeaverEnemy:updateAI(dt)
+function WeaverEnemy:inFormation()
+  return self.aiState ~= "laser"
+end
+
+function WeaverEnemy:changeAIState(nextState, ctx)
+  if self.stateObj and self.stateObj.exit then
+    self.stateObj.exit(self, ctx)
+  end
+  self.stateObj = nextState
+  self.aiState = nextState.name
+  if nextState.enter then
+    nextState.enter(self, ctx)
+  end
+end
+
+function WeaverEnemy:updateAI(dt, ctx)
   if not self.alive then
     return
   end
-  local prevOffset = math.sin(self.weavePhase) * self.weaveAmp
-  self.weavePhase = self.weavePhase + dt * self.weaveFreq
-  local nextOffset = math.sin(self.weavePhase) * self.weaveAmp
-  self.x = self.x + (nextOffset - prevOffset)
+  self.stateObj.update(self, dt, ctx)
 end
 
 local FACTORY = {

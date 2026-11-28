@@ -69,4 +69,104 @@ h.test("R7: weaver 경계 접촉 시 편대가 연속 하강(낙하)하지 않�
   return w.y >= startY and (w.y - startY) <= 32
 end)
 
+h.test("R7: weaver 상태 전이(wait->charge->laser->wait) 및 차징 이동 유지·레이저 발사 정지", function()
+  local w = EnemyModel.create("weaver", 200, 100)
+  if w.aiState ~= "wait" then
+    return false
+  end
+
+  -- 3.5초 대기 후 charge 진입
+  for _ = 1, 211 do
+    w:updateAI(1 / 60)
+  end
+  if w.aiState ~= "charge" then
+    return false
+  end
+
+  -- charge 중에는 지그재그 이동 유지
+  local chargeX0 = w.x
+  for _ = 1, 30 do
+    w:updateAI(1 / 60)
+  end
+  local movedInCharge = (w.x ~= chargeX0)
+  if not movedInCharge or w.aiState ~= "charge" then
+    return false
+  end
+
+  -- 나머지 0.5초 경과 후 laser 진입
+  for _ = 1, 31 do
+    w:updateAI(1 / 60)
+  end
+  if w.aiState ~= "laser" or w:inFormation() ~= false then
+    return false
+  end
+
+  -- laser 중에는 이동 정지
+  local laserX0 = w.x
+  for _ = 1, 15 do
+    w:updateAI(1 / 60)
+  end
+  if w.x ~= laserX0 or w.aiState ~= "laser" then
+    return false
+  end
+
+  -- 0.6초 레이저 종료 후 wait 복귀
+  for _ = 1, 25 do
+    w:updateAI(1 / 60)
+  end
+  return w.aiState == "wait" and w:inFormation() == true
+end)
+
+h.test("R7: weaver 는 일반 탄환을 쏘지 않고 차징 후 레이저로 플레이어를 1회 피격한다", function()
+  local g = GameModel({
+    width = 600,
+    height = 800,
+    seed = 7,
+    wavesText = "wave 1\nenemy weaver 280 100\n",
+  })
+  local w = g.enemies[1]
+  -- 편대 이동을 0으로 두고 플레이어를 레이저 경로에 배치
+  g.formationDir = 0
+  g.player.x = w:centerX() - g.player.w * 0.5
+  local startLives = g.lives
+
+  local sawCharge = false
+  local sawLaser = false
+  local hitEvents = 0
+  for _ = 1, 320 do
+    g:update(1 / 60, { move = 0, fire = false })
+    if w.aiState == "charge" then
+      sawCharge = true
+      g.player.x = w:centerX() - g.player.w * 0.5
+    elseif w.aiState == "laser" then
+      sawLaser = true
+    end
+    local evts = g:drainEvents()
+    for i = 1, #evts do
+      if evts[i].type == "player_hit" then
+        hitEvents = hitEvents + 1
+      end
+    end
+  end
+
+  return sawCharge and sawLaser and #g.enemyBullets == 0 and hitEvents == 1 and g.lives == startLives - 1
+end)
+
+h.test("R7: EnemyView 가 weaver 의 charge 및 laser 연출을 그린다", function()
+  local w = EnemyModel.create("weaver", 200, 100)
+  w.aiState = "charge"
+  w.chargeTimer = 0.5
+
+  local gfxCharge = h.fakeGfx()
+  EnemyView.draw(gfxCharge, { w })
+  if h.count(gfxCharge, "line") < 1 or h.count(gfxCharge, "circle") < 4 then
+    return false
+  end
+
+  w.aiState = "laser"
+  local gfxLaser = h.fakeGfx()
+  EnemyView.draw(gfxLaser, { w })
+  return h.count(gfxLaser, "rectangle") >= 2
+end)
+
 h.finish()

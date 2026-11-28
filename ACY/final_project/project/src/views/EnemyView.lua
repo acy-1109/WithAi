@@ -24,6 +24,9 @@ local SNIPER_AIM_CORE = { 1.0, 0.35, 0.75 }
 local WEAVER_FILL = { 0.08, 0.40, 0.30 }
 local WEAVER_EDGE = { 0.3, 1.0, 0.75 }
 local WEAVER_CORE = { 0.8, 1.0, 0.92 }
+local WEAVER_LASER_OUTER = { 0.25, 0.95, 0.72 }
+local WEAVER_LASER_CORE = { 0.88, 1.0, 0.96 }
+local WEAVER_LASER_LENGTH = 1000
 
 local HP_BG_COLOR = { 0.2, 0.2, 0.2 }
 local HP_FILL_COLOR = { 0.3, 0.95, 0.5 }
@@ -158,6 +161,32 @@ local function drawWeaver(gfx, e)
   gfx.circle("fill", x + w * 0.86, y + h * 0.58, 1.6)
   setColor(gfx, WEAVER_CORE)
   gfx.circle("fill", cx, y + h * 0.50, 2.8)
+
+  local muzzleY = y + h
+  if e.aiState == "charge" then
+    local duration = e.chargeDuration or 1.0
+    local progress = 1 - (e.chargeTimer or 0) / duration
+    if progress < 0 then
+      progress = 0
+    elseif progress > 1 then
+      progress = 1
+    end
+    setColor(gfx, WEAVER_EDGE)
+    if gfx.line then
+      gfx.line(cx, muzzleY, cx, muzzleY + WEAVER_LASER_LENGTH)
+    end
+    gfx.circle("line", cx, muzzleY, 12 * (1 - progress * 0.65))
+    setColor(gfx, WEAVER_CORE)
+    gfx.circle("fill", cx, muzzleY, 2 + progress * 4)
+  elseif e.aiState == "laser" then
+    local lw = e.laserWidth or 8
+    local coreW = lw * 0.4
+    setColor(gfx, WEAVER_LASER_OUTER)
+    gfx.rectangle("fill", cx - lw * 0.5, muzzleY, lw, WEAVER_LASER_LENGTH)
+    setColor(gfx, WEAVER_LASER_CORE)
+    gfx.rectangle("fill", cx - coreW * 0.5, muzzleY, coreW, WEAVER_LASER_LENGTH)
+    gfx.circle("fill", cx, muzzleY, lw * 0.65)
+  end
 end
 
 local KIND_DRAWERS = {

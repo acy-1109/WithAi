@@ -30,6 +30,7 @@ end
 
 local DEFAULT_COLOR = { 1, 0.8, 0.2 }
 local SPLIT_COLOR = { 0.85, 0.5, 1.0 }
+local PLAYER_SPLIT_COLOR = { 1.0, 0.92, 0.25 }
 
 function EffectsView:_burst(x, y, count, life, minSpeed, speedRange, color, size)
   local n = count or BURST
@@ -59,7 +60,8 @@ function EffectsView:onEvent(ev)
     self:_burst(ev.x, ev.y)
     self.flash = FLASH_TIME
   elseif ev.type == "bullet_split" then
-    self:_burst(ev.x, ev.y, 4, 0.16, 30, 45, SPLIT_COLOR, 2)
+    local color = (ev.kind == "player") and PLAYER_SPLIT_COLOR or SPLIT_COLOR
+    self:_burst(ev.x, ev.y, 4, 0.16, 30, 45, color, 2)
   elseif ev.type == "boss_enraged" then
     self.shake = SHAKE_TIME
     self.flash = FLASH_TIME
