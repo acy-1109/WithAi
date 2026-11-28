@@ -55,18 +55,22 @@
 
 ---
 
-### 4단계. 보스전 기믹 심화
-`BossModel`의 기존 3상태(`patrol`, `aimed`, `spiral`) + `enraged` 구조에 **패턴 변주와 공략 루트**를 추가합니다.
+### 4단계. 보스전 기믹 심화 (`tier 2` 레이저, `tier 3` 호위 적 소환, `+5` 보스 주기, `F1` 치트 완료 / `tier 4` 부위 파괴 남음)
+`BossModel`의 기존 3상태(`patrol`, `aimed`, `spiral`) + `enraged` 구조에 **티어별 패턴 변주와 공략 루트**를 추가합니다. (`BossPhase` / `FormationPhase` 주기를 `+5` 웨이브 단위로 조정: `5`=`tier 1`, `10`=`tier 2`, `15`=`tier 3`, `20`=`tier 4`)
 
 - **핵심 내용**
-  - **보스 레이저 패턴**: `Weaver`와 유사하게 예고선 차징 후 굵은 수직/조준 레이저 발사 상태 추가.
-  - **호위 적 소환**: `enraged` 진입 시 `grunt` 또는 `weaver` 소환.
-  - **부위 파괴(서브 포탑)**: 좌우 파괴 가능 포탑을 두고, 파괴 시 해당 탄막 패턴 약화 및 보너스 점수 부여.
+  - [x] **보스 레이저 패턴 (`tier 2`, 10웨이브+)**: `LaserChargeState`(`1.0초` 수직 예고선, 속도 `0.35x`) → `LaserFireState`(`0.8초` 폭 `24px` 수직 레이저, 속도 `0.25x`) 상태 추가, `BossPhase:resolveCollisions` 1회 피격 판정, `BossView` 차징/빔 렌더링.
+  - [x] **호위 적 소환 (`tier 3`, 15웨이브+)**: `enraged`(HP 50% 이하) 최초 진입 시 `game.rng` 기반 랜덤 동일 종류 2체 + 다른 종류 1체(총 3체) 1회 소환, 보스 격파 후에도 남은 호위 적 유지.
+  - [x] **디버그용 페이즈 클리어 치트**: `PlayScene`에서 `F1` 키 입력 시 `GameModel:debugClearPhase()`로 현재 편대전/보스전을 즉시 클리어.
+  - [ ] **부위 파괴(서브 포탑, `tier 4`, 20웨이브+)**: 좌우 파괴 가능 포탑을 두고, 파괴 시 해당 탄막 패턴 약화 및 보너스 점수 부여.
 - **관련 파일**
-  - 수정: `src/models/BossModel.lua`, `src/models/GameModel.lua`, `src/views/BossView.lua`
-  - 읽기 전용: `src/models/BossPhase.lua`, `src/models/EnemyModel.lua`
+  - 수정: `src/models/BossModel.lua`, `src/models/BossPhase.lua`, `src/models/FormationPhase.lua`, `src/models/GameModel.lua`, `src/views/BossView.lua`, `src/scenes/PlayScene.lua`
+  - 읽기 전용: `src/models/EnemyModel.lua`
+  - 테스트: `tests/boss_laser_test.lua`, `tests/boss_escort_test.lua`, `tests/boss_fsm_test.lua`, `tests/boss_view_test.lua`
 - **검증 포인트**
-  - 보스 FSM 상태 전이 및 소환/레이저/부위 파괴 조건 헤드리스 테스트
+  - [x] `tier 1`(5웨이브) 기존 3상태 유지 및 `tier 2`(10웨이브+) 레이저 차징·발사·피격 판정 테스트 (`tests/boss_laser_test.lua` 5/5 통과)
+  - [x] `tier 3`(15웨이브+) 호위 적 3체 1회 소환·중복 방지·격파 후 유지 테스트 (`tests/boss_escort_test.lua` 3/3 통과, `tests/layer_check.lua` 0건 위반)
+  - [ ] `tier 4`(20웨이브+) 좌우 포탑 부위 파괴 및 탄막 약화 헤드리스 테스트
 
 ---
 
