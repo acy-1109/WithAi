@@ -39,18 +39,19 @@
 
 ---
 
-### 3단계. 방어·역전용 아이템 및 회피 액션 확장
+### 3단계. 방어·역전용 아이템 및 회피 액션 확장 (`shield`, `bomb` 구현 완료)
 `ItemModel.registerType` 레지스트리 구조를 활용해 공격·체력 일변도인 아이템 풀에 **생존과 탄막 소거 수단**을 추가합니다.
 
 - **핵심 내용**
-  - **에너지 실드(`shield`)**: 1회 피격을 무효화하고 짧은 무적 + 주변 탄환 정리.
-  - **EMP / 스마트 폭탄(`bomb`)**: 보유 후 키 입력(또는 획득 즉시)으로 화면 내 적 탄환 소거 + 전체 적 광역 피해.
-  - *(선택)* **짧은 대시/회피기**: 짧은 쿨다운의 무적 회피 이동으로 `Weaver` 레이저/보스 패턴 능동 돌파.
+  - [x] **에너지 실드(`shield`)**: 1회 피격 무효화 + `1.5초` 무적 + 반경 `120px` 주변 적 탄환 정리 (`PlayerModel`, `GameModel`, `ItemView`, `PlayerView`).
+  - [x] **EMP / 스마트 폭탄(`bomb`)**: 기본 `1개` 지급(최대 `3개`), `Q` 키 상승 에지 발동으로 화면 내 적 탄환 전량 소거 + 전체 적/보스 광역 피해(`5`), 좌측 HUD(`EMP %d/%d [Q]`) 및 `EffectsView` 이중 충격파 링 연출(`0.45초`, 최대 반경 `750px`).
+  - [ ] *(선택)* **짧은 대시/회피기**: 짧은 쿨다운의 무적 회피 이동으로 `Weaver` 레이저/보스 패턴 능동 돌파.
 - **관련 파일**
-  - 수정: `src/models/ItemModel.lua`, `src/models/GameModel.lua`, `src/models/PlayerModel.lua`, `src/views/ItemView.lua`, `src/views/PlayerView.lua`, `src/controllers/InputController.lua`
+  - 수정: `src/models/ItemModel.lua`, `src/models/GameModel.lua`, `src/models/PlayerModel.lua`, `src/models/BossPhase.lua`, `src/views/ItemView.lua`, `src/views/PlayerView.lua`, `src/views/HudView.lua`, `src/views/EffectsView.lua`, `src/views/GameView.lua`, `src/controllers/InputController.lua`
+  - 테스트: `tests/shield_test.lua`, `tests/emp_bomb_test.lua`, `tests/item_growth_test.lua`
 - **검증 포인트**
-  - 실드 보유 중 피격 시 라이프 감소 없이 실드만 소모되는지 테스트
-  - 폭탄 발동 시 적 탄환 제거 및 보스/적 피해 적용 테스트
+  - [x] 실드 보유 중 피격 시 라이프 감소 없이 실드만 소모되고 주변 탄환이 제거되는지 테스트 (`tests/shield_test.lua` 4/4 통과)
+  - [x] 폭탄 발동 시 적 탄환 제거, 보스/적 피해, HUD/충격파 연출 테스트 (`tests/emp_bomb_test.lua` 6/6 통과, `tests/layer_check.lua` 0건 위반)
 
 ---
 
