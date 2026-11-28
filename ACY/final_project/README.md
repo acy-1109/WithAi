@@ -21,6 +21,11 @@ lua tests/title_buttons_test.lua src
 lua tests/r1_difficulty_scene_test.lua src
 lua tests/achievement_overlay_test.lua src
 lua tests/achievement_catalog_test.lua src
+lua tests/player_view_test.lua src
+lua tests/bullet_view_test.lua src
+lua tests/enemy_view_test.lua src
+lua tests/boss_view_test.lua src
+lua tests/space_background_test.lua src
 ```
 
 ## 조작법
