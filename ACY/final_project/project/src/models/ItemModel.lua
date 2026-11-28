@@ -7,6 +7,14 @@ local ItemModel = class()
 
 local DEFAULT_SPEED = 140
 local DEFAULT_SIZE = 18
+local DEFAULT_MIN_COOLDOWN = 0.10
+local DEFAULT_BASE_COOLDOWN = 0.25
+local DEFAULT_SPEED_UP_MUL = 0.85
+local DEFAULT_TRIPLE_SHOT_DURATION = 6.0
+
+local function alwaysCollect()
+  return true
+end
 
 --- 아이템 타입 레지스트리.
 -- 새 아이템 추가 시 여기에 테이블 항목(또는 ItemModel.registerType)만 등록한다.
@@ -20,6 +28,42 @@ local TYPES = {
     end,
     apply = function(game)
       game.lives = math.min(game.maxLives, game.lives + 1)
+    end,
+  },
+  attack_up = {
+    w = DEFAULT_SIZE,
+    h = DEFAULT_SIZE,
+    speed = DEFAULT_SPEED,
+    canCollect = alwaysCollect,
+    apply = function(game)
+      game.playerDamage = (game.playerDamage or 1) + 1
+    end,
+  },
+  speed_up = {
+    w = DEFAULT_SIZE,
+    h = DEFAULT_SIZE,
+    speed = DEFAULT_SPEED,
+    canCollect = alwaysCollect,
+    apply = function(game)
+      if game.applySpeedUp then
+        game:applySpeedUp()
+      else
+        local cd = (game.fireCooldown or DEFAULT_BASE_COOLDOWN) * DEFAULT_SPEED_UP_MUL
+        game.fireCooldown = math.max(DEFAULT_MIN_COOLDOWN, cd)
+      end
+    end,
+  },
+  triple_shot = {
+    w = DEFAULT_SIZE,
+    h = DEFAULT_SIZE,
+    speed = DEFAULT_SPEED,
+    canCollect = alwaysCollect,
+    apply = function(game)
+      if game.activateTripleShot then
+        game:activateTripleShot()
+      else
+        game.tripleShotTimer = DEFAULT_TRIPLE_SHOT_DURATION
+      end
     end,
   },
 }

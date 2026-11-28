@@ -81,7 +81,7 @@ local TANK_STAGE_STATS = {
   [1] = { bulletSpeedMul = 1.0, fireCooldownMul = 1.0 },
 }
 
---- 고체력 적 ("tank") — HP가 깎일수록 탄속·발사딜레이가 기본 적(1.0)에 가까워진다
+--- 고체력 적 ("tank") — 공격력과 무관하게 피격 횟수(1타격 = -1)로 HP/단계가 줄어든다
 local TankEnemy = class(EnemyModel)
 
 function TankEnemy:init(x, y)
@@ -101,8 +101,8 @@ function TankEnemy:_syncCombatStats()
   self.fireCooldownMul = st.fireCooldownMul
 end
 
-function TankEnemy:takeDamage(amount)
-  local alive = EnemyModel.takeDamage(self, amount)
+function TankEnemy:takeDamage(_amount)
+  local alive = EnemyModel.takeDamage(self, 1)
   self:_syncCombatStats()
   return alive
 end

@@ -19,6 +19,7 @@ function BulletModel:init(x, y, vx, vy, w, h, kind, opts)
   self.w = w
   self.h = h
   self.kind = kind
+  self.damage = (opts and opts.damage) or 1
   if opts then
     self.splitAfter = opts.splitAfter
     self.splitSpread = opts.splitSpread or 0.32
@@ -55,7 +56,8 @@ function BulletModel:spawnSplitBullets()
       math.sin(a) * speed,
       4,
       12,
-      self.kind
+      self.kind,
+      { damage = self.damage }
     )
   end
   return children

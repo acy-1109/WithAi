@@ -36,10 +36,14 @@ h.test("R3: 각 적 타입 고유 스탯(Tank 고체력, Sprinter 고속, Sniper
 
   local tankSurvivedOneHit = tank:takeDamage(1)
   local tankHpAfterOne = tank.hp
-  local tankSurvivedThreeHits = tank:takeDamage(2)
+  local tankSurvivedTwoHits = tank:takeDamage(3)
+  local tankHpAfterTwo = tank.hp
+  local tankSurvivedThreeHits = tank:takeDamage(3)
 
   return tankSurvivedOneHit == true
     and tankHpAfterOne == 2
+    and tankSurvivedTwoHits == true
+    and tankHpAfterTwo == 1
     and tankSurvivedThreeHits == false
     and tank.alive == false
     and sprinter.speedMul > 1.0

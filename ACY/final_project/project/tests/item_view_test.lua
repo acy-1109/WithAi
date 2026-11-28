@@ -54,4 +54,20 @@ h.test("ItemView: registerDrawer 로 새 아이템 타입 렌더러를 확장할
   return called and h.count(gfx, "rectangle") == 1
 end)
 
+h.test("ItemView: attack_up, speed_up, triple_shot 아이템이 고유 아이콘으로 그려진다", function()
+  local gfxAtk = h.fakeGfx()
+  ItemView.draw(gfxAtk, { ItemModel.create("attack_up", 100, 100) })
+  local okAtk = h.count(gfxAtk, "circle") == 2 and h.count(gfxAtk, "polygon") == 1 and h.count(gfxAtk, "rectangle") == 1
+
+  local gfxSpd = h.fakeGfx()
+  ItemView.draw(gfxSpd, { ItemModel.create("speed_up", 100, 100) })
+  local okSpd = h.count(gfxSpd, "circle") == 2 and h.count(gfxSpd, "polygon") == 2
+
+  local gfxTrp = h.fakeGfx()
+  ItemView.draw(gfxTrp, { ItemModel.create("triple_shot", 100, 100) })
+  local okTrp = h.count(gfxTrp, "circle") == 5
+
+  return okAtk and okSpd and okTrp
+end)
+
 h.finish()

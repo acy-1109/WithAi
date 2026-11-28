@@ -40,4 +40,37 @@ h.test("HudView: draw 호출 전후로 GameModel 을 변경하지 않는다", fu
   return h.same(before, after) == true
 end)
 
+h.test("HudView: 공격력·공속 및 트리플 샷 남은 시간(활성 시에만)을 표시한다", function()
+  local g = GameModel({ width = 600, height = 800, seed = 1 })
+  g.playerDamage = 3
+  g.fireCooldown = 0.125
+
+  local gfxNoTriple = h.fakeGfx()
+  HudView.draw(gfxNoTriple, g, 600, 800)
+  local sawStats = false
+  local sawTripleOff = false
+  for _, c in ipairs(gfxNoTriple.calls) do
+    if c.name == "print" then
+      local msg = tostring(c.args[1])
+      if msg == "ATK 3  SPD 2.00x" then
+        sawStats = true
+      elseif msg:find("TRIPLE", 1, true) then
+        sawTripleOff = true
+      end
+    end
+  end
+
+  g.tripleShotTimer = 4.2
+  local gfxTriple = h.fakeGfx()
+  HudView.draw(gfxTriple, g, 600, 800)
+  local sawTripleOn = false
+  for _, c in ipairs(gfxTriple.calls) do
+    if c.name == "print" and tostring(c.args[1]) == "TRIPLE 4.2s" then
+      sawTripleOn = true
+    end
+  end
+
+  return sawStats and not sawTripleOff and sawTripleOn
+end)
+
 h.finish()

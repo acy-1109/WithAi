@@ -20,6 +20,12 @@ local PLAYER_SPEED = 320
 local BULLET_SPEED = 520
 local ENEMY_BULLET_SPEED = 240
 local FIRE_COOLDOWN = 0.25
+local MIN_FIRE_COOLDOWN = 0.10
+local SPEED_UP_COOLDOWN_MUL = 0.85
+local BASE_PLAYER_DAMAGE = 1
+local TRIPLE_SHOT_DURATION = 6.0
+local TRIPLE_SHOT_SPLIT_AFTER = 0.45
+local TRIPLE_SHOT_SPLIT_SPREAD = 0.32
 local ENEMY_FIRE_INTERVAL = 0.6
 local FORMATION_SPEED = 40
 local FORMATION_DESCEND = 16
@@ -28,7 +34,8 @@ local MISSILE_TURN = 0.16
 local MISSILE_COOLDOWN = 0.6
 local MAX_MISSILES = 3
 local MISSILE_RECHARGE_SCORE = 500
-local ITEM_DROP_CHANCE = 0.05
+local ITEM_DROP_CHANCE = 0.08
+local DROP_KINDS = { "life", "speed_up", "triple_shot" }
 
 -- AABB 겹침
 local function overlaps(a, b)
@@ -65,9 +72,24 @@ function GameModel:reset()
   self.events = {} -- 스텝마다 쌓이고, 소비자(View)가 drainEvents() 로 비운다
   self.wave = 0
   self.waveIndex = 0
+  self.bossDefeatedCount = 0
+  self.playerDamage = BASE_PLAYER_DAMAGE
+  self.fireCooldown = FIRE_COOLDOWN
+  self.tripleShotTimer = 0
   self:spawnFormation()
   self.phase = nil
   self:changePhase(FormationPhase())
+end
+
+function GameModel:_spawnEnemy(kind, x, y)
+  local e = EnemyModel.create(kind, x, y)
+  if e.kind ~= "tank" then
+    local scaledHp = 1 + (self.bossDefeatedCount or 0)
+    e.hp = scaledHp
+    e.maxHp = scaledHp
+  end
+  self.enemies[#self.enemies + 1] = e
+  return e
 end
 
 --- 진행 단계를 바꾼다. 새 단계의 enter 가 곧바로 호출된다.
@@ -96,14 +118,14 @@ function GameModel:spawnFormation()
     local wave = self.waves[self.waveIndex]
     for i = 1, #wave.enemies do
       local spec = wave.enemies[i]
-      self.enemies[#self.enemies + 1] = EnemyModel.create(spec.kind, spec.x, spec.y)
+      self:_spawnEnemy(spec.kind, spec.x, spec.y)
     end
     return
   end
 
   for row = 0, 3 do
     for col = 0, 7 do
-      self.enemies[#self.enemies + 1] = EnemyModel.create("grunt", 60 + col * 60, 60 + row * 50)
+      self:_spawnEnemy("grunt", 60 + col * 60, 60 + row * 50)
     end
   end
 end
@@ -134,9 +156,31 @@ end
 --   { type = "boss_appeared" }
 --   { type = "boss_hit", x = number, y = number }
 --   { type = "boss_destroyed", x = number, y = number }
+-- 탄환 배열을 이동·분열(Sniper/트리플샷)·화면 밖 제거까지 일괄 갱신한다.
+local function updateBulletList(list, dt, width, height, game)
+  for i = #list, 1, -1 do
+    local b = list[i]
+    b:update(dt)
+    if b.shouldSplit and b:shouldSplit() then
+      game:_emit({ type = "bullet_split", x = b.x + b.w * 0.5, y = b.y + b.h * 0.5 })
+      local children = b:spawnSplitBullets()
+      table.remove(list, i)
+      for j = 1, #children do
+        list[#list + 1] = children[j]
+      end
+    elseif b:isOffscreen(width, height) then
+      table.remove(list, i)
+    end
+  end
+end
+
 function GameModel:update(dt, input)
   if self.state ~= "playing" then
     return
+  end
+
+  if self.tripleShotTimer > 0 then
+    self.tripleShotTimer = math.max(0, self.tripleShotTimer - dt)
   end
 
   local move = input.move or 0
@@ -148,9 +192,14 @@ function GameModel:update(dt, input)
   self.player:tickCooldown(dt)
   if fire and self.player:canFire() then
     local p = self.player
+    local bulletOpts = { damage = self.playerDamage }
+    if self.tripleShotTimer > 0 then
+      bulletOpts.splitAfter = TRIPLE_SHOT_SPLIT_AFTER
+      bulletOpts.splitSpread = TRIPLE_SHOT_SPLIT_SPREAD
+    end
     self.bullets[#self.bullets + 1] =
-      BulletModel(p.x + p.w * 0.5 - 2, p.y, 0, -BULLET_SPEED, 4, 12, "player")
-    self.player:resetCooldown(FIRE_COOLDOWN)
+      BulletModel(p.x + p.w * 0.5 - 2, p.y, 0, -BULLET_SPEED, 4, 12, "player", bulletOpts)
+    self.player:resetCooldown(self.fireCooldown)
     self:_emit({ type = "fire" })
   end
 
@@ -167,14 +216,8 @@ function GameModel:update(dt, input)
   end
   self:_steerMissiles()
 
-  -- 플레이어 총알 이동/제거
-  for i = #self.bullets, 1, -1 do
-    local b = self.bullets[i]
-    b:update(dt)
-    if b:isOffscreen(self.width, self.height) then
-      table.remove(self.bullets, i)
-    end
-  end
+  -- 플레이어 총알 이동/분열/제거
+  updateBulletList(self.bullets, dt, self.width, self.height, self)
 
   self:_updateFormation(dt)
   local aiCtx = {
@@ -196,20 +239,7 @@ function GameModel:update(dt, input)
   self.phase:update(self, dt)
 
   -- 적 총알 이동/분열/제거
-  for i = #self.enemyBullets, 1, -1 do
-    local b = self.enemyBullets[i]
-    b:update(dt)
-    if b:shouldSplit() then
-      self:_emit({ type = "bullet_split", x = b.x + b.w * 0.5, y = b.y + b.h * 0.5 })
-      local children = b:spawnSplitBullets()
-      table.remove(self.enemyBullets, i)
-      for j = 1, #children do
-        self.enemyBullets[#self.enemyBullets + 1] = children[j]
-      end
-    elseif b:isOffscreen(self.width, self.height) then
-      table.remove(self.enemyBullets, i)
-    end
-  end
+  updateBulletList(self.enemyBullets, dt, self.width, self.height, self)
 
   self:_resolveCollisions()
   self:_updateItems(dt)
@@ -285,7 +315,7 @@ function GameModel:_resolveCollisions()
     local b = self.bullets[bi]
     for _, e in ipairs(self.enemies) do
       if e.alive and overlaps(b, e) then
-        local stillAlive = e:takeDamage(1)
+        local stillAlive = e:takeDamage(b.damage or 1)
         if not stillAlive then
           self:addScore(e.score or 100)
           self:_emit({ type = "enemy_destroyed", x = e:centerX(), y = e:centerY() })
@@ -344,12 +374,32 @@ function GameModel:addScore(points)
   self:_emit({ type = "score_changed", score = self.score, delta = delta })
 end
 
--- 적 처치 시 5% 확률로 아이템을 드랍한다.
+function GameModel:applySpeedUp()
+  self.fireCooldown = math.max(MIN_FIRE_COOLDOWN, self.fireCooldown * SPEED_UP_COOLDOWN_MUL)
+end
+
+function GameModel:activateTripleShot(duration)
+  self.tripleShotTimer = duration or TRIPLE_SHOT_DURATION
+end
+
+function GameModel:_spawnItem(kind, cx, cy)
+  local item = ItemModel.create(kind, cx, cy)
+  self.items[#self.items + 1] = item
+  self:_emit({ type = "item_spawned", kind = item.kind, x = cx, y = cy })
+  return item
+end
+
+--- 보스 처치 시 처치 횟수를 증가시키고 attack_up 을 확정 드랍한다.
+function GameModel:onBossDefeated(bx, by)
+  self.bossDefeatedCount = (self.bossDefeatedCount or 0) + 1
+  self:_spawnItem("attack_up", bx, by)
+end
+
+-- 적 처치 시 8% 확률로 일반 드랍 풀(life, speed_up, triple_shot)에서 균등 드랍한다.
 function GameModel:_tryDropItem(cx, cy)
   if self.rng:nextFloat() < ITEM_DROP_CHANCE then
-    local item = ItemModel.create("life", cx, cy)
-    self.items[#self.items + 1] = item
-    self:_emit({ type = "item_spawned", kind = item.kind, x = cx, y = cy })
+    local kind = DROP_KINDS[self.rng:range(#DROP_KINDS)]
+    self:_spawnItem(kind, cx, cy)
   end
 end
 

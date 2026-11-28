@@ -26,14 +26,14 @@ h.test("ItemModel: 수직 이동(140 px/s) 및 화면 밖 소멸 판정", functi
   return item:isOffscreen(600, 800) == true
 end)
 
-h.test("GameModel: 적 처치 시 5% 확률(< 0.05)일 때만 아이템 드랍", function()
+h.test("GameModel: 적 처치 시 8% 확률(< 0.08)일 때만 아이템 드랍", function()
   local g = GameModel({ width = 600, height = 800, seed = 1 })
   local target = g.enemies[1]
   target.hp = 1
 
-  -- 0.05 이상이면 드랍 안 됨
+  -- 0.08 이상이면 드랍 안 됨
   g.rng.nextFloat = function()
-    return 0.05
+    return 0.08
   end
   g.bullets[#g.bullets + 1] = { x = target.x + 2, y = target.y + 2, w = 4, h = 12, update = function() end, isOffscreen = function() return false end }
   g:update(0.016, {})
@@ -41,11 +41,14 @@ h.test("GameModel: 적 처치 시 5% 확률(< 0.05)일 때만 아이템 드랍",
     return false
   end
 
-  -- 0.05 미만이면 드랍됨
+  -- 0.08 미만이면 4종 중 선택해 드랍됨
   local target2 = g.enemies[2]
   target2.hp = 1
   g.rng.nextFloat = function()
-    return 0.049
+    return 0.079
+  end
+  g.rng.range = function()
+    return 1
   end
   g.bullets[#g.bullets + 1] = { x = target2.x + 2, y = target2.y + 2, w = 4, h = 12, update = function() end, isOffscreen = function() return false end }
   g:update(0.016, {})

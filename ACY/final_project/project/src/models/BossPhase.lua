@@ -54,7 +54,7 @@ function BossPhase:resolveCollisions(game)
     if overlaps(b, boss) then
       table.remove(game.bullets, bi)
       game:_emit({ type = "boss_hit", x = b.x, y = b.y })
-      local killed = boss:takeDamage(1)
+      local killed = boss:takeDamage(b.damage or 1)
       if boss.justEnraged then
         boss.justEnraged = false
         game:_emit({ type = "boss_enraged", x = boss:centerX(), y = boss:centerY() })
@@ -64,6 +64,9 @@ function BossPhase:resolveCollisions(game)
         game:addScore(self.reward or BASE_BOSS_REWARD)
         game.boss = nil
         game:_emit({ type = "boss_destroyed", x = bx, y = by })
+        if game.onBossDefeated then
+          game:onBossDefeated(bx, by)
+        end
         game:spawnFormation()
         local FormationPhase = require("FormationPhase")
         game:changePhase(FormationPhase())

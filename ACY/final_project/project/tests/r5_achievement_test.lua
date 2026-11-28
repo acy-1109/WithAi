@@ -115,6 +115,8 @@ h.test("R5: PlayScene drainEvents 구독으로 GameModel 수정 없이 업적 �
     translate = function() end,
     setColor = function() end,
     rectangle = function() end,
+    circle = function() end,
+    polygon = function() end,
     print = function(msg) printed[#printed + 1] = tostring(msg) end,
     printf = function(msg) printed[#printed + 1] = tostring(msg) end,
   }
