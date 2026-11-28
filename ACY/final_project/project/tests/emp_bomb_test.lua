@@ -13,6 +13,7 @@ local BossPhase = require("BossPhase")
 local InputController = require("InputController")
 local ItemView = require("ItemView")
 local HudView = require("HudView")
+local EffectsView = require("EffectsView")
 
 h.test("bomb: 시작 시 1개 기본 보유, 획득 시 증가 및 최대 3개 상한 초과 시 미획득", function()
   local g = GameModel({ width = 600, height = 800, seed = 1 })
@@ -113,6 +114,24 @@ h.test("ItemView / HudView: bomb 아이템 및 좌측 EMP 보유 수 표시가 �
     end
   end
   return h.same(before, after) == true and hasEmpText
+end)
+
+h.test("EffectsView: emp_detonated 수신 시 충격파 링이 퍼지고 지속 시간(0.45초) 후 사라진다", function()
+  local fx = EffectsView(function() return 0.5 end)
+  fx:onEvent({ type = "emp_detonated", x = 300, y = 700, clearedBullets = 3 })
+  fx:update(0.2)
+
+  local midGfx = h.fakeGfx()
+  fx:drawShockwaves(midGfx)
+  if h.count(midGfx, "circle") ~= 2 then
+    return false
+  end
+
+  -- 지속 시간(0.45초) 경과 후 만료되어 그려지지 않음
+  fx:update(0.3)
+  local endGfx = h.fakeGfx()
+  fx:drawShockwaves(endGfx)
+  return h.count(endGfx, "circle") == 0
 end)
 
 h.finish()

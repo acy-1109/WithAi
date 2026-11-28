@@ -14,11 +14,14 @@ local SHAKE_TIME = 0.3
 local SHAKE_PIXELS = 10
 local BANNER_TIME = 1.0
 local NOTICE_TIME = 2.5
+local EMP_WAVE_DURATION = 0.45
+local EMP_WAVE_MAX_RADIUS = 750
 
 --- @param rand function|nil  0~1 난수 함수. 테스트에서 고정값을 주입할 수 있다. 기본 math.random
 function EffectsView:init(rand)
   self.rand = rand or math.random
   self.particles = {}
+  self.shockwaves = {}
   self.flash = 0
   self.shake = 0
   self.banner = 0
@@ -72,6 +75,15 @@ function EffectsView:onEvent(ev)
     self.shake = SHAKE_TIME
     self.flash = FLASH_TIME
     self:_burst(ev.x, ev.y, 18, 0.45, 90, 220, { 0.45, 0.85, 1.0 }, 3.5)
+    self.shockwaves[#self.shockwaves + 1] = {
+      x = ev.x,
+      y = ev.y,
+      elapsed = 0,
+      duration = EMP_WAVE_DURATION,
+      maxRadius = EMP_WAVE_MAX_RADIUS,
+      radius = 0,
+      alpha = 1,
+    }
   elseif ev.type == "formation_cleared" then
     self.banner = BANNER_TIME
   elseif ev.type == "achievement_unlocked" then
@@ -115,6 +127,20 @@ function EffectsView:update(dt)
       table.remove(list, i)
     end
   end
+
+  local waves = self.shockwaves
+  for i = #waves, 1, -1 do
+    local w = waves[i]
+    w.elapsed = w.elapsed + dt
+    if w.elapsed >= w.duration then
+      table.remove(waves, i)
+    else
+      local t = w.elapsed / w.duration
+      local ease = 1 - (1 - t) * (1 - t)
+      w.radius = w.maxRadius * ease
+      w.alpha = 1 - t
+    end
+  end
 end
 
 function EffectsView:drawFlash(gfx, width, height)
@@ -131,6 +157,18 @@ function EffectsView:drawParticles(gfx)
     local sz = p.size or 3
     gfx.setColor(c[1], c[2], c[3])
     gfx.rectangle("fill", p.x, p.y, sz, sz)
+  end
+end
+
+function EffectsView:drawShockwaves(gfx)
+  for i = 1, #self.shockwaves do
+    local w = self.shockwaves[i]
+    if w.radius > 0 then
+      gfx.setColor(0.35, 0.9, 1.0, w.alpha)
+      gfx.circle("line", w.x, w.y, w.radius)
+      gfx.setColor(0.75, 0.92, 1.0, w.alpha * 0.7)
+      gfx.circle("line", w.x, w.y, w.radius * 0.72)
+    end
   end
 end
 

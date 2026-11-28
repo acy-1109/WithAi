@@ -44,6 +44,7 @@ function GameView:draw(gfx, game, highScore)
   BulletView.draw(gfx, game.bullets, game.enemyBullets)
   ItemView.draw(gfx, game.items)
   fx:drawParticles(gfx)
+  fx:drawShockwaves(gfx)
   gfx.pop()
 
   HudView.draw(gfx, game, self.width, self.height, highScore)
