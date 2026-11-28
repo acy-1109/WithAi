@@ -109,6 +109,7 @@ h.test("웨이브: 1~4웨이브 동안 편대전 유지 후 5웨이브부터 보
   local printed = {}
   local fakeGfx = {
     setColor = function() end,
+    rectangle = function() end,
     print = function(msg) printed[#printed + 1] = tostring(msg) end,
     printf = function(msg) printed[#printed + 1] = tostring(msg) end,
   }

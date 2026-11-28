@@ -8,26 +8,30 @@ local EnemyView = require("EnemyView")
 local BulletView = require("BulletView")
 local HudView = require("HudView")
 local EffectsView = require("EffectsView")
+local AudioView = require("AudioView")
 local BossView = require("BossView")
 local ItemView = require("ItemView")
 
 local GameView = class()
 
---- @param opts table  { width=number, height=number, rand=function|nil }
+--- @param opts table  { width=number, height=number, rand=function|nil, audio=table|nil, sound=table|nil }
 function GameView:init(opts)
   self.width = opts.width
   self.height = opts.height
   self.effects = EffectsView(opts.rand)
+  self.audio = AudioView({ audio = opts.audio, sound = opts.sound })
 end
 
 --- GameModel:drainEvents() 로 받은 이벤트 1개
 function GameView:onEvent(ev)
   self.effects:onEvent(ev)
+  self.audio:onEvent(ev)
 end
 
 --- 연출 시간 진행 (Model 과 무관한 View 자신의 시간)
-function GameView:update(dt)
+function GameView:update(dt, game)
   self.effects:update(dt)
+  self.audio:update(dt, game)
 end
 
 --- @param gfx       table       love.graphics 또는 가짜

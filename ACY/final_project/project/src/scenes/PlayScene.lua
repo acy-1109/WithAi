@@ -26,7 +26,13 @@ function PlayScene:init(ctx)
   if self.achievements.resetRun then
     self.achievements:resetRun()
   end
-  self.view = GameView({ width = ctx.width, height = ctx.height, rand = ctx.rand })
+  self.view = GameView({
+    width = ctx.width,
+    height = ctx.height,
+    rand = ctx.rand,
+    audio = ctx.audio,
+    sound = ctx.sound,
+  })
   self.controller = InputController(ctx.isDown)
 end
 
@@ -56,7 +62,7 @@ function PlayScene:update(dt)
       end
     end
   end
-  self.view:update(dt)
+  self.view:update(dt, self.game)
 
   -- 이 씬이 맨 위일 때만 update 가 불리므로, 결과 화면은 한 번만 쌓인다.
   if self.game.state ~= "playing" then

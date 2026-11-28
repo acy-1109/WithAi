@@ -8,19 +8,21 @@
 
 ## 권장 작업 순서
 
-### 1단계. 타격감(Game Feel) 및 사운드 피드백
+### 1단계. 타격감(Game Feel) 및 사운드 피드백 (진행 중: 효과음 SFX 완료)
 기존 `GameModel` 이벤트를 그대로 구독하여 **Model 변경을 최소화하면서** 플레이 체감을 가장 크게 끌어올리는 단계입니다.
 
 - **핵심 내용**
-  - **효과음(SFX) 추가**: 발사, `Weaver` 차징/레이저 발사, 피격, 폭발, 아이템 획득, 보스 등장 경고음(`love.audio` 기반 프로시저럴 파형 또는 에셋 로드).
-  - **화면 흔들림(Screen Shake)**: 플레이어 피격, `tank`/보스 격파, 레이저 발사 순간에 감쇠형 카메라 오프셋 적용.
-  - **히트 플래시 / 히트스톱**: 보스·중형 적 피격 시 짧은 플래시 및 격파 순간 미세한 연출 강화.
+  - [x] **효과음(SFX) 추가**: 발사, 미사일, `Weaver`/보스 레이저 차징·발사, 피격, 실드 해제, EMP, 폭발, 아이템 획득, 웨이브/업적/게임오버, 보스 등장 경고음(`AudioView`에서 `love.audio`/`love.sound` 기반 프로시저럴 레트로 파형 생성, 보이스 풀·디바운스 적용).
+  - [ ] **화면 흔들림(Screen Shake)**: 플레이어 피격, `tank`/보스 격파, 레이저 발사 순간에 감쇠형 카메라 오프셋 적용.
+  - [ ] **히트 플래시 / 히트스톱**: 보스·중형 적 피격 시 짧은 플래시 및 격파 순간 미세한 연출 강화.
 - **관련 파일**
-  - 수정/추가: `src/views/AudioView.lua`(신규), `src/views/GameView.lua`, `src/views/EffectsView.lua`, `src/scenes/PlayScene.lua`
+  - 수정/추가: `src/views/AudioView.lua`(구현 완료), `src/views/GameView.lua`, `src/scenes/PlayScene.lua`, `src/main.lua`, `src/views/EffectsView.lua`
   - 읽기 전용: `src/models/GameModel.lua`(발행 이벤트 목록 확인)
+  - 테스트: `tests/audio_view_test.lua`
 - **검증 포인트**
-  - `layer_check.lua` 통과 (Model에 `love.audio` 침투 없음)
-  - 실게임 실행 시 모든 주요 이벤트에서 음향/시각 피드백 확인
+  - [x] `layer_check.lua` 통과 (Model에 `love.audio` 침투 없음, 0건 위반)
+  - [x] 헤드리스 목 기반 이벤트→SFX 매핑·레이저 전이·디바운스 테스트 통과 (`tests/audio_view_test.lua` 5/5 통과)
+  - [ ] 실게임 실행 시 모든 주요 이벤트에서 음향/시각 피드백 확인
 
 ---
 

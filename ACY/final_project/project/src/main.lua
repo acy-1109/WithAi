@@ -35,6 +35,8 @@ function love.load()
     width = 600,
     height = 800,
     isDown = love.keyboard.isDown,
+    audio = love.audio,
+    sound = love.sound,
     seed = newSeed,
     quit = love.event.quit,
     difficulty = "normal",
